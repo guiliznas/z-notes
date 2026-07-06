@@ -1,0 +1,14 @@
+services:
+  z-notes:
+    build: .
+    ports:
+      - "8787:8787"
+    environment:
+      PORT: 8787
+      # Defina no arquivo .env (docker compose lê automaticamente):
+      Z_NOTES_PASSWORD_HASH: ${Z_NOTES_PASSWORD_HASH}
+      Z_NOTES_SESSION_SECRET: ${Z_NOTES_SESSION_SECRET}
+    volumes:
+      # SQLite + espelho .md persistem aqui. Backup = copiar esta pasta.
+      - ./data:/app/data
+    restart: unless-stopped
