@@ -9,7 +9,8 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
-    "hash": "tsx scripts/hash.ts"
+    "hash": "tsx scripts/hash.ts",
+    "restore": "tsx scripts/restore.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.2",
@@ -22,6 +23,7 @@
     "drizzle-orm": "^0.38.4",
     "fastify": "^5.2.1",
     "jszip": "^3.10.1",
+    "node-cron": "^3.0.3",
     "tsx": "^4.19.2",
     "zod": "^3.24.1"
   },
@@ -29,6 +31,7 @@
     "@types/better-sqlite3": "^7.6.12",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22.13.1",
+    "@types/node-cron": "^3.0.11",
     "typescript": "^5.8.3",
     "vitest": "^3.0.5"
   }

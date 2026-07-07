@@ -15,10 +15,17 @@ export interface AppConfig {
   passwordHash: string;
   sessionSecret: string;
   isProd: boolean;
+  /** diretório dos snapshots de backup (separado do dataDir ativo). */
+  backupDir: string;
+  /** expressão cron do agendamento diário de backup. */
+  backupCron: string;
+  /** URL opcional para notificação (POST) em caso de falha no backup. */
+  backupWebhookUrl?: string;
 }
 
 const DEFAULT_PASSWORD = "changeme";
 const DEFAULT_SECRET = "dev-insecure-secret-change-me";
+const DEFAULT_BACKUP_CRON = "0 3 * * *";
 
 /** Resolve a configuração a partir das variáveis de ambiente (uso em produção/dev). */
 export function configFromEnv(): AppConfig {
@@ -31,6 +38,9 @@ export function configFromEnv(): AppConfig {
     passwordHash,
     sessionSecret: process.env.Z_NOTES_SESSION_SECRET ?? DEFAULT_SECRET,
     isProd: process.env.NODE_ENV === "production",
+    backupDir: process.env.Z_NOTES_BACKUP_DIR ?? path.join(REPO_ROOT, "backups"),
+    backupCron: process.env.Z_NOTES_BACKUP_CRON ?? DEFAULT_BACKUP_CRON,
+    backupWebhookUrl: process.env.Z_NOTES_BACKUP_WEBHOOK_URL,
   };
 }
 
@@ -49,6 +59,8 @@ export function makeConfig(overrides: Partial<AppConfig> & { dataDir: string }):
     passwordHash: bcrypt.hashSync(DEFAULT_PASSWORD, 8),
     sessionSecret: DEFAULT_SECRET,
     isProd: false,
+    backupDir: path.join(overrides.dataDir, "backups"),
+    backupCron: DEFAULT_BACKUP_CRON,
     ...overrides,
   };
 }

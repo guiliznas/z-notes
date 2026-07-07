@@ -8,7 +8,11 @@ services:
       # Defina no arquivo .env (docker compose lê automaticamente):
       Z_NOTES_PASSWORD_HASH: ${Z_NOTES_PASSWORD_HASH}
       Z_NOTES_SESSION_SECRET: ${Z_NOTES_SESSION_SECRET}
+      Z_NOTES_BACKUP_WEBHOOK_URL: ${Z_NOTES_BACKUP_WEBHOOK_URL:-}
+      Z_NOTES_BACKUP_CRON: ${Z_NOTES_BACKUP_CRON:-0 3 * * *}
     volumes:
       # SQLite + espelho .md persistem aqui. Backup = copiar esta pasta.
       - ./data:/app/data
+      # Snapshots recorrentes (separado do data/ ativo). Ver README > Backup automático.
+      - ./backups:/app/backups
     restart: unless-stopped

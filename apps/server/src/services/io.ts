@@ -6,6 +6,7 @@ import type { AppContext } from "../context.js";
 import { folders, notes } from "../db/schema.js";
 import { sanitizeSegment } from "../mirror/mirror.js";
 import { syncNoteMirror, rebuildMirror } from "./mirror-sync.js";
+import { addDirToZip } from "../lib/zip-fs.js";
 
 const IMPORT_FALLBACK_FOLDER = "Importados";
 
@@ -122,17 +123,4 @@ export async function exportZip(ctx: AppContext): Promise<Buffer> {
   const zip = new JSZip();
   addDirToZip(zip, ctx.cfg.mirrorDir, "");
   return zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
-}
-
-function addDirToZip(zip: JSZip, absDir: string, relBase: string): void {
-  if (!fs.existsSync(absDir)) return;
-  for (const entry of fs.readdirSync(absDir, { withFileTypes: true })) {
-    const abs = path.join(absDir, entry.name);
-    const rel = relBase ? `${relBase}/${entry.name}` : entry.name;
-    if (entry.isDirectory()) {
-      addDirToZip(zip, abs, rel);
-    } else {
-      zip.file(rel, fs.readFileSync(abs));
-    }
-  }
 }

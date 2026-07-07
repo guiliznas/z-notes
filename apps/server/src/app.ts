@@ -10,6 +10,7 @@ import { WEB_DIST } from "./config.js";
 import { openDatabase } from "./db/bootstrap.js";
 import { HttpError } from "./errors.js";
 import { registerApiRoutes } from "./routes/index.js";
+import { scheduleBackups } from "./backup/scheduler.js";
 
 const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
 
@@ -43,7 +44,9 @@ export async function buildApp(cfg: AppConfig): Promise<FastifyInstance> {
   registerApiRoutes(app, ctx);
   registerStaticOrFallback(app);
 
+  const backupTask = scheduleBackups(ctx);
   app.addHook("onClose", async () => {
+    backupTask.stop();
     sqlite.close();
   });
   return app;

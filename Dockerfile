@@ -15,4 +15,8 @@ WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=build /app /app
 EXPOSE 8787
-CMD ["pnpm", "--filter", "@z-notes/server", "start"]
+WORKDIR /app/apps/server
+# Invoca o tsx diretamente (não via "pnpm run start"): o pnpm não repassa SIGTERM
+# ao processo filho de forma confiável, o que impediria o shutdown gracioso
+# (checkpoint do WAL do SQLite) em `docker stop`.
+CMD ["node_modules/.bin/tsx", "src/index.ts"]
