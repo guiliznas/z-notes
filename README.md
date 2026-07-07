@@ -30,7 +30,7 @@ pnpm dev                  # server em :8787, web (Vite) em :5173 com proxy /api
 Testes e checagens:
 
 ```bash
-pnpm test        # 74 testes (shared + server + web)
+pnpm test        # 75 testes (shared + server + web)
 pnpm typecheck
 pnpm build       # builda web + valida tipos do server
 ```
