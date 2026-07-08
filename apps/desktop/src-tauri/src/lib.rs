@@ -11,3 +11,27 @@ pub fn run() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn greet_inclui_nome() {
+        let result = greet("Mundo");
+        assert!(result.contains("Mundo"));
+        assert!(result.contains("z-notes"));
+    }
+
+    #[test]
+    fn greet_vazio() {
+        let result = greet("");
+        assert!(result.contains("z-notes"));
+    }
+
+    #[test]
+    fn greet_com_nome_especial() {
+        let result = greet("João & Maria");
+        assert!(result.contains("João & Maria"));
+    }
+}

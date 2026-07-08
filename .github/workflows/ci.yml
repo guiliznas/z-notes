@@ -38,6 +38,9 @@ jobs:
       - name: Test web
         run: pnpm --filter @z-notes/web test -- --coverage
 
+      - name: Test mobile
+        run: pnpm --filter @z-notes/mobile test -- --coverage
+
       - name: Type check
         run: pnpm typecheck
 
@@ -65,6 +68,9 @@ jobs:
       - run: cargo install tauri-cli --version "^2"
 
       - run: pnpm install --frozen-lockfile
+
+      - name: Test desktop (Rust)
+        run: pnpm --filter @z-notes/desktop test
 
       - name: Build desktop
         run: pnpm build:desktop
