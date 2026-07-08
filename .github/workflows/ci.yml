@@ -1,0 +1,160 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Testes + TypeCheck + Cobertura
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build shared
+        run: pnpm build:shared
+
+      - name: Test shared
+        run: pnpm --filter @z-notes/shared test -- --coverage
+
+      - name: Test server
+        run: pnpm --filter @z-notes/server test -- --coverage
+
+      - name: Test web
+        run: pnpm --filter @z-notes/web test -- --coverage
+
+      - name: Test mobile
+        run: pnpm --filter @z-notes/mobile test -- --coverage
+
+      - name: Type check
+        run: pnpm typecheck
+
+  build-desktop:
+    name: Build Desktop (Tauri)
+    needs: [test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - name: Install Tauri system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev librsvg2-dev patchelf
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - run: cargo install tauri-cli --version "^2"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Test desktop (Rust)
+        run: pnpm --filter @z-notes/desktop test
+
+      - name: Build desktop
+        run: pnpm build:desktop
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-bundles
+          path: apps/desktop/src-tauri/target/release/bundle/
+          retention-days: 14
+
+  build-mobile:
+    name: Build mobile APK (Expo)
+    needs: [test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build shared
+        run: pnpm build:shared
+
+      - name: Build APK
+        run: pnpm --filter @z-notes/mobile build:apk
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mobile-apk
+          path: apps/mobile/*.apk
+          retention-days: 7
+
+  release:
+    name: Release
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [build-desktop, build-mobile]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download desktop bundles
+        uses: actions/download-artifact@v4
+        with:
+          name: desktop-bundles
+          path: ./artifacts/desktop
+
+      - name: Download mobile APK
+        uses: actions/download-artifact@v4
+        with:
+          name: mobile-apk
+          path: ./artifacts/mobile
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ github.run_number }}
+          name: Release v${{ github.run_number }}
+          body: |
+            ## z-notes v${{ github.run_number }}
+
+            ### Downloads
+            - **Desktop (Linux)**: `.deb`, `.rpm`, `.AppImage` nos assets abaixo
+            - **Android**: APK nos assets abaixo
+
+            > Para instalar o APK no celular: baixe o arquivo e abra no Android.
+            > Para desktop Ubuntu: `sudo dpkg -i z-notes_*.deb`
+          files: |
+            ./artifacts/desktop/**/*
+            ./artifacts/mobile/**/*
+          draft: false
+          prerelease: false

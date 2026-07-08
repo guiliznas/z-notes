@@ -14,6 +14,8 @@ export interface AppConfig {
   /** hash bcrypt da senha de acesso. */
   passwordHash: string;
   sessionSecret: string;
+  /** segredo para assinar tokens JWT (Bearer auth para apps mobile/desktop). */
+  jwtSecret: string;
   isProd: boolean;
   /** diretório dos snapshots de backup (separado do dataDir ativo). */
   backupDir: string;
@@ -37,6 +39,7 @@ export function configFromEnv(): AppConfig {
     mirrorDir: path.join(dataDir, "mirror"),
     passwordHash,
     sessionSecret: process.env.Z_NOTES_SESSION_SECRET ?? DEFAULT_SECRET,
+    jwtSecret: process.env.Z_NOTES_JWT_SECRET ?? DEFAULT_SECRET,
     isProd: process.env.NODE_ENV === "production",
     backupDir: process.env.Z_NOTES_BACKUP_DIR ?? path.join(REPO_ROOT, "backups"),
     backupCron: process.env.Z_NOTES_BACKUP_CRON ?? DEFAULT_BACKUP_CRON,
@@ -58,6 +61,7 @@ export function makeConfig(overrides: Partial<AppConfig> & { dataDir: string }):
     mirrorDir: path.join(overrides.dataDir, "mirror"),
     passwordHash: bcrypt.hashSync(DEFAULT_PASSWORD, 8),
     sessionSecret: DEFAULT_SECRET,
+    jwtSecret: DEFAULT_SECRET,
     isProd: false,
     backupDir: path.join(overrides.dataDir, "backups"),
     backupCron: DEFAULT_BACKUP_CRON,

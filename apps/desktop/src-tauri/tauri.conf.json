@@ -1,0 +1,41 @@
+{
+  "$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/dev/crates/tauri-config-schema/schema.json",
+  "productName": "z-notes",
+  "version": "0.1.0",
+  "identifier": "com.znotes.desktop",
+  "build": {
+    "frontendDist": "../../../apps/web/dist",
+    "devUrl": "http://localhost:5173",
+    "beforeDevCommand": "cd /home/guiliznas/services/z-notes && pnpm build:shared && pnpm --filter @z-notes/web dev",
+    "beforeBuildCommand": "cd /home/guiliznas/services/z-notes && pnpm build:shared && pnpm --filter @z-notes/web build"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "z-notes",
+        "width": 1200,
+        "height": 800,
+        "minWidth": 640,
+        "minHeight": 480,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png"
+    ],
+    "linux": {
+      "deb": {
+        "depends": []
+      }
+    }
+  }
+}
