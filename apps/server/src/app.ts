@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import Fastify, { type FastifyInstance } from "fastify";
 import cookie from "@fastify/cookie";
+import cors from "@fastify/cors";
 import multipart from "@fastify/multipart";
 import rateLimit from "@fastify/rate-limit";
 import fastifyStatic from "@fastify/static";
@@ -19,6 +20,10 @@ export async function buildApp(cfg: AppConfig): Promise<FastifyInstance> {
   const ctx = { db, sqlite, cfg };
   const app = Fastify({ logger: cfg.isProd, bodyLimit: MAX_UPLOAD_BYTES });
 
+  await app.register(cors, {
+    origin: true,
+    credentials: true,
+  });
   await app.register(cookie, { secret: cfg.sessionSecret });
   await app.register(multipart, { limits: { fileSize: MAX_UPLOAD_BYTES, files: 500 } });
   await app.register(rateLimit, { global: false });

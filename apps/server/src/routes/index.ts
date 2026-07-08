@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import type { AppContext } from "../context.js";
-import { requireAuth } from "../auth/session.js";
+import { requireAnyAuth } from "../auth/session.js";
 import { registerAuthRoutes } from "./auth.js";
 import { registerFolderRoutes } from "./folders.js";
 import { registerNoteRoutes } from "./notes.js";
@@ -15,7 +15,7 @@ export function registerApiRoutes(app: FastifyInstance, ctx: AppContext): void {
     const path = req.url.split("?")[0];
     if (!path.startsWith("/api/")) return;
     if (path.startsWith("/api/auth/") || PUBLIC_PATHS.includes(path)) return;
-    requireAuth(req);
+    requireAnyAuth(req, ctx);
   });
 
   app.get("/api/health", async () => ({ ok: true }));
