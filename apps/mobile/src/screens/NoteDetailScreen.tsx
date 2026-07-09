@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
+import Markdown from "react-native-markdown-display";
 import { useNote } from "../hooks/useNotes";
 import { useUpdateNote } from "../hooks/useUpdateNote";
 import { deriveTitle } from "@z-notes/shared";
@@ -64,7 +65,9 @@ export default function NoteDetailScreen({ noteId, onBack }: Props) {
           placeholderTextColor="#555"
         />
       ) : (
-        <Text style={styles.content}>{content || "Toque em ✏️ para editar"}</Text>
+        <View style={styles.content}>
+          <Markdown>{content || "Toque em ✏️ para editar"}</Markdown>
+        </View>
       )}
     </View>
   );
