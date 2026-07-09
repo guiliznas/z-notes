@@ -7,6 +7,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "react-native": path.resolve(__dirname, "src/test/react-native-mock.tsx"),
+      "react-native-markdown-display": path.resolve(__dirname, "src/test/react-native-markdown-display-mock.tsx"),
       "expo-secure-store": path.resolve(__dirname, "src/test/expo-secure-store-mock.ts"),
       "expo-status-bar": path.resolve(__dirname, "src/test/expo-status-bar-mock.ts"),
       "@react-native-async-storage/async-storage": path.resolve(__dirname, "src/test/async-storage-mock.ts"),
