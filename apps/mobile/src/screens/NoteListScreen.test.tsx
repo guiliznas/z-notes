@@ -1,6 +1,6 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, waitFor } from "@testing-library/react";
+import { render, fireEvent } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useNotes } from "../hooks/useNotes";
 import NoteListScreen from "./NoteListScreen";
@@ -69,5 +69,62 @@ describe("NoteListScreen", () => {
       }),
     );
     expect(getByText("Pasta 3")).toBeTruthy();
+  });
+
+  it("mostra folderName customizado quando fornecido", () => {
+    vi.mocked(useNotes).mockReturnValue({ isPending: false, data: [] } as any);
+    const { getByText } = renderWithProviders(
+      React.createElement(NoteListScreen, {
+        folderId: 3,
+        folderName: "Faculdade",
+        onSelectNote: () => {},
+        onCreateNote: () => {},
+      }),
+    );
+    expect(getByText("Faculdade")).toBeTruthy();
+  });
+
+  it("mostra cabeçalho Lixeira e oculta FAB quando view é trash", () => {
+    vi.mocked(useNotes).mockReturnValue({ isPending: false, data: [] } as any);
+    const { getByText, queryByLabelText } = renderWithProviders(
+      React.createElement(NoteListScreen, {
+        folderId: null,
+        view: "trash",
+        onSelectNote: () => {},
+        onCreateNote: () => {},
+      }),
+    );
+    expect(getByText("Lixeira")).toBeTruthy();
+    expect(getByText("Notas na lixeira são somente-leitura")).toBeTruthy();
+    expect(queryByLabelText("Criar nota")).toBeNull();
+  });
+
+  it("mostra cabeçalho Arquivadas quando view é archived", () => {
+    vi.mocked(useNotes).mockReturnValue({ isPending: false, data: [] } as any);
+    const { getByText } = renderWithProviders(
+      React.createElement(NoteListScreen, {
+        folderId: null,
+        view: "archived",
+        onSelectNote: () => {},
+        onCreateNote: () => {},
+      }),
+    );
+    expect(getByText("Arquivadas")).toBeTruthy();
+  });
+
+  it("chama onOpenDrawer ao clicar no menu", () => {
+    vi.mocked(useNotes).mockReturnValue({ isPending: false, data: [] } as any);
+    const onOpenDrawer = vi.fn();
+    const { getByLabelText } = renderWithProviders(
+      React.createElement(NoteListScreen, {
+        folderId: null,
+        onOpenDrawer,
+        onSelectNote: () => {},
+        onCreateNote: () => {},
+      }),
+    );
+
+    fireEvent.click(getByLabelText("Abrir gaveta de pastas"));
+    expect(onOpenDrawer).toHaveBeenCalled();
   });
 });

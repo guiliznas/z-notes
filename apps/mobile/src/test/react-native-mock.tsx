@@ -5,7 +5,11 @@ function pass<T extends Record<string, unknown>>(props: T): Record<string, unkno
   for (const k in props) {
     const v = props[k];
     if (typeof v === "function") continue;
-    if (k === "style" || k === "numberOfLines" || k === "autoCapitalize" || k === "autoCorrect" || k === "secureTextEntry" || k === "placeholderTextColor" || k === "textAlignVertical" || k === "autoFocus" || k === "multiline" || k === "elevation") continue;
+    if (k === "accessibilityLabel") {
+      out["aria-label"] = v;
+      continue;
+    }
+    if (k === "style" || k === "numberOfLines" || k === "autoCapitalize" || k === "autoCorrect" || k === "secureTextEntry" || k === "placeholderTextColor" || k === "textAlignVertical" || k === "autoFocus" || k === "multiline" || k === "elevation" || k === "transparent" || k === "animationType") continue;
     out[k] = v;
   }
   return out;
@@ -60,6 +64,15 @@ export const FlatList = <T,>({ data, keyExtractor, renderItem, ListEmptyComponen
 export const StyleSheet = {
   create: <T extends Record<string, unknown>>(styles: T): T => styles,
 };
+
+export const ScrollView = ({ children, ...rest }: { children?: ReactNode } & Record<string, unknown>) =>
+  React.createElement("div", pass(rest), children);
+
+export const Modal = ({ children, visible = true, ...rest }: { children?: ReactNode; visible?: boolean } & Record<string, unknown>) =>
+  visible ? React.createElement("div", { "data-testid": "modal", ...pass(rest) }, children) : null;
+
+export const ActivityIndicator = ({ ...rest }: Record<string, unknown>) =>
+  React.createElement("div", { "data-testid": "activity-indicator", ...pass(rest) }, "Loading...");
 
 export const Alert = {
   alert: () => {},
