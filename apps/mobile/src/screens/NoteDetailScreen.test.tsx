@@ -1,6 +1,6 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, fireEvent, waitFor } from "@testing-library/react";
+import { render, fireEvent } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useNote } from "../hooks/useNotes";
 import { useUpdateNote } from "../hooks/useUpdateNote";
@@ -86,5 +86,41 @@ describe("NoteDetailScreen", () => {
       { id: 1, contentMd: "Original", version: 1 },
       expect.objectContaining({ onSuccess: expect.any(Function), onError: expect.any(Function) }),
     );
+  });
+
+  it("abre modal de ações da nota ao clicar em ⋯", () => {
+    vi.mocked(useNote).mockReturnValue({
+      isPending: false,
+      data: { id: 1, contentMd: "Nota", version: 1 },
+    } as any);
+    vi.mocked(useUpdateNote).mockReturnValue({ mutate: vi.fn() } as any);
+    const { getByLabelText, getByText } = renderWithProviders(
+      React.createElement(NoteDetailScreen, { noteId: 1, onBack: () => {} }),
+    );
+
+    fireEvent.click(getByLabelText("Ações da nota"));
+    expect(getByText("Ações da Nota")).toBeTruthy();
+    expect(getByText("Mover para pasta...")).toBeTruthy();
+  });
+
+  it("insere prefixo markdown no input ao clicar na toolbar", () => {
+    vi.mocked(useNote).mockReturnValue({
+      isPending: false,
+      data: { id: 1, contentMd: "Nota", version: 1 },
+    } as any);
+    vi.mocked(useUpdateNote).mockReturnValue({ mutate: vi.fn() } as any);
+    const { container, getByText } = renderWithProviders(
+      React.createElement(NoteDetailScreen, { noteId: 1, onBack: () => {} }),
+    );
+
+    // Entra em modo edição
+    const buttons = container.querySelectorAll("button");
+    fireEvent.click(buttons[buttons.length - 1]);
+
+    // Clica no atalho H1 da toolbar
+    fireEvent.click(getByText("H1"));
+
+    const input = container.querySelector("input") as HTMLInputElement;
+    expect(input.value).toContain("# ");
   });
 });

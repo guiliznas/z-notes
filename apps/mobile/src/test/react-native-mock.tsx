@@ -9,7 +9,7 @@ function pass<T extends Record<string, unknown>>(props: T): Record<string, unkno
       out["aria-label"] = v;
       continue;
     }
-    if (k === "style" || k === "numberOfLines" || k === "autoCapitalize" || k === "autoCorrect" || k === "secureTextEntry" || k === "placeholderTextColor" || k === "textAlignVertical" || k === "autoFocus" || k === "multiline" || k === "elevation" || k === "transparent" || k === "animationType") continue;
+    if (k === "style" || k === "numberOfLines" || k === "autoCapitalize" || k === "autoCorrect" || k === "secureTextEntry" || k === "placeholderTextColor" || k === "textAlignVertical" || k === "autoFocus" || k === "multiline" || k === "elevation" || k === "transparent" || k === "animationType" || k === "horizontal" || k === "showsHorizontalScrollIndicator" || k === "contentContainerStyle") continue;
     out[k] = v;
   }
   return out;
