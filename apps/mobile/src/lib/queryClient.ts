@@ -16,7 +16,7 @@ export function createQueryClient(): QueryClient {
         networkMode: "offlineFirst",
       },
       mutations: {
-        networkMode: "online",
+        networkMode: "offlineFirst",
       },
     },
   });

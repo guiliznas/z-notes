@@ -17,6 +17,11 @@ describe("createQueryClient", () => {
     expect(qc.getDefaultOptions().queries?.staleTime).toBe(30_000);
   });
 
+  it("configura networkMode offlineFirst nas mutações", () => {
+    const qc = createQueryClient();
+    expect(qc.getDefaultOptions().mutations?.networkMode).toBe("offlineFirst");
+  });
+
   it("configura mutation default para UPDATE_NOTE_KEY", () => {
     const qc = createQueryClient();
     const defaults = qc.getMutationDefaults(UPDATE_NOTE_KEY);

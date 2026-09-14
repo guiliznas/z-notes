@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import type { NoteViewFilter } from "@z-notes/shared";
 import { createQueryClient } from "./src/lib/queryClient";
+import { persistOptions } from "./src/lib/storage";
 import { loadToken } from "./src/api/http";
 import LoginScreen from "./src/screens/LoginScreen";
 import NoteListScreen from "./src/screens/NoteListScreen";
@@ -68,7 +69,11 @@ export default function App() {
   };
 
   return (
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={persistOptions}
+      onSuccess={() => queryClient.resumePausedMutations()}
+    >
       <StatusBar style="light" />
       {screen === "login" && <LoginScreen onAuthenticated={handleAuthenticated} />}
       {screen === "list" && (
@@ -94,6 +99,6 @@ export default function App() {
       {screen === "detail" && selectedNote !== null && (
         <NoteDetailScreen noteId={selectedNote} onBack={() => setScreen("list")} />
       )}
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   );
 }
