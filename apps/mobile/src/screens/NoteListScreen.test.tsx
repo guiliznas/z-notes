@@ -3,9 +3,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, fireEvent } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useNotes } from "../hooks/useNotes";
-import NoteListScreen from "./NoteListScreen";
+import { useSearch } from "../hooks/useSearch";
+import NoteListScreen, { formatNoteDate } from "./NoteListScreen";
 
 vi.mock("../hooks/useNotes");
+vi.mock("../hooks/useSearch");
 
 function renderWithProviders(ui: React.ReactElement) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -14,8 +16,23 @@ function renderWithProviders(ui: React.ReactElement) {
   );
 }
 
+describe("formatNoteDate", () => {
+  it("retorna vazio quando timestamp é undefined", () => {
+    expect(formatNoteDate(undefined)).toBe("");
+  });
+
+  it("formata hora e minuto para hoje", () => {
+    const now = new Date();
+    const res = formatNoteDate(now.getTime());
+    expect(res).toMatch(/^\d{2}:\d{2}$/);
+  });
+});
+
 describe("NoteListScreen", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(useSearch).mockReturnValue({ isPending: false, data: [] } as any);
+  });
 
   it("mostra Carregando enquanto pending", () => {
     vi.mocked(useNotes).mockReturnValue({ isPending: true, data: undefined } as any);
@@ -43,8 +60,8 @@ describe("NoteListScreen", () => {
 
   it("renderiza notas com título e excerpt", async () => {
     const notes = [
-      { id: 1, title: "Nota 1", excerpt: "Conteúdo 1" },
-      { id: 2, title: "Nota 2", excerpt: "Conteúdo 2" },
+      { id: 1, title: "Nota 1", excerpt: "Conteúdo 1", updatedAt: 1718000000000 },
+      { id: 2, title: "Nota 2", excerpt: "Conteúdo 2", archived: true },
     ];
     vi.mocked(useNotes).mockReturnValue({ isPending: false, data: notes } as any);
     const { getByText } = renderWithProviders(
@@ -57,6 +74,7 @@ describe("NoteListScreen", () => {
     expect(getByText("Nota 1")).toBeTruthy();
     expect(getByText("Nota 2")).toBeTruthy();
     expect(getByText("Conteúdo 1")).toBeTruthy();
+    expect(getByText("📦 Arquivada")).toBeTruthy();
   });
 
   it("mostra nome da pasta quando folderId não é null", () => {
@@ -73,7 +91,7 @@ describe("NoteListScreen", () => {
 
   it("mostra folderName customizado quando fornecido", () => {
     vi.mocked(useNotes).mockReturnValue({ isPending: false, data: [] } as any);
-    const { getByText } = renderWithProviders(
+    const { getByText, getByPlaceholderText } = renderWithProviders(
       React.createElement(NoteListScreen, {
         folderId: 3,
         folderName: "Faculdade",
@@ -82,6 +100,7 @@ describe("NoteListScreen", () => {
       }),
     );
     expect(getByText("Faculdade")).toBeTruthy();
+    expect(getByPlaceholderText("Buscar em Faculdade...")).toBeTruthy();
   });
 
   it("mostra cabeçalho Lixeira e oculta FAB quando view é trash", () => {
@@ -126,5 +145,52 @@ describe("NoteListScreen", () => {
 
     fireEvent.click(getByLabelText("Abrir gaveta de pastas"));
     expect(onOpenDrawer).toHaveBeenCalled();
+  });
+
+  it("alterna para busca e exibe resultados quando digita na barra de pesquisa", () => {
+    vi.mocked(useNotes).mockReturnValue({ isPending: false, data: [] } as any);
+    const hits = [
+      {
+        note: { id: 9, title: "Nota Encontrada", excerpt: "Trecho da nota" },
+        snippet: "Trecho com destaque",
+      },
+    ];
+    vi.mocked(useSearch).mockReturnValue({ isPending: false, data: hits } as any);
+    const onSelectNote = vi.fn();
+
+    const { getByPlaceholderText, getByText } = renderWithProviders(
+      React.createElement(NoteListScreen, {
+        folderId: null,
+        onSelectNote,
+        onCreateNote: () => {},
+      }),
+    );
+
+    const input = getByPlaceholderText("Buscar em todas as notas...");
+    fireEvent.change(input, { target: { value: "encontrada" } });
+
+    expect(getByText("Nota Encontrada")).toBeTruthy();
+    expect(getByText("Trecho com destaque")).toBeTruthy();
+
+    fireEvent.click(getByText("Nota Encontrada"));
+    expect(onSelectNote).toHaveBeenCalledWith(9);
+  });
+
+  it("exibe aviso de nenhum resultado quando busca não retorna itens", () => {
+    vi.mocked(useNotes).mockReturnValue({ isPending: false, data: [] } as any);
+    vi.mocked(useSearch).mockReturnValue({ isPending: false, data: [] } as any);
+
+    const { getByPlaceholderText, getByText } = renderWithProviders(
+      React.createElement(NoteListScreen, {
+        folderId: null,
+        onSelectNote: () => {},
+        onCreateNote: () => {},
+      }),
+    );
+
+    const input = getByPlaceholderText("Buscar em todas as notas...");
+    fireEvent.change(input, { target: { value: "inexistente" } });
+
+    expect(getByText('Nenhum resultado encontrado para "inexistente"')).toBeTruthy();
   });
 });

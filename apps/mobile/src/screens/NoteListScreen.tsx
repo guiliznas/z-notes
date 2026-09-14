@@ -1,6 +1,16 @@
-import { FlatList, Text, TouchableOpacity, View, StyleSheet } from "react-native";
+import { useState } from "react";
+import {
+  FlatList,
+  Text,
+  TouchableOpacity,
+  View,
+  RefreshControl,
+  StyleSheet,
+} from "react-native";
+import type { NoteMeta, SearchHit, NoteViewFilter } from "@z-notes/shared";
 import { useNotes } from "../hooks/useNotes";
-import type { NoteMeta, NoteViewFilter } from "@z-notes/shared";
+import { useSearch } from "../hooks/useSearch";
+import SearchBar from "../components/SearchBar";
 
 interface Props {
   folderId: number | null;
@@ -11,6 +21,29 @@ interface Props {
   onCreateNote: () => void;
 }
 
+export function formatNoteDate(timestamp?: number): string {
+  if (!timestamp) return "";
+  const date = new Date(timestamp);
+  const now = new Date();
+  const isSameDay =
+    date.getDate() === now.getDate() &&
+    date.getMonth() === now.getMonth() &&
+    date.getFullYear() === now.getFullYear();
+
+  if (isSameDay) {
+    const hours = String(date.getHours()).padStart(2, "0");
+    const mins = String(date.getMinutes()).padStart(2, "0");
+    return `${hours}:${mins}`;
+  }
+
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  if (date.getFullYear() === now.getFullYear()) {
+    return `${day}/${month}`;
+  }
+  return `${day}/${month}/${date.getFullYear()}`;
+}
+
 export default function NoteListScreen({
   folderId,
   folderName,
@@ -19,7 +52,11 @@ export default function NoteListScreen({
   onSelectNote,
   onCreateNote,
 }: Props) {
-  const { data: notes, isPending } = useNotes(folderId, view);
+  const [searchQuery, setSearchQuery] = useState("");
+  const isSearching = searchQuery.trim().length > 0;
+
+  const { data: notes, isPending, refetch, isRefetching } = useNotes(folderId, view);
+  const { data: searchHits, isPending: searchPending } = useSearch(searchQuery, folderId);
 
   const getHeaderTitle = () => {
     if (view === "trash") return "Lixeira";
@@ -51,23 +88,78 @@ export default function NoteListScreen({
         </View>
       </View>
 
-      {isPending && <Text style={styles.loading}>Carregando...</Text>}
-
-      <FlatList
-        data={notes}
-        keyExtractor={(item: NoteMeta) => String(item.id)}
-        renderItem={({ item }) => (
-          <TouchableOpacity style={styles.item} onPress={() => onSelectNote(item.id)}>
-            <Text style={styles.itemTitle} numberOfLines={1}>
-              {item.title}
-            </Text>
-            <Text style={styles.itemExcerpt} numberOfLines={2}>
-              {item.excerpt}
-            </Text>
-          </TouchableOpacity>
-        )}
-        ListEmptyComponent={!isPending ? <Text style={styles.empty}>Nenhuma nota</Text> : null}
+      <SearchBar
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+        placeholder={folderName ? `Buscar em ${folderName}...` : "Buscar em todas as notas..."}
       />
+
+      {isSearching ? (
+        <>
+          {searchPending && <Text style={styles.loading}>Buscando notas...</Text>}
+          <FlatList
+            data={searchHits ?? []}
+            keyExtractor={(item: SearchHit) => `search-${item.note.id}`}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.item}
+                onPress={() => onSelectNote(item.note.id)}
+              >
+                <View style={styles.itemHeader}>
+                  <Text style={styles.itemTitle} numberOfLines={1}>
+                    {item.note.title}
+                  </Text>
+                  {item.note.updatedAt && (
+                    <Text style={styles.itemDate}>
+                      {formatNoteDate(item.note.updatedAt)}
+                    </Text>
+                  )}
+                </View>
+                <Text style={styles.itemExcerpt} numberOfLines={2}>
+                  {item.snippet || item.note.excerpt}
+                </Text>
+              </TouchableOpacity>
+            )}
+            ListEmptyComponent={
+              !searchPending ? (
+                <Text style={styles.empty}>
+                  Nenhum resultado encontrado para "{searchQuery.trim()}"
+                </Text>
+              ) : null
+            }
+          />
+        </>
+      ) : (
+        <>
+          {isPending && <Text style={styles.loading}>Carregando...</Text>}
+          <FlatList
+            data={notes}
+            keyExtractor={(item: NoteMeta) => String(item.id)}
+            refreshControl={
+              <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
+            }
+            renderItem={({ item }) => (
+              <TouchableOpacity style={styles.item} onPress={() => onSelectNote(item.id)}>
+                <View style={styles.itemHeader}>
+                  <Text style={styles.itemTitle} numberOfLines={1}>
+                    {item.title}
+                  </Text>
+                  {item.updatedAt && (
+                    <Text style={styles.itemDate}>{formatNoteDate(item.updatedAt)}</Text>
+                  )}
+                </View>
+                <Text style={styles.itemExcerpt} numberOfLines={2}>
+                  {item.excerpt}
+                </Text>
+                {item.archived && view !== "archived" && (
+                  <Text style={styles.archivedBadge}>📦 Arquivada</Text>
+                )}
+              </TouchableOpacity>
+            )}
+            ListEmptyComponent={!isPending ? <Text style={styles.empty}>Nenhuma nota</Text> : null}
+          />
+        </>
+      )}
 
       {!isTrash && (
         <TouchableOpacity
@@ -89,7 +181,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 8,
+    paddingBottom: 4,
   },
   menuButton: {
     padding: 8,
@@ -111,9 +203,17 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5,
     borderBottomColor: "#333",
   },
-  itemTitle: { color: "#fff", fontSize: 16, fontWeight: "600", marginBottom: 2 },
+  itemHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 2,
+  },
+  itemTitle: { color: "#fff", fontSize: 16, fontWeight: "600", flex: 1, marginRight: 8 },
+  itemDate: { color: "#8e8e93", fontSize: 12 },
   itemExcerpt: { color: "#888", fontSize: 13, lineHeight: 18 },
-  empty: { color: "#888", textAlign: "center", marginTop: 40 },
+  archivedBadge: { color: "#ff9f0a", fontSize: 11, marginTop: 4 },
+  empty: { color: "#888", textAlign: "center", marginTop: 40, paddingHorizontal: 24 },
   fab: {
     position: "absolute",
     bottom: 24,

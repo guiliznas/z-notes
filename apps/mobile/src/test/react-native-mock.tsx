@@ -74,6 +74,9 @@ export const Modal = ({ children, visible = true, ...rest }: { children?: ReactN
 export const ActivityIndicator = ({ ...rest }: Record<string, unknown>) =>
   React.createElement("div", { "data-testid": "activity-indicator", ...pass(rest) }, "Loading...");
 
+export const RefreshControl = ({ ...rest }: Record<string, unknown>) =>
+  React.createElement("div", { "data-testid": "refresh-control", ...pass(rest) });
+
 export const Alert = {
   alert: () => {},
 };
