@@ -23,7 +23,7 @@ Monorepo pnpm — React + Vite + Tailwind (`apps/web`), Fastify + Drizzle + SQLi
 
 ```bash
 pnpm install
-cp .env.example .env      # ajuste Z_NOTES_PASSWORD
+cp .env.example .env      # ajuste GOOGLE_CLIENT_ID/SECRET/CALLBACK_URL
 pnpm dev                  # server em :8787, web (Vite) em :5173 com proxy /api
 ```
 
@@ -38,11 +38,10 @@ pnpm build       # builda web + valida tipos do server
 ## Produção (Docker)
 
 ```bash
-# Gere o hash da senha:
-pnpm --filter @z-notes/server hash "sua-senha-forte"
-
 # .env na raiz:
-#   Z_NOTES_PASSWORD_HASH=<hash gerado acima>
+#   GOOGLE_CLIENT_ID=<client id do Google Cloud Console>
+#   GOOGLE_CLIENT_SECRET=<client secret>
+#   GOOGLE_CALLBACK_URL=https://<seu-domínio>/api/auth/google/callback
 #   Z_NOTES_SESSION_SECRET=<segredo aleatório>
 
 docker compose up -d --build

@@ -1,7 +1,9 @@
 import { z } from "zod";
 
-export const LoginSchema = z.object({
-  password: z.string().min(1, "Senha é obrigatória"),
+export const OAuthCallbackQuery = z.object({
+  code: z.string().min(1, "code é obrigatório").optional(),
+  state: z.string().min(1, "state é obrigatório").optional(),
+  error: z.string().optional(),
 });
 
 export const CreateFolderSchema = z.object({

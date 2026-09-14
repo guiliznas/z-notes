@@ -9,6 +9,7 @@ import type {
   UpdateFolderInput,
   CreateNoteInput,
   UpdateNoteInput,
+  AuthMeResponse,
 } from "@z-notes/shared";
 import { api } from "./http.js";
 
@@ -46,10 +47,9 @@ export function searchNotes(q: string, folderId: number | null) {
   return api<SearchHit[]>(`/search?${params.toString()}`);
 }
 
-// Auth
-export const authMe = () => api<{ authenticated: boolean }>("/auth/me");
-export const authLogin = (password: string) =>
-  api<{ ok: true }>("/auth/login", { method: "POST", body: JSON.stringify({ password }) });
+// Auth (login via redirect OAuth — o browser navega, não é fetch)
+export const googleLoginUrl = "/api/auth/google";
+export const authMe = () => api<AuthMeResponse>("/auth/me");
 export const authLogout = () => api<{ ok: true }>("/auth/logout", { method: "POST" });
 
 // Import / Export

@@ -30,7 +30,7 @@ describe("createSnapshotIfChanged", () => {
 
     const zip = await JSZip.loadAsync(fs.readFileSync(zipPath));
     expect(Object.keys(zip.files)).toContain("z-notes.db");
-    expect(Object.keys(zip.files).some((f) => f.startsWith("mirror/Trabalho/"))).toBe(true);
+    expect(Object.keys(zip.files).some((f) => f.startsWith(`mirror/${t.userId}/Trabalho/`))).toBe(true);
 
     const manifest = readManifest(t.cfg.backupDir);
     expect(manifest.snapshots).toHaveLength(1);

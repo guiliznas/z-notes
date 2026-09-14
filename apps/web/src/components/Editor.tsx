@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { deriveTitle } from "@z-notes/shared";
+import { ApiError } from "@/api/http";
 import { useSelection } from "@/hooks/useSelection";
 import { useNote, useTrashNote, useRestoreNote, useHardDeleteNote } from "@/hooks/useNotes";
 import { useUpdateNote } from "@/hooks/useUpdateNote";
@@ -71,6 +72,19 @@ export function Editor({ onBack }: Props) {
   const autosave = useAutosave({ resetKey: note?.id ?? null, initialContent: note?.contentMd ?? "", commit });
 
   if (noteId === null) return <EmptyEditor />;
+  if (noteQuery.isError) {
+    const gone = noteQuery.error instanceof ApiError && noteQuery.error.status === 404;
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-3 text-sm text-[var(--muted)]">
+        <p>{gone ? "Nota não encontrada." : "Falha ao carregar a nota."}</p>
+        {onBack && (
+          <Button variant="subtle" onClick={onBack}>
+            Voltar para a lista
+          </Button>
+        )}
+      </div>
+    );
+  }
   if (!note) return <div className="flex h-full items-center justify-center text-sm text-[var(--muted)]">Carregando…</div>;
 
   const content = autosave.content;

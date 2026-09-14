@@ -1,7 +1,8 @@
 import path from "node:path";
 import { and, eq, isNull, isNotNull, asc, ne } from "drizzle-orm";
 import { deriveTitle } from "@z-notes/shared";
-import type { AppContext } from "../context.js";
+import type { RequestContext } from "../context.js";
+import { userMirrorDir } from "../config.js";
 import { folders, notes, type NoteRow } from "../db/schema.js";
 import {
   slugify,
@@ -13,14 +14,18 @@ import {
   type MirrorNoteData,
 } from "../mirror/mirror.js";
 
-/** Segmentos de diretório (pasta raiz [, subpasta]) para uma pasta. */
-function folderSegments(ctx: AppContext, folderId: number): string[] {
+/** Segmentos de diretório (pasta raiz [, subpasta]) para uma pasta do usuário. */
+function folderSegments(ctx: RequestContext, folderId: number): string[] {
   const segments: string[] = [];
   let current: number | null = folderId;
   const guard = new Set<number>();
   while (current !== null && !guard.has(current)) {
     guard.add(current);
-    const folder = ctx.db.select().from(folders).where(eq(folders.id, current)).get();
+    const folder = ctx.db
+      .select()
+      .from(folders)
+      .where(and(eq(folders.id, current), eq(folders.userId, ctx.userId)))
+      .get();
     if (!folder) break;
     segments.unshift(sanitizeSegment(folder.name));
     current = folder.parentId;
@@ -32,12 +37,12 @@ function slugFromPath(relPath: string): string {
   return path.basename(relPath, ".md");
 }
 
-/** Slugs já ocupados por outras notas ativas na mesma pasta. */
-function takenSlugs(ctx: AppContext, folderId: number, exceptId: number): Set<string> {
+/** Slugs já ocupados por outras notas ativas do usuário na mesma pasta. */
+function takenSlugs(ctx: RequestContext, folderId: number, exceptId: number): Set<string> {
   const rows = ctx.db
     .select({ mirrorPath: notes.mirrorPath })
     .from(notes)
-    .where(and(eq(notes.folderId, folderId), isNull(notes.deletedAt), ne(notes.id, exceptId)))
+    .where(and(eq(notes.folderId, folderId), eq(notes.userId, ctx.userId), isNull(notes.deletedAt), ne(notes.id, exceptId)))
     .all();
   const set = new Set<string>();
   for (const r of rows) {
@@ -63,50 +68,53 @@ function toMirrorData(row: NoteRow): MirrorNoteData {
   };
 }
 
-function computeRelPath(ctx: AppContext, row: NoteRow): string {
+function computeRelPath(ctx: RequestContext, row: NoteRow): string {
   const segments = folderSegments(ctx, row.folderId!);
   const base = slugify(deriveTitle(row.contentMd));
   const slug = makeUnique(base, takenSlugs(ctx, row.folderId!, row.id));
   return [...segments, `${slug}.md`].join("/");
 }
 
-/** Sincroniza o arquivo .md de uma nota: escreve, move ou remove conforme o estado. */
-export function syncNoteMirror(ctx: AppContext, noteId: number): void {
-  const row = ctx.db.select().from(notes).where(eq(notes.id, noteId)).get();
+/** Sincroniza o arquivo .md de uma nota do usuário: escreve, move ou remove conforme o estado. */
+export function syncNoteMirror(ctx: RequestContext, noteId: number): void {
+  const owned = and(eq(notes.id, noteId), eq(notes.userId, ctx.userId));
+  const row = ctx.db.select().from(notes).where(owned).get();
   if (!row) return;
+  const dir = userMirrorDir(ctx.cfg, ctx.userId);
 
   // Notas na lixeira ou órfãs saem do espelho.
   if (row.deletedAt !== null || row.folderId === null) {
     if (row.mirrorPath) {
-      removeFile(ctx.cfg.mirrorDir, row.mirrorPath);
-      ctx.db.update(notes).set({ mirrorPath: null }).where(eq(notes.id, noteId)).run();
+      removeFile(dir, row.mirrorPath);
+      ctx.db.update(notes).set({ mirrorPath: null }).where(owned).run();
     }
     return;
   }
 
   const relPath = computeRelPath(ctx, row);
   if (row.mirrorPath && row.mirrorPath !== relPath) {
-    removeFile(ctx.cfg.mirrorDir, row.mirrorPath);
+    removeFile(dir, row.mirrorPath);
   }
-  writeFile(ctx.cfg.mirrorDir, relPath, renderNoteFile(toMirrorData(row)));
+  writeFile(dir, relPath, renderNoteFile(toMirrorData(row)));
   if (row.mirrorPath !== relPath) {
-    ctx.db.update(notes).set({ mirrorPath: relPath }).where(eq(notes.id, noteId)).run();
+    ctx.db.update(notes).set({ mirrorPath: relPath }).where(owned).run();
   }
 }
 
-/** Regenera todo o espelho a partir do banco (recuperação / mudança de pastas). */
-export function rebuildMirror(ctx: AppContext): void {
-  clearMirror(ctx.cfg.mirrorDir);
-  ctx.db.update(notes).set({ mirrorPath: null }).run();
+/** Regenera o espelho do usuário a partir do banco (recuperação / mudança de pastas). */
+export function rebuildMirror(ctx: RequestContext): void {
+  const dir = userMirrorDir(ctx.cfg, ctx.userId);
+  clearMirror(dir);
+  ctx.db.update(notes).set({ mirrorPath: null }).where(eq(notes.userId, ctx.userId)).run();
   const active = ctx.db
     .select()
     .from(notes)
-    .where(and(isNull(notes.deletedAt), isNotNull(notes.folderId)))
+    .where(and(eq(notes.userId, ctx.userId), isNull(notes.deletedAt), isNotNull(notes.folderId)))
     .orderBy(asc(notes.id))
     .all();
   for (const row of active) {
     const relPath = computeRelPath(ctx, row);
-    writeFile(ctx.cfg.mirrorDir, relPath, renderNoteFile(toMirrorData(row)));
+    writeFile(dir, relPath, renderNoteFile(toMirrorData(row)));
     ctx.db.update(notes).set({ mirrorPath: relPath }).where(eq(notes.id, row.id)).run();
   }
 }

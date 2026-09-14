@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import type { AppContext } from "../context.js";
+import { reqCtx } from "../auth/session.js";
 import { badRequest } from "../errors.js";
 import { importEntries, zipToEntries, exportZip, type ImportEntry } from "../services/io.js";
 
@@ -20,11 +21,11 @@ export function registerIoRoutes(app: FastifyInstance, ctx: AppContext): void {
       }
     }
     if (entries.length === 0) throw badRequest("Nenhum arquivo .md ou .zip válido encontrado");
-    return importEntries(ctx, entries);
+    return importEntries(reqCtx(ctx, req), entries);
   });
 
-  app.get("/api/export", async (_req, reply) => {
-    const buffer = await exportZip(ctx);
+  app.get("/api/export", async (req, reply) => {
+    const buffer = await exportZip(reqCtx(ctx, req));
     reply.header("Content-Type", "application/zip");
     reply.header("Content-Disposition", 'attachment; filename="z-notes-backup.zip"');
     return reply.send(buffer);

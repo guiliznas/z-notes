@@ -1,12 +1,18 @@
 import { and, eq, isNull, isNotNull, desc, asc } from "drizzle-orm";
 import { deriveTitle, deriveExcerpt } from "@z-notes/shared";
 import type { Note, NoteMeta, NoteViewFilter, CreateNoteInput, UpdateNoteInput } from "@z-notes/shared";
-import type { AppContext } from "../context.js";
+import type { RequestContext } from "../context.js";
+import { userMirrorDir } from "../config.js";
 import { folders, notes, type NoteRow } from "../db/schema.js";
 import { badRequest, notFound, conflict } from "../errors.js";
 import { getFolderRow } from "./folders.js";
 import { syncNoteMirror } from "./mirror-sync.js";
 import { removeFile } from "../mirror/mirror.js";
+
+/** Guard de ownership: toda leitura por id filtra pelo dono (cross-access → 404). */
+function owned(ctx: RequestContext, id: number) {
+  return and(eq(notes.id, id), eq(notes.userId, ctx.userId));
+}
 
 function toMeta(row: NoteRow): NoteMeta {
   return {
@@ -25,11 +31,11 @@ function toNote(row: NoteRow): Note {
   return { ...toMeta(row), contentMd: row.contentMd, version: row.version };
 }
 
-export function getNoteRow(ctx: AppContext, id: number): NoteRow | undefined {
-  return ctx.db.select().from(notes).where(eq(notes.id, id)).get();
+export function getNoteRow(ctx: RequestContext, id: number): NoteRow | undefined {
+  return ctx.db.select().from(notes).where(owned(ctx, id)).get();
 }
 
-export function getNote(ctx: AppContext, id: number): Note {
+export function getNote(ctx: RequestContext, id: number): Note {
   const row = getNoteRow(ctx, id);
   if (!row) throw notFound("Nota não encontrada");
   return toNote(row);
@@ -40,8 +46,8 @@ export interface ListNotesParams {
   view: NoteViewFilter;
 }
 
-export function listNotes(ctx: AppContext, params: ListNotesParams): NoteMeta[] {
-  const filters = buildListFilters(params);
+export function listNotes(ctx: RequestContext, params: ListNotesParams): NoteMeta[] {
+  const filters = buildListFilters(ctx, params);
   const rows = ctx.db
     .select()
     .from(notes)
@@ -51,10 +57,11 @@ export function listNotes(ctx: AppContext, params: ListNotesParams): NoteMeta[] 
   return rows.map(toMeta);
 }
 
-function buildListFilters(params: ListNotesParams) {
+function buildListFilters(ctx: RequestContext, params: ListNotesParams) {
   const { view, folderId } = params;
-  if (view === "trash") return [isNotNull(notes.deletedAt)];
-  const filters = [isNull(notes.deletedAt)];
+  const owner = eq(notes.userId, ctx.userId);
+  if (view === "trash") return [owner, isNotNull(notes.deletedAt)];
+  const filters = [owner, isNull(notes.deletedAt)];
   if (view === "archived") {
     filters.push(isNotNull(notes.archivedAt));
   } else {
@@ -66,13 +73,14 @@ function buildListFilters(params: ListNotesParams) {
   return filters;
 }
 
-export function createNote(ctx: AppContext, input: CreateNoteInput): Note {
+export function createNote(ctx: RequestContext, input: CreateNoteInput): Note {
   const folder = getFolderRow(ctx, input.folderId);
   if (!folder) throw badRequest("Pasta de destino não existe");
   const now = Date.now();
   const row = ctx.db
     .insert(notes)
     .values({
+      userId: ctx.userId,
       folderId: input.folderId,
       contentMd: input.contentMd ?? "",
       version: 1,
@@ -85,7 +93,7 @@ export function createNote(ctx: AppContext, input: CreateNoteInput): Note {
   return toNote(getNoteRow(ctx, row.id)!);
 }
 
-export function updateNote(ctx: AppContext, id: number, input: UpdateNoteInput): Note {
+export function updateNote(ctx: RequestContext, id: number, input: UpdateNoteInput): Note {
   const existing = getNoteRow(ctx, id);
   if (!existing) throw notFound("Nota não encontrada");
   if (existing.deletedAt !== null) throw badRequest("Nota na lixeira não pode ser editada; restaure antes");
@@ -104,48 +112,53 @@ export function updateNote(ctx: AppContext, id: number, input: UpdateNoteInput):
     patch.archivedAt = input.archived ? (existing.archivedAt ?? Date.now()) : null;
   }
 
-  ctx.db.update(notes).set(patch).where(eq(notes.id, id)).run();
+  ctx.db.update(notes).set(patch).where(owned(ctx, id)).run();
   syncNoteMirror(ctx, id);
   return toNote(getNoteRow(ctx, id)!);
 }
 
 /** Move para a lixeira (soft delete). */
-export function trashNote(ctx: AppContext, id: number): void {
+export function trashNote(ctx: RequestContext, id: number): void {
   const existing = getNoteRow(ctx, id);
   if (!existing) throw notFound("Nota não encontrada");
-  ctx.db.update(notes).set({ deletedAt: Date.now(), updatedAt: Date.now() }).where(eq(notes.id, id)).run();
+  ctx.db.update(notes).set({ deletedAt: Date.now(), updatedAt: Date.now() }).where(owned(ctx, id)).run();
   syncNoteMirror(ctx, id);
 }
 
-export function restoreNote(ctx: AppContext, id: number): Note {
+export function restoreNote(ctx: RequestContext, id: number): Note {
   const existing = getNoteRow(ctx, id);
   if (!existing) throw notFound("Nota não encontrada");
   const folderId = existing.folderId ?? fallbackFolderId(ctx);
   ctx.db
     .update(notes)
     .set({ deletedAt: null, folderId, updatedAt: Date.now() })
-    .where(eq(notes.id, id))
+    .where(owned(ctx, id))
     .run();
   syncNoteMirror(ctx, id);
   return toNote(getNoteRow(ctx, id)!);
 }
 
 /** Exclusão definitiva (remove do banco). */
-export function hardDeleteNote(ctx: AppContext, id: number): void {
+export function hardDeleteNote(ctx: RequestContext, id: number): void {
   const existing = getNoteRow(ctx, id);
   if (!existing) throw notFound("Nota não encontrada");
-  if (existing.mirrorPath) removeFile(ctx.cfg.mirrorDir, existing.mirrorPath);
-  ctx.db.delete(notes).where(eq(notes.id, id)).run();
+  if (existing.mirrorPath) removeFile(userMirrorDir(ctx.cfg, ctx.userId), existing.mirrorPath);
+  ctx.db.delete(notes).where(owned(ctx, id)).run();
 }
 
 /** Pasta padrão para restaurar notas órfãs (pasta cuja original foi excluída). */
-function fallbackFolderId(ctx: AppContext): number {
-  const root = ctx.db.select().from(folders).where(isNull(folders.parentId)).orderBy(asc(folders.position)).get();
+function fallbackFolderId(ctx: RequestContext): number {
+  const root = ctx.db
+    .select()
+    .from(folders)
+    .where(and(eq(folders.userId, ctx.userId), isNull(folders.parentId)))
+    .orderBy(asc(folders.position))
+    .get();
   if (root) return root.id;
   const now = Date.now();
   const created = ctx.db
     .insert(folders)
-    .values({ name: "Notas", parentId: null, position: 0, createdAt: now, updatedAt: now })
+    .values({ name: "Notas", userId: ctx.userId, parentId: null, position: 0, createdAt: now, updatedAt: now })
     .returning()
     .get();
   return created.id;

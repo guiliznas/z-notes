@@ -32,10 +32,10 @@ describe("mirror rebuild em mudança de pasta", () => {
   it("renomear pasta move os arquivos no espelho", () => {
     const folder = createFolder(t.ctx, { name: "Antigo" });
     createNote(t.ctx, { folderId: folder.id, contentMd: "Uma nota\ncorpo" });
-    expect(listMirror(t.cfg)).toContain("Antigo/uma-nota.md");
+    expect(listMirror(t.cfg, t.userId)).toContain("Antigo/uma-nota.md");
 
     updateFolder(t.ctx, folder.id, { name: "Novo" });
-    const files = listMirror(t.cfg);
+    const files = listMirror(t.cfg, t.userId);
     expect(files).toContain("Novo/uma-nota.md");
     expect(files).not.toContain("Antigo/uma-nota.md");
   });
@@ -43,7 +43,7 @@ describe("mirror rebuild em mudança de pasta", () => {
   it("frontmatter contém id e archived", () => {
     const folder = createFolder(t.ctx, { name: "F" });
     const note = createNote(t.ctx, { folderId: folder.id, contentMd: "Nota\ncorpo" });
-    const content = readMirror(t.cfg, "F/nota.md");
+    const content = readMirror(t.cfg, "F/nota.md", t.userId);
     expect(content).toContain(`id: ${note.id}`);
     expect(content).toContain("archived: false");
     expect(content).toContain("Nota\ncorpo");
