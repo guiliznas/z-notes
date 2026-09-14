@@ -8,11 +8,12 @@ import { loadToken } from "./src/api/http";
 import LoginScreen from "./src/screens/LoginScreen";
 import NoteListScreen from "./src/screens/NoteListScreen";
 import NoteDetailScreen from "./src/screens/NoteDetailScreen";
+import SettingsScreen from "./src/screens/SettingsScreen";
 import FolderDrawer from "./src/components/FolderDrawer";
 
 const queryClient = createQueryClient();
 
-type Screen = "login" | "list" | "detail";
+type Screen = "login" | "list" | "detail" | "settings";
 
 interface SelectedFolderState {
   folderId: number | null;
@@ -93,11 +94,21 @@ export default function App() {
             selectedView={folderState.view}
             onSelectView={handleSelectView}
             onSelectFolder={handleSelectFolder}
+            onOpenSettings={() => {
+              setDrawerOpen(false);
+              setScreen("settings");
+            }}
           />
         </>
       )}
       {screen === "detail" && selectedNote !== null && (
         <NoteDetailScreen noteId={selectedNote} onBack={() => setScreen("list")} />
+      )}
+      {screen === "settings" && (
+        <SettingsScreen
+          onBack={() => setScreen("list")}
+          onLogout={() => setScreen("login")}
+        />
       )}
     </PersistQueryClientProvider>
   );

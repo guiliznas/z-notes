@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ApiError, api, setBaseUrl, loadToken, saveToken, clearToken, getToken } from "./http";
+import { ApiError, api, setBaseUrl, getBaseUrl, loadToken, saveToken, clearToken, getToken } from "./http";
 
 import { resetStore } from "../test/expo-secure-store-mock";
 
@@ -113,9 +113,10 @@ describe("tokens", () => {
   });
 });
 
-describe("setBaseUrl", () => {
-  it("remove trailing slash", async () => {
+describe("setBaseUrl / getBaseUrl", () => {
+  it("remove trailing slash e retorna baseUrl atualizado", async () => {
     setBaseUrl("http://example.com/");
+    expect(getBaseUrl()).toBe("http://example.com");
     mockFetch(200, {});
     await api("/ping");
     expect(fetch).toHaveBeenCalledWith("http://example.com/api/ping", expect.anything());

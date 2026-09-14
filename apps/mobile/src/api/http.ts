@@ -20,6 +20,10 @@ export function setBaseUrl(url: string): void {
   baseUrl = url.replace(/\/+$/, "");
 }
 
+export function getBaseUrl(): string {
+  return baseUrl;
+}
+
 export async function loadToken(): Promise<string | null> {
   token = await SecureStore.getItemAsync(TOKEN_KEY);
   return token;
