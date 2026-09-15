@@ -1,4 +1,5 @@
 import { useRef, type ChangeEvent } from "react";
+import { Link } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { importFiles } from "@/api/resources";
 import { useAuth } from "@/auth/AuthContext";
@@ -52,6 +53,16 @@ export function SidebarFooter() {
         <DownloadIcon />
       </a>
       <div className="flex-1" />
+      {user?.isAdmin && (
+        <Link
+          to="/admin"
+          title="Administração"
+          aria-label="Administração"
+          className="inline-flex h-9 items-center rounded-lg px-2 text-xs text-[var(--muted)] hover:bg-[var(--surface-hover)] hover:text-[var(--text)]"
+        >
+          Admin
+        </Link>
+      )}
       {user && (
         <div className="flex min-w-0 items-center gap-2" title={user.email}>
           {user.avatarUrl ? (

@@ -10,7 +10,7 @@ vi.mock("@/offline/queryClient", async (importOriginal) => {
   return { ...mod, clearUserCache: vi.fn().mockResolvedValue(undefined) };
 });
 
-const USER = { id: 7, email: "user@example.com", name: "User", avatarUrl: null };
+const USER = { id: 7, email: "user@example.com", name: "User", avatarUrl: null, isAdmin: false };
 
 function Probe() {
   const { status, user, logout } = useAuth();

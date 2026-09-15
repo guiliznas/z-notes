@@ -11,9 +11,18 @@ CREATE TABLE IF NOT EXISTS users (
   email TEXT NOT NULL,
   name TEXT,
   avatar_url TEXT,
+  is_admin INTEGER NOT NULL DEFAULT 0,
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS metric_samples (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  captured_at INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  value INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_metric_samples_name_time ON metric_samples(name, captured_at);
 
 CREATE TABLE IF NOT EXISTS folders (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -90,6 +99,10 @@ function migrateUserColumns(sqlite: Sqlite): boolean {
   }
   if (!hasColumn(sqlite, "folders", "user_id")) {
     sqlite.exec("ALTER TABLE folders ADD COLUMN user_id INTEGER REFERENCES users(id)");
+    migrated = true;
+  }
+  if (!hasColumn(sqlite, "users", "is_admin")) {
+    sqlite.exec("ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0");
     migrated = true;
   }
   return migrated;

@@ -20,7 +20,7 @@ import { adoptOrphanData, getUserById, upsertUserByGoogle, type UserRow } from "
 import { rebuildMirror } from "../services/mirror-sync.js";
 
 function toPublicUser(user: UserRow) {
-  return { id: user.id, email: user.email, name: user.name, avatarUrl: user.avatarUrl };
+  return { id: user.id, email: user.email, name: user.name, avatarUrl: user.avatarUrl, isAdmin: user.isAdmin === 1 };
 }
 
 export function registerAuthRoutes(app: FastifyInstance, ctx: AppContext): void {

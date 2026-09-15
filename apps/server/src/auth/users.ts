@@ -19,14 +19,34 @@ export function countUsers(ctx: AppContext): number {
   return ctx.db.select({ count: sql<number>`count(*)` }).from(users).get()?.count ?? 0;
 }
 
+function isAdminEmail(ctx: AppContext, email: string): boolean {
+  return ctx.cfg.adminEmails.includes(email.trim().toLowerCase());
+}
+
+/** Liga/desliga o papel admin de um usuário. */
+export function setAdmin(ctx: AppContext, userId: number, isAdmin: boolean): void {
+  ctx.db
+    .update(users)
+    .set({ isAdmin: isAdmin ? 1 : 0, updatedAt: Date.now() })
+    .where(eq(users.id, userId))
+    .run();
+}
+
 /** Cria o usuário no primeiro login ou atualiza os dados do perfil (mesmo `sub`). */
 export function upsertUserByGoogle(ctx: AppContext, profile: GoogleProfile): UserRow {
   const now = Date.now();
+  const isAdmin = isAdminEmail(ctx, profile.email) ? 1 : 0;
   const existing = ctx.db.select().from(users).where(eq(users.googleSub, profile.sub)).get();
   if (existing) {
     return ctx.db
       .update(users)
-      .set({ email: profile.email, name: profile.name ?? null, avatarUrl: profile.picture ?? null, updatedAt: now })
+      .set({
+        email: profile.email,
+        name: profile.name ?? null,
+        avatarUrl: profile.picture ?? null,
+        isAdmin,
+        updatedAt: now,
+      })
       .where(eq(users.id, existing.id))
       .returning()
       .get();
@@ -38,6 +58,7 @@ export function upsertUserByGoogle(ctx: AppContext, profile: GoogleProfile): Use
       email: profile.email,
       name: profile.name ?? null,
       avatarUrl: profile.picture ?? null,
+      isAdmin,
       createdAt: now,
       updatedAt: now,
     })

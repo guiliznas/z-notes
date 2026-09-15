@@ -3,6 +3,7 @@ import { useAuth } from "@/auth/AuthContext";
 import { PerUserProvider } from "@/offline/PerUserProvider";
 import { LoginPage } from "@/components/LoginPage";
 import { NotesPage } from "@/components/NotesPage";
+import { AdminPage } from "@/components/AdminPage";
 
 export function App() {
   const { status, user } = useAuth();
@@ -14,10 +15,14 @@ export function App() {
     return <LoginPage />;
   }
 
+  // A exibição da rota é UX: a autorização real é feita pelo backend em cada /api/admin/*.
+  const adminRoutes = user.isAdmin ? <Route path="/admin" element={<AdminPage />} /> : null;
+
   return (
     <PerUserProvider key={user.id} userId={user.id}>
       <Routes>
         <Route path="/" element={<NotesPage />} />
+        {adminRoutes}
         <Route path="/all" element={<NotesPage />} />
         <Route path="/all/note/:noteId" element={<NotesPage />} />
         <Route path="/archived" element={<NotesPage />} />

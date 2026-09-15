@@ -12,6 +12,7 @@ import { HttpError } from "./errors.js";
 import { registerApiRoutes } from "./routes/index.js";
 import { createSnapshotIfChanged } from "./backup/snapshot.js";
 import { scheduleBackups } from "./backup/scheduler.js";
+import { hasMetricSamples, runMetricsJob, scheduleMetrics } from "./services/metrics.js";
 
 const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
 
@@ -50,9 +51,13 @@ export async function buildApp(cfg: AppConfig): Promise<FastifyInstance> {
   registerApiRoutes(app, ctx);
   registerStaticOrFallback(app);
 
+  // Backfill: primeira amostra de métricas para o dashboard não começar vazio.
+  if (!hasMetricSamples(ctx)) await runMetricsJob(ctx);
   const backupTask = scheduleBackups(ctx);
+  const metricsTask = scheduleMetrics(ctx);
   app.addHook("onClose", async () => {
     backupTask.stop();
+    metricsTask.stop();
     sqlite.close();
   });
   return app;

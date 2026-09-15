@@ -17,6 +17,8 @@ export interface AppConfig {
   dbPath: string;
   mirrorDir: string;
   google: GoogleOAuthConfig;
+  /** e-mails com acesso admin (CSV em Z_NOTES_ADMIN_EMAILS, minúsculos). */
+  adminEmails: string[];
   sessionSecret: string;
   isProd: boolean;
   /** diretório dos snapshots de backup (separado do dataDir ativo). */
@@ -66,6 +68,7 @@ export function configFromEnv(): AppConfig {
     dbPath: path.join(dataDir, "z-notes.db"),
     mirrorDir: path.join(dataDir, "mirror"),
     google,
+    adminEmails: parseEmailList(process.env.Z_NOTES_ADMIN_EMAILS),
     sessionSecret: resolveSessionSecret(isProd),
     isProd,
     backupDir: process.env.Z_NOTES_BACKUP_DIR ?? path.join(REPO_ROOT, "backups"),
@@ -74,12 +77,22 @@ export function configFromEnv(): AppConfig {
   };
 }
 
+/** Normaliza CSV de e-mails para comparação (minúsculos, sem espaços/vazios). */
+export function parseEmailList(raw: string | undefined): string[] {
+  if (!raw) return [];
+  return raw
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+}
+
 /** Monta um AppConfig apontando para diretórios arbitrários (usado nos testes). */
 export function makeConfig(overrides: Partial<AppConfig> & { dataDir: string }): AppConfig {
   return {
     dbPath: path.join(overrides.dataDir, "z-notes.db"),
     mirrorDir: path.join(overrides.dataDir, "mirror"),
     google: { clientId: "", clientSecret: "", callbackUrl: "" },
+    adminEmails: [],
     sessionSecret: DEV_SECRET,
     isProd: false,
     backupDir: path.join(overrides.dataDir, "backups"),
