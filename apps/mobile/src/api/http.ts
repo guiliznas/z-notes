@@ -1,6 +1,7 @@
 import * as SecureStore from "expo-secure-store";
 
 const TOKEN_KEY = "z_notes_token";
+const BASE_URL_KEY = "z_notes_base_url";
 
 export class ApiError extends Error {
   status: number;
@@ -18,11 +19,25 @@ let token: string | null = null;
 
 export function setBaseUrl(url: string): void {
   baseUrl = url.replace(/\/+$/, "");
+  SecureStore.setItemAsync(BASE_URL_KEY, baseUrl).catch(() => {});
+}
+
+export async function loadBaseUrl(): Promise<string> {
+  try {
+    const stored = await SecureStore.getItemAsync(BASE_URL_KEY);
+    if (stored) {
+      baseUrl = stored.replace(/\/+$/, "");
+    }
+  } catch {
+    // fallback
+  }
+  return baseUrl;
 }
 
 export function getBaseUrl(): string {
   return baseUrl;
 }
+
 
 export async function loadToken(): Promise<string | null> {
   token = await SecureStore.getItemAsync(TOKEN_KEY);

@@ -4,7 +4,7 @@ import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client
 import type { NoteViewFilter } from "@z-notes/shared";
 import { createQueryClient } from "./src/lib/queryClient";
 import { persistOptions } from "./src/lib/storage";
-import { loadToken } from "./src/api/http";
+import { loadToken, loadBaseUrl } from "./src/api/http";
 import LoginScreen from "./src/screens/LoginScreen";
 import NoteListScreen from "./src/screens/NoteListScreen";
 import NoteDetailScreen from "./src/screens/NoteDetailScreen";
@@ -32,7 +32,7 @@ export default function App() {
   });
 
   useEffect(() => {
-    loadToken().then((t) => {
+    Promise.all([loadToken(), loadBaseUrl()]).then(([t]) => {
       if (t) setScreen("list");
     });
   }, []);

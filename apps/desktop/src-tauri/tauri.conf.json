@@ -4,10 +4,10 @@
   "version": "0.1.0",
   "identifier": "com.znotes.desktop",
   "build": {
-    "frontendDist": "../../../apps/web/dist",
+    "frontendDist": "../../web/dist",
     "devUrl": "http://localhost:5173",
-    "beforeDevCommand": "cd /home/guiliznas/services/z-notes && pnpm build:shared && pnpm --filter @z-notes/web dev",
-    "beforeBuildCommand": "cd /home/guiliznas/services/z-notes && pnpm build:shared && pnpm --filter @z-notes/web build"
+    "beforeDevCommand": "pnpm --filter @z-notes/web dev",
+    "beforeBuildCommand": "pnpm --filter @z-notes/web build"
   },
   "app": {
     "windows": [

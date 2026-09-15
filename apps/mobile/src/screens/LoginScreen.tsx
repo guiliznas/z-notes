@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet } from "react-native";
 import { authLogin, authMe } from "../api/resources";
-import { saveToken, loadToken, setBaseUrl } from "../api/http";
+import { saveToken, loadToken, setBaseUrl, getBaseUrl, loadBaseUrl } from "../api/http";
 
 interface Props {
   onAuthenticated: () => void;
@@ -10,7 +10,12 @@ interface Props {
 export default function LoginScreen({ onAuthenticated }: Props) {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [serverUrl, setServerUrl] = useState("http://10.0.2.2:8787");
+  const [serverUrl, setServerUrl] = useState(getBaseUrl());
+
+  useEffect(() => {
+    loadBaseUrl().then((u) => setServerUrl(u));
+  }, []);
+
 
   const handleLogin = async () => {
     setLoading(true);

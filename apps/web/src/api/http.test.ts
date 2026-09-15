@@ -80,4 +80,28 @@ describe("api", () => {
     } as Response);
     await expect(api("/notes")).rejects.toMatchObject({ status: 500, code: "error" });
   });
+
+  it("utiliza baseUrl configurada quando definida", async () => {
+    mockFetch(200, { ok: true });
+    const { setBaseUrl, resetBaseUrl } = await import("./http");
+    setBaseUrl("http://localhost:8787");
+    await api("/folders");
+    expect(fetch).toHaveBeenCalledWith("http://localhost:8787/api/folders", expect.anything());
+    resetBaseUrl();
+  });
 });
+
+describe("baseURL management", () => {
+  it("permite definir, ler e resetar baseUrl", async () => {
+    const { getBaseUrl, setBaseUrl, resetBaseUrl } = await import("./http");
+    resetBaseUrl();
+    expect(getBaseUrl()).toBe("");
+
+    setBaseUrl("https://notes.example.com/");
+    expect(getBaseUrl()).toBe("https://notes.example.com");
+
+    resetBaseUrl();
+    expect(getBaseUrl()).toBe("");
+  });
+});
+

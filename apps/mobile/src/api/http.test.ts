@@ -113,7 +113,7 @@ describe("tokens", () => {
   });
 });
 
-describe("setBaseUrl / getBaseUrl", () => {
+describe("setBaseUrl / getBaseUrl / loadBaseUrl", () => {
   it("remove trailing slash e retorna baseUrl atualizado", async () => {
     setBaseUrl("http://example.com/");
     expect(getBaseUrl()).toBe("http://example.com");
@@ -121,4 +121,12 @@ describe("setBaseUrl / getBaseUrl", () => {
     await api("/ping");
     expect(fetch).toHaveBeenCalledWith("http://example.com/api/ping", expect.anything());
   });
+
+  it("persiste e recupera via loadBaseUrl", async () => {
+    const { loadBaseUrl } = await import("./http");
+    setBaseUrl("https://my-custom-server.com/");
+    const loaded = await loadBaseUrl();
+    expect(loaded).toBe("https://my-custom-server.com");
+  });
 });
+
