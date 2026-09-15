@@ -15,8 +15,7 @@ from PIL import Image, ImageDraw
 
 OUT = Path(__file__).resolve().parent.parent / "public" / "icons"
 
-TEAL_TOP = (0, 150, 167)
-TEAL_BOTTOM = (0, 98, 110)
+BG = (35, 35, 37)
 AMBER = "#ffc107"
 
 # Paths do SVG do bloco (originais, só com fill trocado para o âmbar).
@@ -26,17 +25,8 @@ GLYPH_PATHS = """
 """  # noqa: E501
 
 
-def lerp(a: int, b: int, t: float) -> int:
-    return round(a + (b - a) * t)
-
-
 def background(size: int) -> Image.Image:
-    img = Image.new("RGB", (size, size))
-    draw = ImageDraw.Draw(img)
-    for y in range(size):
-        t = y / max(size - 1, 1)
-        draw.line([(0, y), (size, y)], fill=tuple(lerp(TEAL_TOP[i], TEAL_BOTTOM[i], t) for i in range(3)))
-    return img.convert("RGBA")
+    return Image.new("RGBA", (size, size), BG + (255,))
 
 
 def glyph_png(px: int) -> Image.Image:
@@ -57,13 +47,7 @@ def make_icon(size: int, glyph_ratio: float) -> Image.Image:
 
 
 SVG_DOC = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#0096a7"/>
-      <stop offset="1" stop-color="#00626e"/>
-    </linearGradient>
-  </defs>
-  <rect width="512" height="512" fill="url(#bg)"/>
+  <rect width="512" height="512" fill="#232325"/>
   <g transform="translate(82,82) scale(14.5)">{GLYPH_PATHS}</g>
 </svg>
 """

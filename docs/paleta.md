@@ -37,7 +37,7 @@ Fonte de verdade no código: `apps/web/src/index.css` (`:root` + `prefers-color-
 
 | Elemento | Hex |
 |---|---|
-| Fundo (gradiente) | `#0096a7` → `#00626e` (primária teal) |
+| Fundo | `#232325` (grafite sólido) |
 | Glifo do bloco | `#ffc107` (amber 500, com camada 20% de profundidade) |
 
 Regenerar: `/tmp/iconvenv/bin/python apps/web/scripts/generate-icons.py`
