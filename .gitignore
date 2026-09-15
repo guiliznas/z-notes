@@ -1,8 +1,13 @@
 data/
+backups/
 node_modules/
 dist/
+coverage/
 *.log
 .env
 .env.*
 !.env.example
 .DS_Store
+plan/
+*.node
+apps/desktop/src-tauri/target/

@@ -7,7 +7,7 @@ Fonte de verdade no código: `apps/web/src/index.css` (`:root` + `prefers-color-
 
 | Token | Hex | Uso |
 |---|---|---|
-| `--bg` | `#eceff1` (blue-grey 50) | fundo do app |
+| `--bg` | `#f5f5f0` (papel quente, original) | fundo do app |
 | `--surface` | `#ffffff` | cards, editor, sidebar |
 | `--surface-2` | `#dde5e9` | inputs, faixas secundárias |
 | `--surface-hover` | `#cfd8dc` (blue-grey 100) | hover |
@@ -22,7 +22,7 @@ Fonte de verdade no código: `apps/web/src/index.css` (`:root` + `prefers-color-
 
 | Token | Hex | Uso |
 |---|---|---|
-| `--bg` | `#263238` (blue-grey 900) | fundo do app |
+| `--bg` | `#1c1c1e` (grafite original) | fundo do app |
 | `--surface` | `#37474f` (blue-grey 800) | cards, editor, sidebar |
 | `--surface-2` | `#2e383e` | inputs, faixas secundárias |
 | `--surface-hover` | `#455a64` (blue-grey 700) | hover |
