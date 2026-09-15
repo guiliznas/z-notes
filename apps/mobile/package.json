@@ -5,7 +5,7 @@
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
+    "android": "expo run:android",
     "build:apk": "eas build -p android --profile preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
