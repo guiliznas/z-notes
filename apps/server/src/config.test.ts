@@ -6,8 +6,10 @@ describe("configFromEnv", () => {
 
   beforeEach(() => {
     process.env = { ...OLD_ENV };
-    delete process.env.Z_NOTES_PASSWORD_HASH;
-    delete process.env.Z_NOTES_PASSWORD;
+    delete process.env.GOOGLE_CLIENT_ID;
+    delete process.env.GOOGLE_CLIENT_SECRET;
+    delete process.env.GOOGLE_CALLBACK_URL;
+    delete process.env.Z_NOTES_ADMIN_EMAILS;
     delete process.env.Z_NOTES_DATA_DIR;
     delete process.env.Z_NOTES_SESSION_SECRET;
     delete process.env.Z_NOTES_JWT_SECRET;
@@ -19,7 +21,8 @@ describe("configFromEnv", () => {
 
   it("usa defaults quando nenhuma env é definida", () => {
     const cfg = configFromEnv();
-    expect(cfg.passwordHash).toBeTruthy();
+    expect(cfg.google.clientId).toBe("");
+    expect(cfg.adminEmails).toEqual([]);
     expect(cfg.sessionSecret).toBe("dev-insecure-secret-change-me");
     expect(cfg.jwtSecret).toBe("dev-insecure-secret-change-me");
     expect(cfg.isProd).toBe(false);
@@ -27,22 +30,26 @@ describe("configFromEnv", () => {
     expect(cfg.backupWebhookUrl).toBeUndefined();
   });
 
-  it("lê Z_NOTES_PASSWORD_HASH quando definida", () => {
-    process.env.Z_NOTES_PASSWORD_HASH = "$2a$10$hashfake";
+  it("lê credenciais Google e adminEmails quando definidas", () => {
+    process.env.GOOGLE_CLIENT_ID = "my-client-id";
+    process.env.GOOGLE_CLIENT_SECRET = "my-client-secret";
+    process.env.Z_NOTES_ADMIN_EMAILS = "admin@example.com, other@example.com";
     const cfg = configFromEnv();
-    expect(cfg.passwordHash).toBe("$2a$10$hashfake");
+    expect(cfg.google.clientId).toBe("my-client-id");
+    expect(cfg.google.clientSecret).toBe("my-client-secret");
+    expect(cfg.adminEmails).toEqual(["admin@example.com", "other@example.com"]);
   });
 
-  it("lê Z_NOTES_PASSWORD quando não há hash", () => {
-    process.env.Z_NOTES_PASSWORD = "minha-senha";
-    const cfg = configFromEnv();
-    expect(cfg.passwordHash).not.toBe("minha-senha");
-    expect(cfg.passwordHash).toMatch(/^\$2[ab]\$/);
-  });
-
-  it("detecta produção por NODE_ENV", () => {
+  it("detecta produção por NODE_ENV com segredo definido", () => {
     process.env.NODE_ENV = "production";
+    process.env.Z_NOTES_SESSION_SECRET = "segredo-prod";
     expect(configFromEnv().isProd).toBe(true);
+  });
+
+  it("exige Z_NOTES_SESSION_SECRET em produção", () => {
+    process.env.NODE_ENV = "production";
+    delete process.env.Z_NOTES_SESSION_SECRET;
+    expect(() => configFromEnv()).toThrow("Z_NOTES_SESSION_SECRET é obrigatório em produção");
   });
 
   it("lê sessionSecret personalizado", () => {
@@ -80,7 +87,7 @@ describe("makeConfig", () => {
     expect(cfg.dataDir).toBe("/tmp/test");
     expect(cfg.dbPath).toBe("/tmp/test/z-notes.db");
     expect(cfg.mirrorDir).toBe("/tmp/test/mirror");
-    expect(cfg.passwordHash).toMatch(/^\$2[ab]\$/);
+    expect(cfg.google.clientId).toBe("");
     expect(cfg.sessionSecret).toBe("dev-insecure-secret-change-me");
     expect(cfg.jwtSecret).toBe("dev-insecure-secret-change-me");
     expect(cfg.isProd).toBe(false);

@@ -13,8 +13,8 @@ import {
   restoreNote,
   searchNotes,
   authMe,
-  authLogin,
   authLogout,
+  fetchAdminMetrics,
   importFiles,
 } from "./resources";
 
@@ -102,20 +102,20 @@ describe("search", () => {
   });
 });
 
-describe("auth", () => {
+describe("auth & admin", () => {
   it("authMe", () => {
     authMe();
     expect(mockApi).toHaveBeenCalledWith("/auth/me");
   });
 
-  it("authLogin", () => {
-    authLogin("senha");
-    expect(mockApi).toHaveBeenCalledWith("/auth/login", { method: "POST", body: JSON.stringify({ password: "senha" }) });
-  });
-
   it("authLogout", () => {
     authLogout();
     expect(mockApi).toHaveBeenCalledWith("/auth/logout", { method: "POST" });
+  });
+
+  it("fetchAdminMetrics", () => {
+    fetchAdminMetrics();
+    expect(mockApi).toHaveBeenCalledWith("/admin/metrics");
   });
 });
 

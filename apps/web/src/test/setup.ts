@@ -1,4 +1,10 @@
 import "@testing-library/jest-dom/vitest";
+import { cleanup } from "@testing-library/react";
+import { afterEach } from "vitest";
+
+afterEach(() => {
+  cleanup();
+});
 
 // Garante um localStorage funcional quando o ambiente jsdom não provisiona um completo.
 if (!globalThis.localStorage || typeof localStorage.setItem !== "function") {
