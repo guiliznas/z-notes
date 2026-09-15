@@ -67,9 +67,14 @@ export interface UpdateNoteInput {
   archived?: boolean;
 }
 
-export interface LoginInput {
-  password: string;
+export interface PublicUser {
+  id: number;
+  email: string;
+  name: string | null;
+  avatarUrl: string | null;
 }
+
+export type AuthMeResponse = { authenticated: false } | { authenticated: true; user: PublicUser };
 
 export interface ApiError {
   error: string;

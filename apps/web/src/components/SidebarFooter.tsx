@@ -10,7 +10,7 @@ import { UploadIcon, DownloadIcon, LogoutIcon } from "./icons";
 export function SidebarFooter() {
   const qc = useQueryClient();
   const { notify } = useToast();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const fileRef = useRef<HTMLInputElement>(null);
 
   const importMut = useMutation({
@@ -52,6 +52,14 @@ export function SidebarFooter() {
         <DownloadIcon />
       </a>
       <div className="flex-1" />
+      {user && (
+        <div className="flex min-w-0 items-center gap-2" title={user.email}>
+          {user.avatarUrl ? (
+            <img src={user.avatarUrl} alt="" className="h-7 w-7 rounded-full" referrerPolicy="no-referrer" />
+          ) : null}
+          <span className="max-w-28 truncate text-xs text-[var(--muted)]">{user.name ?? user.email}</span>
+        </div>
+      )}
       <IconButton label="Sair" onClick={() => logout()}>
         <LogoutIcon />
       </IconButton>

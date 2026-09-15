@@ -28,19 +28,20 @@ describe("applySnapshot", () => {
 
     // Muda o estado depois do snapshot — o mirror-sync renomeia o arquivo (título mudou).
     updateNote(t.ctx, note.id, { contentMd: "Estado modificado\noutro corpo", version: note.version });
-    expect(fs.existsSync(path.join(t.cfg.mirrorDir, "Original", "estado-modificado.md"))).toBe(true);
+    const userMirror = path.join(t.cfg.mirrorDir, String(t.userId));
+    expect(fs.existsSync(path.join(userMirror, "Original", "estado-modificado.md"))).toBe(true);
 
     const { safetyDir } = await applySnapshot(t.cfg, snapshotPath);
 
     // Backup de segurança preserva o que existia antes do restore (estado modificado).
     expect(fs.existsSync(path.join(safetyDir, "z-notes.db"))).toBe(true);
-    expect(fs.readFileSync(path.join(safetyDir, "mirror", "Original", "estado-modificado.md"), "utf8")).toContain(
-      "Estado modificado",
-    );
+    expect(
+      fs.readFileSync(path.join(safetyDir, "mirror", String(t.userId), "Original", "estado-modificado.md"), "utf8"),
+    ).toContain("Estado modificado");
 
     // O mirror restaurado reflete o conteúdo de quando o snapshot foi tirado.
-    expect(fs.existsSync(path.join(t.cfg.mirrorDir, "Original", "estado-modificado.md"))).toBe(false);
-    const restored = fs.readFileSync(path.join(t.cfg.mirrorDir, "Original", "estado-original.md"), "utf8");
+    expect(fs.existsSync(path.join(userMirror, "Original", "estado-modificado.md"))).toBe(false);
+    const restored = fs.readFileSync(path.join(userMirror, "Original", "estado-original.md"), "utf8");
     expect(restored).toContain("Estado original");
   });
 

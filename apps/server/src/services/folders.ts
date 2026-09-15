@@ -1,9 +1,14 @@
 import { and, eq, isNull, asc, sql } from "drizzle-orm";
 import type { Folder, FolderTreeNode, CreateFolderInput, UpdateFolderInput } from "@z-notes/shared";
-import type { AppContext } from "../context.js";
+import type { RequestContext } from "../context.js";
 import { folders, notes, type FolderRow } from "../db/schema.js";
 import { badRequest, notFound } from "../errors.js";
 import { rebuildMirror } from "./mirror-sync.js";
+
+/** Guard de ownership para pastas (cross-access → 404). */
+function owned(ctx: RequestContext, id: number) {
+  return and(eq(folders.id, id), eq(folders.userId, ctx.userId));
+}
 
 function toApi(row: FolderRow): Folder {
   return {
@@ -16,13 +21,18 @@ function toApi(row: FolderRow): Folder {
   };
 }
 
-export function getFolderRow(ctx: AppContext, id: number): FolderRow | undefined {
-  return ctx.db.select().from(folders).where(eq(folders.id, id)).get();
+export function getFolderRow(ctx: RequestContext, id: number): FolderRow | undefined {
+  return ctx.db.select().from(folders).where(owned(ctx, id)).get();
 }
 
 /** Árvore completa: raízes ordenadas, cada uma com filhas (1 nível) e contagem de notas ativas. */
-export function listFolderTree(ctx: AppContext): FolderTreeNode[] {
-  const all = ctx.db.select().from(folders).orderBy(asc(folders.position), asc(folders.name)).all();
+export function listFolderTree(ctx: RequestContext): FolderTreeNode[] {
+  const all = ctx.db
+    .select()
+    .from(folders)
+    .where(eq(folders.userId, ctx.userId))
+    .orderBy(asc(folders.position), asc(folders.name))
+    .all();
   const counts = activeNoteCounts(ctx);
   const roots = all.filter((f) => f.parentId === null);
   const childrenByParent = new Map<number, FolderRow[]>();
@@ -43,11 +53,11 @@ export function listFolderTree(ctx: AppContext): FolderTreeNode[] {
   }));
 }
 
-function activeNoteCounts(ctx: AppContext): Map<number, number> {
+function activeNoteCounts(ctx: RequestContext): Map<number, number> {
   const rows = ctx.db
     .select({ folderId: notes.folderId, count: sql<number>`count(*)` })
     .from(notes)
-    .where(and(isNull(notes.deletedAt), isNull(notes.archivedAt)))
+    .where(and(eq(notes.userId, ctx.userId), isNull(notes.deletedAt), isNull(notes.archivedAt)))
     .groupBy(notes.folderId)
     .all();
   const map = new Map<number, number>();
@@ -57,7 +67,7 @@ function activeNoteCounts(ctx: AppContext): Map<number, number> {
   return map;
 }
 
-export function createFolder(ctx: AppContext, input: CreateFolderInput): Folder {
+export function createFolder(ctx: RequestContext, input: CreateFolderInput): Folder {
   const name = input.name.trim();
   if (!name) throw badRequest("Nome da pasta é obrigatório");
   const parentId = input.parentId ?? null;
@@ -66,13 +76,13 @@ export function createFolder(ctx: AppContext, input: CreateFolderInput): Folder 
   const nextPosition = maxPosition(ctx, parentId) + 1;
   const row = ctx.db
     .insert(folders)
-    .values({ name, parentId, position: nextPosition, createdAt: now, updatedAt: now })
+    .values({ name, userId: ctx.userId, parentId, position: nextPosition, createdAt: now, updatedAt: now })
     .returning()
     .get();
   return toApi(row);
 }
 
-export function updateFolder(ctx: AppContext, id: number, input: UpdateFolderInput): Folder {
+export function updateFolder(ctx: RequestContext, id: number, input: UpdateFolderInput): Folder {
   const existing = getFolderRow(ctx, id);
   if (!existing) throw notFound("Pasta não encontrada");
 
@@ -93,16 +103,21 @@ export function updateFolder(ctx: AppContext, id: number, input: UpdateFolderInp
     patch.parentId = parentId;
   }
 
-  const row = ctx.db.update(folders).set(patch).where(eq(folders.id, id)).returning().get();
+  const row = ctx.db.update(folders).set(patch).where(owned(ctx, id)).returning().get();
   if (input.name !== undefined || input.parentId !== undefined) rebuildMirror(ctx);
   return toApi(row);
 }
 
 /** Exclui a pasta: manda as notas dela (e das subpastas) para a lixeira e apaga as pastas. */
-export function deleteFolder(ctx: AppContext, id: number): void {
+export function deleteFolder(ctx: RequestContext, id: number): void {
   const existing = getFolderRow(ctx, id);
   if (!existing) throw notFound("Pasta não encontrada");
-  const childIds = ctx.db.select({ id: folders.id }).from(folders).where(eq(folders.parentId, id)).all().map((r) => r.id);
+  const childIds = ctx.db
+    .select({ id: folders.id })
+    .from(folders)
+    .where(and(eq(folders.parentId, id), eq(folders.userId, ctx.userId)))
+    .all()
+    .map((r) => r.id);
   const affectedFolderIds = [id, ...childIds];
   const now = Date.now();
 
@@ -110,29 +125,37 @@ export function deleteFolder(ctx: AppContext, id: number): void {
     for (const fid of affectedFolderIds) {
       tx.update(notes)
         .set({ deletedAt: now, folderId: null, mirrorPath: null, updatedAt: now })
-        .where(and(eq(notes.folderId, fid), isNull(notes.deletedAt)))
+        .where(and(eq(notes.folderId, fid), eq(notes.userId, ctx.userId), isNull(notes.deletedAt)))
         .run();
     }
-    for (const cid of childIds) tx.delete(folders).where(eq(folders.id, cid)).run();
-    tx.delete(folders).where(eq(folders.id, id)).run();
+    for (const cid of childIds) tx.delete(folders).where(and(eq(folders.id, cid), eq(folders.userId, ctx.userId))).run();
+    tx.delete(folders).where(owned(ctx, id)).run();
   });
 
   rebuildMirror(ctx);
 }
 
-function assertValidParent(ctx: AppContext, parentId: number): void {
+function assertValidParent(ctx: RequestContext, parentId: number): void {
   const parent = getFolderRow(ctx, parentId);
   if (!parent) throw badRequest("Pasta pai não existe");
   if (parent.parentId !== null) throw badRequest("Aninhamento de pastas limitado a 1 nível");
 }
 
-function hasChildren(ctx: AppContext, id: number): boolean {
-  const child = ctx.db.select({ id: folders.id }).from(folders).where(eq(folders.parentId, id)).get();
+function hasChildren(ctx: RequestContext, id: number): boolean {
+  const child = ctx.db
+    .select({ id: folders.id })
+    .from(folders)
+    .where(and(eq(folders.parentId, id), eq(folders.userId, ctx.userId)))
+    .get();
   return child !== undefined;
 }
 
-function maxPosition(ctx: AppContext, parentId: number | null): number {
-  const where = parentId === null ? isNull(folders.parentId) : eq(folders.parentId, parentId);
-  const row = ctx.db.select({ max: sql<number | null>`max(${folders.position})` }).from(folders).where(where).get();
+function maxPosition(ctx: RequestContext, parentId: number | null): number {
+  const scope = parentId === null ? isNull(folders.parentId) : eq(folders.parentId, parentId);
+  const row = ctx.db
+    .select({ max: sql<number | null>`max(${folders.position})` })
+    .from(folders)
+    .where(and(scope, eq(folders.userId, ctx.userId)))
+    .get();
   return row?.max ?? 0;
 }

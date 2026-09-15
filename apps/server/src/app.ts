@@ -10,13 +10,19 @@ import { WEB_DIST } from "./config.js";
 import { openDatabase } from "./db/bootstrap.js";
 import { HttpError } from "./errors.js";
 import { registerApiRoutes } from "./routes/index.js";
+import { createSnapshotIfChanged } from "./backup/snapshot.js";
 import { scheduleBackups } from "./backup/scheduler.js";
 
 const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
 
 export async function buildApp(cfg: AppConfig): Promise<FastifyInstance> {
-  const { sqlite, db } = openDatabase(cfg.dbPath);
+  const { sqlite, db, migrated } = openDatabase(cfg.dbPath);
   const ctx = { db, sqlite, cfg };
+  if (migrated) {
+    // ADD COLUMN não altera dados: o snapshot aqui equivale a um backup pré-migração.
+    const result = await createSnapshotIfChanged(ctx);
+    if (result.created) console.log(`[z-notes] snapshot de segurança pós-migração: ${result.filename}`);
+  }
   const app = Fastify({ logger: cfg.isProd, bodyLimit: MAX_UPLOAD_BYTES });
 
   await app.register(cookie, { secret: cfg.sessionSecret });

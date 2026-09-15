@@ -36,18 +36,32 @@ export function createQueryClient(): QueryClient {
   return client;
 }
 
-export const persister = createAsyncStoragePersister({
-  storage: {
-    getItem: (key) => get(key),
-    setItem: (key, value) => set(key, value),
-    removeItem: (key) => del(key),
-  },
-  key: "z-notes-cache",
-  throttleTime: 1000,
-});
+/** Chave do IndexedDB isolada por usuário (nunca global). */
+export function cacheKeyFor(userId: number): string {
+  return `z-notes-cache:${userId}`;
+}
 
-export const persistOptions = {
-  persister,
-  maxAge: WEEK_MS,
-  buster: "v1",
-};
+export function createPersister(userId: number) {
+  return createAsyncStoragePersister({
+    storage: {
+      getItem: (key) => get(key),
+      setItem: (key, value) => set(key, value),
+      removeItem: (key) => del(key),
+    },
+    key: cacheKeyFor(userId),
+    throttleTime: 1000,
+  });
+}
+
+export function persistOptionsFor(userId: number) {
+  return {
+    persister: createPersister(userId),
+    maxAge: WEEK_MS,
+    buster: "v2",
+  };
+}
+
+/** Apaga o cache offline de um usuário (logout / troca de conta). */
+export async function clearUserCache(userId: number): Promise<void> {
+  await del(cacheKeyFor(userId));
+}

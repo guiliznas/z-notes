@@ -2,7 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 import JSZip from "jszip";
 import { and, eq, isNull } from "drizzle-orm";
-import type { AppContext } from "../context.js";
+import type { RequestContext } from "../context.js";
+import { userMirrorDir } from "../config.js";
 import { folders, notes } from "../db/schema.js";
 import { sanitizeSegment } from "../mirror/mirror.js";
 import { syncNoteMirror, rebuildMirror } from "./mirror-sync.js";
@@ -20,8 +21,8 @@ export interface ImportResult {
   notesImported: number;
 }
 
-/** Importa um lote de entradas .md, criando pastas conforme necessário. */
-export function importEntries(ctx: AppContext, entries: ImportEntry[]): ImportResult {
+/** Importa um lote de entradas .md, criando pastas conforme necessário (tudo no dono atual). */
+export function importEntries(ctx: RequestContext, entries: ImportEntry[]): ImportResult {
   let count = 0;
   for (const entry of entries) {
     const { body, createdAt, updatedAt } = parseFrontmatter(entry.content);
@@ -31,6 +32,7 @@ export function importEntries(ctx: AppContext, entries: ImportEntry[]): ImportRe
     const row = ctx.db
       .insert(notes)
       .values({
+        userId: ctx.userId,
         folderId,
         contentMd: body,
         version: 1,
@@ -52,7 +54,7 @@ function flattenSegments(segments: string[]): string[] {
   return [clean[0], clean.slice(1).join(" — ")];
 }
 
-function ensurePath(ctx: AppContext, segments: string[]): number {
+function ensurePath(ctx: RequestContext, segments: string[]): number {
   let parentId: number | null = null;
   let currentId = 0;
   for (const name of segments) {
@@ -62,16 +64,19 @@ function ensurePath(ctx: AppContext, segments: string[]): number {
   return currentId;
 }
 
-function ensureFolder(ctx: AppContext, name: string, parentId: number | null): number {
-  const where = parentId === null
-    ? and(eq(folders.name, name), isNull(folders.parentId))
-    : and(eq(folders.name, name), eq(folders.parentId, parentId));
-  const existing = ctx.db.select().from(folders).where(where).get();
+function ensureFolder(ctx: RequestContext, name: string, parentId: number | null): number {
+  const scope =
+    parentId === null ? and(eq(folders.name, name), isNull(folders.parentId)) : and(eq(folders.name, name), eq(folders.parentId, parentId));
+  const existing = ctx.db
+    .select()
+    .from(folders)
+    .where(and(scope, eq(folders.userId, ctx.userId)))
+    .get();
   if (existing) return existing.id;
   const now = Date.now();
   const created = ctx.db
     .insert(folders)
-    .values({ name, parentId, position: 0, createdAt: now, updatedAt: now })
+    .values({ name, userId: ctx.userId, parentId, position: 0, createdAt: now, updatedAt: now })
     .returning()
     .get();
   return created.id;
@@ -117,10 +122,10 @@ export async function zipToEntries(buffer: Buffer): Promise<ImportEntry[]> {
   return entries;
 }
 
-/** Gera um .zip do espelho .md atual (regenerado antes para garantir consistência). */
-export async function exportZip(ctx: AppContext): Promise<Buffer> {
+/** Gera um .zip do espelho .md do usuário (regenerado antes para garantir consistência). */
+export async function exportZip(ctx: RequestContext): Promise<Buffer> {
   rebuildMirror(ctx);
   const zip = new JSZip();
-  addDirToZip(zip, ctx.cfg.mirrorDir, "");
+  addDirToZip(zip, userMirrorDir(ctx.cfg, ctx.userId), "");
   return zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
 }

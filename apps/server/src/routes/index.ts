@@ -11,11 +11,12 @@ import { registerAdminRoutes } from "./admin.js";
 const PUBLIC_PATHS = ["/api/health"];
 
 export function registerApiRoutes(app: FastifyInstance, ctx: AppContext): void {
+  app.decorateRequest("userId", null);
   app.addHook("preHandler", async (req) => {
     const path = req.url.split("?")[0];
     if (!path.startsWith("/api/")) return;
     if (path.startsWith("/api/auth/") || PUBLIC_PATHS.includes(path)) return;
-    requireAuth(req);
+    req.userId = requireAuth(req, ctx);
   });
 
   app.get("/api/health", async () => ({ ok: true }));
