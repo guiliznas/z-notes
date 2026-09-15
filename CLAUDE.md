@@ -3,6 +3,36 @@
 Contexto para trabalhar neste repositório com Claude Code. Para visão de produto, features e como rodar, ver [`README.md`](README.md). Para as decisões de design originais, ver `docs/superpowers/specs/`:
 - `2026-07-06-z-notes-design.md` — app completo (3 colunas, espelho `.md`, offline)
 - `2026-07-06-backup-recorrente-design.md` — backup automático (retenção GFS, restore)
+- `2026-07-07-multi-usuario-google-design.md` — multi-usuário com login Google (planejamento, ainda não iniciado)
+- `ROADMAP.md` — prioridades vigentes (P0 login Google + isolamento, P1 mobile)
+
+## Workflow obrigatório: worktree por tarefa
+
+Toda tarefa (feature, fix, refactor, spike) roda em worktree limpa, nunca no checkout principal.
+
+```bash
+mkdir -p ~/ai-tmp
+git worktree add ~/ai-tmp/<nome-da-tarefa> -b <tipo>/<nome-da-tarefa>
+cd ~/ai-tmp/<nome-da-tarefa>
+pnpm install
+```
+
+Ao finalizar (merge ou descarte): remover a worktree e limpar o branch se descartado.
+
+```bash
+cd /home/guiliznas/services/z-notes
+git worktree remove ~/ai-tmp/<nome-da-tarefa> --force
+git worktree prune
+```
+
+Regras: um diretório por tarefa em `~/ai-tmp/`; nunca commitar dentro de `~/ai-tmp/` esperando que reflita no checkout principal sem push/PR; nunca deixar worktree abandonada — toda tarefa termina com `worktree remove + prune`.
+
+## Estado atual (2026-09-14)
+
+- `main`: backend Fastify + SQLite single-tenant (senha única compartilhada, sessão fixa `"authenticated"`), web 3 colunas, backup recorrente. Testes/pipeline verdes.
+- `feat/mobile-desktop` (não mergeada): app mobile Expo/RN (`apps/mobile`, login + lista + detalhe + markdown) e shell desktop Tauri (`apps/desktop`). Base para a discussão mobile na ROADMAP.
+- `feat/task-list-checkboxes` (não mergeada): preview markdown interativo com checkboxes.
+- Auth atual não isola nada: notas/pastas globais, sem coluna de dono. Qualquer multi-usuário real exige o P0 da ROADMAP antes de qualquer app mobile multi-usuário.
 
 ## Estrutura
 

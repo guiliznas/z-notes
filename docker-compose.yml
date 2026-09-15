@@ -6,7 +6,8 @@ services:
     environment:
       PORT: 8787
       # Defina no arquivo .env (docker compose lê automaticamente):
-      Z_NOTES_PASSWORD_HASH: ${Z_NOTES_PASSWORD_HASH}
+      Z_NOTES_PASSWORD: ${Z_NOTES_PASSWORD:-}
+      Z_NOTES_PASSWORD_HASH: ${Z_NOTES_PASSWORD_HASH:-}
       Z_NOTES_SESSION_SECRET: ${Z_NOTES_SESSION_SECRET}
       Z_NOTES_BACKUP_WEBHOOK_URL: ${Z_NOTES_BACKUP_WEBHOOK_URL:-}
       Z_NOTES_BACKUP_CRON: ${Z_NOTES_BACKUP_CRON:-0 3 * * *}
