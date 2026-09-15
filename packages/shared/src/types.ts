@@ -72,7 +72,15 @@ export interface PublicUser {
   email: string;
   name: string | null;
   avatarUrl: string | null;
+  isAdmin: boolean;
 }
+
+export interface MetricSample {
+  t: number;
+  v: number;
+}
+
+export type MetricsResponse = { series: Record<string, MetricSample[]> };
 
 export type AuthMeResponse = { authenticated: false } | { authenticated: true; user: PublicUser };
 

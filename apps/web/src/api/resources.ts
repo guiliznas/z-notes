@@ -10,6 +10,7 @@ import type {
   CreateNoteInput,
   UpdateNoteInput,
   AuthMeResponse,
+  MetricsResponse,
 } from "@z-notes/shared";
 import { api } from "./http.js";
 
@@ -51,6 +52,9 @@ export function searchNotes(q: string, folderId: number | null) {
 export const googleLoginUrl = "/api/auth/google";
 export const authMe = () => api<AuthMeResponse>("/auth/me");
 export const authLogout = () => api<{ ok: true }>("/auth/logout", { method: "POST" });
+
+// Admin (backend exige papel admin em cada rota: 403 sem isAdmin)
+export const fetchAdminMetrics = () => api<MetricsResponse>("/admin/metrics");
 
 // Import / Export
 export function importFiles(files: File[]) {

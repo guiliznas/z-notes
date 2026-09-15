@@ -30,11 +30,15 @@ const DEFAULT_PROFILE: FakeGoogleProfile = {
   name: "User Um",
 };
 
-export async function makeTestApp(profile: FakeGoogleProfile = DEFAULT_PROFILE): Promise<TestApp> {
+export async function makeTestApp(
+  profile: FakeGoogleProfile = DEFAULT_PROFILE,
+  opts: { adminEmails?: string[] } = {},
+): Promise<TestApp> {
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "z-notes-test-"));
   const cfg = makeConfig({ dataDir });
   // OAuth "configurado" nos testes; o fluxo real é exercido com fetch mockado.
   cfg.google = { clientId: "test-client", clientSecret: "test-secret", callbackUrl: "http://test/callback" };
+  if (opts.adminEmails) cfg.adminEmails = opts.adminEmails;
   const app = await buildApp(cfg);
   const { cookie, userId } = await loginWithGoogle(app, profile);
   const cleanup = async () => {

@@ -7,8 +7,18 @@ export const users = sqliteTable("users", {
   email: text("email").notNull(),
   name: text("name"),
   avatarUrl: text("avatar_url"),
+  /** 1 = pode acessar /api/admin/* e a página /admin. Definido via Z_NOTES_ADMIN_EMAILS. */
+  isAdmin: integer("is_admin").notNull().default(0),
   createdAt: integer("created_at").notNull(),
   updatedAt: integer("updated_at").notNull(),
+});
+
+/** Amostras periódicas de métricas p/ o dashboard admin (só-crescente, com retenção). */
+export const metricSamples = sqliteTable("metric_samples", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  capturedAt: integer("captured_at").notNull(),
+  name: text("name").notNull(),
+  value: integer("value").notNull().default(0),
 });
 
 export const folders = sqliteTable("folders", {
@@ -41,3 +51,4 @@ export const notes = sqliteTable("notes", {
 export type UserRow = typeof users.$inferSelect;
 export type FolderRow = typeof folders.$inferSelect;
 export type NoteRow = typeof notes.$inferSelect;
+export type MetricSampleRow = typeof metricSamples.$inferSelect;

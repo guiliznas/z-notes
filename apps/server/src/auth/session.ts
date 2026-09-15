@@ -1,8 +1,8 @@
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import type { FastifyRequest, FastifyReply } from "fastify";
 import type { AppContext, RequestContext } from "../context.js";
-import { unauthorized } from "../errors.js";
-import { getUserById } from "./users.js";
+import { forbidden, unauthorized } from "../errors.js";
+import { getUserById, setAdmin } from "./users.js";
 
 export const COOKIE_NAME = "z_session";
 const STATE_COOKIE_NAME = "z_oauth_state";
@@ -56,6 +56,24 @@ export function requireAuth(request: FastifyRequest, ctx: AppContext): number {
   const userId = getSessionUserId(request);
   if (userId === null) throw unauthorized();
   if (!getUserById(ctx, userId)) throw unauthorized("Sessão inválida");
+  return userId;
+}
+
+/**
+ * Guard admin (server-side, por rota): 401 sem sessão, 403 sem papel admin.
+ * Auto-promove quem está em Z_NOTES_ADMIN_EMAILS (vale p/ conta criada antes da env).
+ */
+export function requireAdmin(request: FastifyRequest, ctx: AppContext): number {
+  const userId = requireAuth(request, ctx);
+  const user = getUserById(ctx, userId);
+  if (!user) throw unauthorized("Sessão inválida");
+  if (user.isAdmin !== 1) {
+    if (ctx.cfg.adminEmails.includes(user.email.trim().toLowerCase())) {
+      setAdmin(ctx, userId, true);
+      return userId;
+    }
+    throw forbidden();
+  }
   return userId;
 }
 

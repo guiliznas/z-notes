@@ -36,6 +36,7 @@ Login Google implementado, sem senha. Fluxo: tela só com botão Google → `GET
 - **Dados legados:** `user_id` NULL = era single-tenant; primeiro login adota tudo (`adoptOrphanData`, só quando há 1 usuário) e regenera o espelho.
 - **Artefatos por usuário:** espelho em `<mirrorDir>/<userId>/` (`userMirrorDir()` em `config.ts`); cache IndexedDB `z-notes-cache:<userId>` com limpeza no logout (`AuthContext` + `clearUserCache`); QueryClient instanciado por usuário (`PerUserProvider`, `key={user.id}`).
 - **Backup segue global** (banco inteiro + mirror inteiro). Migração gera snapshot de segurança via `createSnapshotIfChanged` no boot.
+- **Admin (branch `feat/admin-metrics`, issue #6):** papel `is_admin` em `users` (via `Z_NOTES_ADMIN_EMAILS`, CSV); `requireAdmin()` em `auth/session.ts` com auto-promoção; `preHandler` (`routes/index.ts`) exige admin em **toda** `/api/admin/*` (401 sem sessão, 403 sem papel) — frontend só esconde, nunca autoriza. Métricas em `metric_samples` via cron `0 */6 * * *` (`services/metrics.ts`: `collectMetrics`/`recordMetrics`/`readMetricSeries`, retenção 365d, backfill no boot); `GET /api/admin/metrics` + página `/admin` (só renderiza se `user.isAdmin`).
 - Envs: `GOOGLE_CLIENT_ID/SECRET/CALLBACK_URL` (sem elas, `/google` → 503); `Z_NOTES_SESSION_SECRET` obrigatório em prod (fail-fast, gotcha #2 mitigado). `docker-compose.yml` usa `:?` para exigir o segredo.
 
 ## Estrutura
