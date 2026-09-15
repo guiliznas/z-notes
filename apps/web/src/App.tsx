@@ -4,6 +4,7 @@ import { PerUserProvider } from "@/offline/PerUserProvider";
 import { LoginPage } from "@/components/LoginPage";
 import { NotesPage } from "@/components/NotesPage";
 import { AdminPage } from "@/components/AdminPage";
+import { UpdatePrompt } from "@/components/UpdatePrompt";
 
 export function App() {
   const { status, user } = useAuth();
@@ -12,7 +13,12 @@ export function App() {
     return <div className="flex h-full items-center justify-center text-sm text-[var(--muted)]">Carregando…</div>;
   }
   if (status === "unauthenticated" || !user) {
-    return <LoginPage />;
+    return (
+      <>
+        <LoginPage />
+        <UpdatePrompt />
+      </>
+    );
   }
 
   // A exibição da rota é UX: a autorização real é feita pelo backend em cada /api/admin/*.
@@ -33,6 +39,7 @@ export function App() {
         <Route path="/folder/:folderId/note/:noteId" element={<NotesPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <UpdatePrompt />
     </PerUserProvider>
   );
 }
