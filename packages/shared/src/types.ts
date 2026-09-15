@@ -67,9 +67,22 @@ export interface UpdateNoteInput {
   archived?: boolean;
 }
 
-export interface LoginInput {
-  password: string;
+export interface PublicUser {
+  id: number;
+  email: string;
+  name: string | null;
+  avatarUrl: string | null;
+  isAdmin: boolean;
 }
+
+export interface MetricSample {
+  t: number;
+  v: number;
+}
+
+export type MetricsResponse = { series: Record<string, MetricSample[]> };
+
+export type AuthMeResponse = { authenticated: false } | { authenticated: true; user: PublicUser };
 
 export interface ApiError {
   error: string;

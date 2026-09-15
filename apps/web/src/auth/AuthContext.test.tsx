@@ -1,20 +1,25 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { renderHook, waitFor, act } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, renderHook } from "@testing-library/react";
 import { AuthProvider, useAuth } from "./AuthContext";
-import type { ReactNode } from "react";
+import { authMe, authLogout } from "@/api/resources";
+import { clearUserCache } from "@/offline/queryClient";
 
-const mockAuthMe = vi.fn();
-const mockAuthLogin = vi.fn();
-const mockAuthLogout = vi.fn();
+vi.mock("@/api/resources", () => ({ authMe: vi.fn(), authLogout: vi.fn() }));
+vi.mock("@/offline/queryClient", async (importOriginal) => {
+  const mod = await importOriginal<typeof import("@/offline/queryClient")>();
+  return { ...mod, clearUserCache: vi.fn().mockResolvedValue(undefined) };
+});
 
-vi.mock("@/api/resources", () => ({
-  authMe: (...args: unknown[]) => mockAuthMe(...args),
-  authLogin: (...args: unknown[]) => mockAuthLogin(...args),
-  authLogout: (...args: unknown[]) => mockAuthLogout(...args),
-}));
+const USER = { id: 7, email: "user@example.com", name: "User", avatarUrl: null, isAdmin: false };
 
-function wrapper({ children }: { children: ReactNode }) {
-  return <AuthProvider>{children}</AuthProvider>;
+function Probe() {
+  const { status, user, logout } = useAuth();
+  return (
+    <div>
+      <span data-testid="status">{status}</span>
+      <span data-testid="email">{user?.email ?? "sem-user"}</span>
+      <button onClick={() => logout()}>sair</button>
+    </div>
+  );
 }
 
 describe("AuthContext", () => {
@@ -22,40 +27,46 @@ describe("AuthContext", () => {
     vi.clearAllMocks();
   });
 
-  it("começa como loading e vai para unauthenticated quando authMe falha", async () => {
-    mockAuthMe.mockRejectedValue(new Error("offline"));
-    const { result } = renderHook(() => useAuth(), { wrapper });
-    expect(result.current.status).toBe("loading");
-    await waitFor(() => expect(result.current.status).toBe("unauthenticated"));
+  it("expõe o usuário do me", async () => {
+    vi.mocked(authMe).mockResolvedValue({ authenticated: true, user: USER });
+    render(
+      <AuthProvider>
+        <Probe />
+      </AuthProvider>,
+    );
+    await waitFor(() => expect(screen.getByTestId("status")).toHaveTextContent("authenticated"));
+    expect(screen.getByTestId("email")).toHaveTextContent("user@example.com");
   });
 
-  it("autentica quando authMe retorna authenticated=true", async () => {
-    mockAuthMe.mockResolvedValue({ authenticated: true });
-    const { result } = renderHook(() => useAuth(), { wrapper });
-    await waitFor(() => expect(result.current.status).toBe("authenticated"));
+  it("logout chama a API e limpa o cache do usuário", async () => {
+    vi.mocked(authMe).mockResolvedValue({ authenticated: true, user: USER });
+    vi.mocked(authLogout).mockResolvedValue({ ok: true });
+    render(
+      <AuthProvider>
+        <Probe />
+      </AuthProvider>,
+    );
+    await waitFor(() => expect(screen.getByTestId("status")).toHaveTextContent("authenticated"));
+
+    fireEvent.click(screen.getByText("sair"));
+    await waitFor(() => expect(screen.getByTestId("status")).toHaveTextContent("unauthenticated"));
+    expect(authLogout).toHaveBeenCalledTimes(1);
+    expect(clearUserCache).toHaveBeenCalledWith(7);
+    expect(screen.getByTestId("email")).toHaveTextContent("sem-user");
   });
 
-  it("login chama authLogin e muda status", async () => {
-    mockAuthMe.mockResolvedValue({ authenticated: false });
-    mockAuthLogin.mockResolvedValue({ ok: true });
-    const { result } = renderHook(() => useAuth(), { wrapper });
-    await waitFor(() => expect(result.current.status).toBe("unauthenticated"));
-    await act(async () => { await result.current.login("senha"); });
-    expect(mockAuthLogin).toHaveBeenCalledWith("senha");
-    expect(result.current.status).toBe("authenticated");
-  });
-
-  it("logout chama authLogout e volta para unauthenticated", async () => {
-    mockAuthMe.mockResolvedValue({ authenticated: true });
-    mockAuthLogout.mockResolvedValue({ ok: true });
-    const { result } = renderHook(() => useAuth(), { wrapper });
-    await waitFor(() => expect(result.current.status).toBe("authenticated"));
-    await act(async () => { await result.current.logout(); });
-    expect(mockAuthLogout).toHaveBeenCalledOnce();
-    expect(result.current.status).toBe("unauthenticated");
+  it("me negativo vira unauthenticated", async () => {
+    vi.mocked(authMe).mockResolvedValue({ authenticated: false });
+    render(
+      <AuthProvider>
+        <Probe />
+      </AuthProvider>,
+    );
+    await waitFor(() => expect(screen.getByTestId("status")).toHaveTextContent("unauthenticated"));
   });
 
   it("lança erro se useAuth chamado fora do provider", () => {
     expect(() => renderHook(() => useAuth()).result.current).toThrow("useAuth deve ser usado dentro de AuthProvider");
   });
 });
+

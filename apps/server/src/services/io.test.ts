@@ -2,6 +2,8 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import JSZip from "jszip";
 import { makeTestCtx, type TestCtx } from "../test-helpers.js";
 import { parseFrontmatter, zipToEntries, importEntries, exportZip } from "./io.js";
+import { upsertUserByGoogle } from "../auth/users.js";
+import type { RequestContext } from "../context.js";
 import { listFolderTree } from "./folders.js";
 import { listNotes } from "./notes.js";
 
@@ -69,6 +71,35 @@ describe("import/export", () => {
     const zip = await JSZip.loadAsync(buffer);
     const names = Object.keys(zip.files).filter((n) => n.endsWith(".md"));
     expect(names).toContain("Pasta/nota-export.md");
+  });
+
+  it("exportZip contém só arquivos do usuário", async () => {
+    importEntries(t.ctx, [{ folderSegments: ["De-A"], content: "Nota de A" }]);
+    const other = upsertUserByGoogle(t.ctx, { sub: "outro-sub", email: "outro@example.com" });
+    const ctxB: RequestContext = { ...t.ctx, userId: other.id };
+    importEntries(ctxB, [{ folderSegments: ["De-B"], content: "Nota de B" }]);
+
+    const namesA = Object.keys((await JSZip.loadAsync(await exportZip(t.ctx))).files).filter((n) =>
+      n.endsWith(".md"),
+    );
+    expect(namesA).toContain("De-A/nota-de-a.md");
+    expect(namesA.some((n) => n.includes("De-B"))).toBe(false);
+
+    const namesB = Object.keys((await JSZip.loadAsync(await exportZip(ctxB))).files).filter((n) =>
+      n.endsWith(".md"),
+    );
+    expect(namesB).toContain("De-B/nota-de-b.md");
+    expect(namesB.some((n) => n.includes("De-A"))).toBe(false);
+  });
+
+  it("import de um usuário não aparece na árvore do outro", () => {
+    importEntries(t.ctx, [{ folderSegments: ["De-A"], content: "Nota de A" }]);
+    const other = upsertUserByGoogle(t.ctx, { sub: "outro-2", email: "outro2@example.com" });
+    const ctxB: RequestContext = { ...t.ctx, userId: other.id };
+    importEntries(ctxB, [{ folderSegments: ["De-B"], content: "Nota de B" }]);
+
+    expect(listFolderTree(t.ctx).map((f) => f.name)).toEqual(["De-A"]);
+    expect(listFolderTree(ctxB).map((f) => f.name)).toEqual(["De-B"]);
   });
 
   it("preserva datas do frontmatter na importação", () => {

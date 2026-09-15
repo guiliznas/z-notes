@@ -1,4 +1,5 @@
 import { useRef, useState, type ChangeEvent } from "react";
+import { Link } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { importFiles } from "@/api/resources";
 import { getBaseUrl } from "@/api/http";
@@ -12,7 +13,7 @@ import { SettingsModal } from "./SettingsModal";
 export function SidebarFooter() {
   const qc = useQueryClient();
   const { notify } = useToast();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const fileRef = useRef<HTMLInputElement>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -60,6 +61,24 @@ export function SidebarFooter() {
         <SettingsIcon />
       </IconButton>
       <div className="flex-1" />
+      {user?.isAdmin && (
+        <Link
+          to="/admin"
+          title="Administração"
+          aria-label="Administração"
+          className="inline-flex h-9 items-center rounded-lg px-2 text-xs text-[var(--muted)] hover:bg-[var(--surface-hover)] hover:text-[var(--text)]"
+        >
+          Admin
+        </Link>
+      )}
+      {user && (
+        <div className="flex min-w-0 items-center gap-2" title={user.email}>
+          {user.avatarUrl ? (
+            <img src={user.avatarUrl} alt="" className="h-7 w-7 rounded-full" referrerPolicy="no-referrer" />
+          ) : null}
+          <span className="max-w-28 truncate text-xs text-[var(--muted)]">{user.name ?? user.email}</span>
+        </div>
+      )}
       <IconButton label="Sair" onClick={() => logout()}>
         <LogoutIcon />
       </IconButton>

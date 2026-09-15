@@ -1,6 +1,6 @@
 import { deriveTitle, deriveExcerpt } from "@z-notes/shared";
 import type { SearchHit } from "@z-notes/shared";
-import type { AppContext } from "../context.js";
+import type { RequestContext } from "../context.js";
 
 interface FtsRow {
   id: number;
@@ -14,18 +14,18 @@ interface FtsRow {
 
 const RESULT_LIMIT = 50;
 
-/** Busca full-text (FTS5). Sem folderId = global. Nunca inclui a lixeira. */
-export function searchNotes(ctx: AppContext, query: string, folderId?: number | null): SearchHit[] {
+/** Busca full-text (FTS5) escopada ao dono. Sem folderId = todas as pastas do usuário. Nunca inclui a lixeira. */
+export function searchNotes(ctx: RequestContext, query: string, folderId?: number | null): SearchHit[] {
   const match = buildMatchExpression(query);
   if (!match) return [];
 
-  const params: (string | number)[] = [match];
+  const params: (string | number)[] = [match, ctx.userId];
   let sql = `
     SELECT n.id, n.folder_id, n.content_md, n.archived_at, n.created_at, n.updated_at,
            snippet(notes_fts, 0, '[', ']', '…', 12) AS snip
     FROM notes_fts
     JOIN notes n ON n.id = notes_fts.rowid
-    WHERE notes_fts MATCH ? AND n.deleted_at IS NULL`;
+    WHERE notes_fts MATCH ? AND n.user_id = ? AND n.deleted_at IS NULL`;
   if (folderId !== undefined && folderId !== null) {
     sql += ` AND n.folder_id = ?`;
     params.push(folderId);

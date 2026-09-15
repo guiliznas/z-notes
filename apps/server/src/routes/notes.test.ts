@@ -35,7 +35,7 @@ describe("notes", () => {
 
   it("escreve arquivo no espelho .md", async () => {
     await post("/api/notes", { folderId, contentMd: "Minha Nota\nlinha" });
-    const files = listMirror(t.cfg);
+    const files = listMirror(t.cfg, t.userId);
     expect(files).toContain("Trabalho/minha-nota.md");
   });
 
@@ -63,14 +63,14 @@ describe("notes", () => {
   it("arquivada permanece no espelho na pasta original", async () => {
     const note = (await post("/api/notes", { folderId, contentMd: "perm\nx" })).json();
     await patch(`/api/notes/${note.id}`, { archived: true });
-    const files = listMirror(t.cfg);
+    const files = listMirror(t.cfg, t.userId);
     expect(files).toContain("Trabalho/perm.md");
   });
 
   it("lixeira e restauração", async () => {
     const note = (await post("/api/notes", { folderId, contentMd: "temp" })).json();
     await del(`/api/notes/${note.id}`);
-    expect(listMirror(t.cfg)).not.toContain("Trabalho/temp.md");
+    expect(listMirror(t.cfg, t.userId)).not.toContain("Trabalho/temp.md");
 
     const trash = (await get("/api/notes?view=trash")).json();
     expect(trash).toHaveLength(1);
@@ -78,7 +78,7 @@ describe("notes", () => {
     const restored = await post(`/api/notes/${note.id}/restore`, {});
     expect(restored.statusCode).toBe(200);
     expect(restored.json().deleted).toBe(false);
-    expect(listMirror(t.cfg)).toContain("Trabalho/temp.md");
+    expect(listMirror(t.cfg, t.userId)).toContain("Trabalho/temp.md");
   });
 
   it("exclusão definitiva remove do banco", async () => {
@@ -95,7 +95,7 @@ describe("notes", () => {
   it("colisão de título gera sufixo no arquivo", async () => {
     await post("/api/notes", { folderId, contentMd: "Igual" });
     await post("/api/notes", { folderId, contentMd: "Igual" });
-    const files = listMirror(t.cfg).filter((f) => f.startsWith("Trabalho/igual"));
+    const files = listMirror(t.cfg, t.userId).filter((f) => f.startsWith("Trabalho/igual"));
     expect(files).toContain("Trabalho/igual.md");
     expect(files).toContain("Trabalho/igual-2.md");
   });
