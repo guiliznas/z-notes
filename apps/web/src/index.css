@@ -1,30 +1,35 @@
 @import "tailwindcss";
 
+/* Paleta: Material blue-grey + amber (primária #0096a7 nos ícones, acento #ffc107). */
 :root {
   --bg: #f5f5f0;
   --surface: #ffffff;
-  --surface-2: #ececec;
-  --surface-hover: #e6e6e1;
-  --text: #1c1c1e;
-  --muted: #8a8a8e;
-  --border: #dcdcd6;
-  --accent: #d9a520;
-  --accent-soft: #f7e7b0;
-  --danger: #d0342c;
+  --surface-2: #dde5e9;
+  --surface-hover: #cfd8dc;
+  --text: #263238;
+  --muted: #607d8b;
+  --border: #cfd8dc;
+  --accent: #ffc107;
+  --accent-soft: #ffecb3;
+  --danger: #e53935;
+  --sidebar: var(--surface-2);
+  --panel: var(--surface);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #1c1c1e;
-    --surface: #2c2c2e;
-    --surface-2: #232325;
-    --surface-hover: #3a3a3c;
-    --text: #f2f2f7;
-    --muted: #98989f;
-    --border: #3a3a3c;
-    --accent: #e6b93f;
-    --accent-soft: #4a3f1c;
-    --danger: #ff6b60;
+    --surface: #37474f;
+    --surface-2: #2e383e;
+    --surface-hover: #455a64;
+    --text: #eceff1;
+    --muted: #b0bec5;
+    --border: #455a64;
+    --accent: #ffc107;
+    --accent-soft: #544800;
+    --danger: #ef5350;
+    --sidebar: #28282a;
+    --panel: #303032;
   }
 }
 

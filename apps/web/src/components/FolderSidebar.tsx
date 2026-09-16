@@ -68,7 +68,7 @@ export function FolderSidebar({ onNavigate }: Props) {
   };
 
   return (
-    <div className="flex h-full flex-col bg-[var(--surface-2)]">
+    <div className="flex h-full flex-col bg-[var(--sidebar)]">
       <div className="flex items-center justify-between px-3 pt-3 pb-1">
         <span className="px-2 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">Pastas</span>
         <IconButton label="Nova pasta" onClick={() => setDialog({ type: "new-root" })}>

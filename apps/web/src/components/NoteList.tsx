@@ -71,7 +71,7 @@ export function NoteList({ onBack, onOpenFolders }: Props) {
   const snippets = new Map((search.data ?? []).map((h) => [h.note.id, h.snippet]));
 
   return (
-    <div className="flex h-full flex-col bg-[var(--surface)]">
+    <div className="flex h-full flex-col bg-[var(--panel)]">
       <header className="flex items-center gap-1 px-2 pt-3 pb-1">
         {onBack && (
           <IconButton label="Voltar para pastas" onClick={onBack}>
