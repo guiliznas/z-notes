@@ -1,4 +1,9 @@
 import { describe, it, expect, vi } from "vitest";
+import { createQueryClient, UPDATE_NOTE_KEY, cacheKeyFor, clearUserCache } from "./queryClient";
+
+vi.mock("@/api/resources", () => ({
+  updateNote: vi.fn(),
+}));
 
 vi.mock("idb-keyval", () => {
   const store = new Map<string, unknown>();
@@ -16,7 +21,23 @@ vi.mock("idb-keyval", () => {
 });
 
 import { set } from "idb-keyval";
-import { cacheKeyFor, clearUserCache } from "./queryClient";
+
+describe("createQueryClient", () => {
+  it("cria QueryClient com defaults offline-first", () => {
+    const client = createQueryClient();
+    const defaults = client.getDefaultOptions();
+    expect(defaults.queries?.networkMode).toBe("offlineFirst");
+    expect(defaults.queries?.staleTime).toBe(30_000);
+    expect(defaults.mutations?.networkMode).toBe("online");
+  });
+
+  it("registra mutation defaults para updateNote", () => {
+    const client = createQueryClient();
+    const defaults = client.getMutationDefaults(UPDATE_NOTE_KEY);
+    expect(defaults).toBeDefined();
+    expect(typeof defaults?.mutationFn).toBe("function");
+  });
+});
 
 describe("cache offline por usuário", () => {
   it("chaves diferem por usuário e nunca são globais", () => {
@@ -36,3 +57,4 @@ describe("cache offline por usuário", () => {
     expect(await get(cacheKeyFor(2))).toEqual({ data: "de-B" });
   });
 });
+

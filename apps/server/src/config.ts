@@ -20,6 +20,8 @@ export interface AppConfig {
   /** e-mails com acesso admin (CSV em Z_NOTES_ADMIN_EMAILS, minúsculos). */
   adminEmails: string[];
   sessionSecret: string;
+  /** segredo para assinar tokens JWT (Bearer auth para apps mobile/desktop). */
+  jwtSecret: string;
   isProd: boolean;
   /** diretório dos snapshots de backup (separado do dataDir ativo). */
   backupDir: string;
@@ -70,6 +72,7 @@ export function configFromEnv(): AppConfig {
     google,
     adminEmails: parseEmailList(process.env.Z_NOTES_ADMIN_EMAILS),
     sessionSecret: resolveSessionSecret(isProd),
+    jwtSecret: process.env.Z_NOTES_JWT_SECRET ?? resolveSessionSecret(isProd),
     isProd,
     backupDir: process.env.Z_NOTES_BACKUP_DIR ?? path.join(REPO_ROOT, "backups"),
     backupCron: process.env.Z_NOTES_BACKUP_CRON ?? DEFAULT_BACKUP_CRON,
@@ -94,6 +97,7 @@ export function makeConfig(overrides: Partial<AppConfig> & { dataDir: string }):
     google: { clientId: "", clientSecret: "", callbackUrl: "" },
     adminEmails: [],
     sessionSecret: DEV_SECRET,
+    jwtSecret: DEV_SECRET,
     isProd: false,
     backupDir: path.join(overrides.dataDir, "backups"),
     backupCron: DEFAULT_BACKUP_CRON,

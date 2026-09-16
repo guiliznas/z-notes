@@ -1,5 +1,6 @@
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import type { FastifyRequest, FastifyReply } from "fastify";
+import jwt from "jsonwebtoken";
 import type { AppContext, RequestContext } from "../context.js";
 import { forbidden, unauthorized } from "../errors.js";
 import { getUserById, setAdmin } from "./users.js";
@@ -8,6 +9,7 @@ export const COOKIE_NAME = "z_session";
 const STATE_COOKIE_NAME = "z_oauth_state";
 const MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 dias
 const STATE_MAX_AGE_SECONDS = 10 * 60; // 10 minutos
+
 
 declare module "fastify" {
   interface FastifyRequest {
@@ -42,18 +44,33 @@ export function clearSessionCookie(reply: FastifyReply): void {
   reply.clearCookie(COOKIE_NAME, { path: "/" });
 }
 
-export function getSessionUserId(request: FastifyRequest): number | null {
+export function getSessionUserId(request: FastifyRequest, secret?: string): number | null {
   const raw = request.cookies[COOKIE_NAME];
-  if (!raw) return null;
-  const unsigned = request.unsignCookie(raw);
-  if (!unsigned.valid || !unsigned.value) return null;
-  const id = Number(unsigned.value);
-  return Number.isInteger(id) && id > 0 ? id : null;
+  if (raw) {
+    const unsigned = request.unsignCookie(raw);
+    if (unsigned.valid && unsigned.value) {
+      const id = Number(unsigned.value);
+      if (Number.isInteger(id) && id > 0) return id;
+    }
+  }
+
+  const header = request.headers.authorization;
+  if (header?.startsWith("Bearer ") && secret) {
+    try {
+      const payload = jwt.verify(header.slice(7), secret) as { userId?: number; sub?: string };
+      const id = payload.userId ?? Number(payload.sub);
+      if (Number.isInteger(id) && id > 0) return id;
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
 }
 
 /** Decorator de ownership: resolve o dono e rejeita sessão ausente/inválida. */
 export function requireAuth(request: FastifyRequest, ctx: AppContext): number {
-  const userId = getSessionUserId(request);
+  const userId = getSessionUserId(request, ctx.cfg.sessionSecret);
   if (userId === null) throw unauthorized();
   if (!getUserById(ctx, userId)) throw unauthorized("Sessão inválida");
   return userId;
@@ -106,4 +123,9 @@ export function consumeOAuthState(request: FastifyRequest, reply: FastifyReply, 
   const a = Buffer.from(unsigned.value);
   const b = Buffer.from(returnedState);
   return a.length === b.length && timingSafeEqual(a, b);
+}
+
+/** Gera um token JWT para uso como Bearer token (mobile/desktop). */
+export function signToken(ctx: AppContext, userId: number): string {
+  return jwt.sign({ userId, sub: String(userId) }, ctx.cfg.sessionSecret, { expiresIn: MAX_AGE_SECONDS });
 }

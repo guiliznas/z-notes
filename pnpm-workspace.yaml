@@ -9,3 +9,5 @@ onlyBuiltDependencies:
   - esbuild
 overrides:
   vite: "^6.1.0"
+patchedDependencies:
+  react-native-screens@4.12.0: patches/react-native-screens@4.12.0.patch
