@@ -12,6 +12,8 @@
   --accent: #ffc107;
   --accent-soft: #ffecb3;
   --danger: #e53935;
+  --sidebar: var(--surface-2);
+  --panel: var(--surface);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -26,6 +28,8 @@
     --accent: #ffc107;
     --accent-soft: #544800;
     --danger: #ef5350;
+    --sidebar: #28282a;
+    --panel: #303032;
   }
 }
 

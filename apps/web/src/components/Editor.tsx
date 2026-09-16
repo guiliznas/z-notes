@@ -94,7 +94,7 @@ export function Editor({ onBack }: Props) {
   const backToList = () => navigate(sourcePath(source));
 
   return (
-    <div className="flex h-full flex-col bg-[var(--surface)]">
+    <div className="flex h-full flex-col bg-[var(--panel)]">
       <header className="flex items-center gap-1 border-b border-[var(--border)] px-2 py-2">
         {onBack && (
           <IconButton label="Voltar" onClick={onBack}>
@@ -207,7 +207,7 @@ function NoteActions({ readOnly, archived, onMove, onToggleArchive, onTrash, onR
 
 function EmptyEditor() {
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-3 bg-[var(--surface)] text-[var(--muted)]">
+    <div className="flex h-full flex-col items-center justify-center gap-3 bg-[var(--panel)] text-[var(--muted)]">
       <NoteIcon className="text-4xl opacity-40" />
       <p className="text-sm">Selecione ou crie uma nota</p>
     </div>

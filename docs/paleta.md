@@ -17,6 +17,8 @@ Fonte de verdade no código: `apps/web/src/index.css` (`:root` + `prefers-color-
 | `--accent` | `#ffc107` (amber 500) | botões primários (com texto preto), destaques |
 | `--accent-soft` | `#ffecb3` (amber 100) | fundos suaves de destaque |
 | `--danger` | `#e53935` (red 600) | ações destrutivas |
+| `--sidebar` | = `--surface-2` | fundo da barra lateral de pastas |
+| `--panel` | = `--surface` | fundo da lista de notas e do editor |
 
 ## Escuras (`prefers-color-scheme: dark`)
 
@@ -32,6 +34,8 @@ Fonte de verdade no código: `apps/web/src/index.css` (`:root` + `prefers-color-
 | `--accent` | `#ffc107` | igual ao claro |
 | `--accent-soft` | `#544800` | fundos suaves de destaque no escuro |
 | `--danger` | `#ef5350` | ações destrutivas |
+| `--sidebar` | `#28282a` | fundo da barra lateral de pastas |
+| `--panel` | `#303032` | fundo da lista de notas e do editor |
 
 ## Ícones do app (`apps/web/scripts/generate-icons.py`)
 
