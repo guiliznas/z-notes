@@ -9,7 +9,10 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: "prompt",
+      // autoUpdate: o SW novo assume sozinho (skipWaiting + clientsClaim).
+      // O modo "prompt" foi removido porque a cadeia waiting→controlling→reload
+      // falhava com duplo registro, prendendo o usuário na versão antiga.
+      registerType: "autoUpdate",
       manifest: {
         name: "z-notes",
         short_name: "z-notes",
