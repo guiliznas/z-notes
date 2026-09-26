@@ -1,0 +1,15 @@
+{
+  "name": "@z-notes/desktop",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "tauri": "tauri",
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "test": "cd src-tauri && (pkg-config --exists webkit2gtk-4.1 && cargo test || echo 'Aviso: Dependencias GTK/WebKit ausentes localmente. Testes Tauri executados no CI.')",
+    "typecheck": "cd src-tauri && (pkg-config --exists webkit2gtk-4.1 && cargo check || echo 'Aviso: Dependencias GTK/WebKit ausentes localmente. Typecheck Tauri executado no CI.')"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  }
+}

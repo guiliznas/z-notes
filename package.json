@@ -10,7 +10,9 @@
   "scripts": {
     "build:shared": "pnpm --filter @z-notes/shared build",
     "dev": "pnpm build:shared && pnpm -r --parallel --filter \"./apps/*\" dev",
+    "dev:desktop": "pnpm build:shared && pnpm --filter @z-notes/web dev & pnpm --filter @z-notes/desktop tauri dev",
     "build": "pnpm build:shared && pnpm --filter @z-notes/web build && pnpm --filter @z-notes/server build",
+    "build:desktop": "pnpm build:shared && pnpm --filter @z-notes/web build && pnpm --filter @z-notes/desktop tauri build",
     "start": "pnpm --filter @z-notes/server start",
     "test": "pnpm build:shared && pnpm -r test",
     "typecheck": "pnpm build:shared && pnpm -r typecheck"

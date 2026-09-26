@@ -1,0 +1,84 @@
+import React, { type ReactNode } from "react";
+
+function pass<T extends Record<string, unknown>>(props: T): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const k in props) {
+    const v = props[k];
+    if (typeof v === "function") continue;
+    if (k === "accessibilityLabel") {
+      out["aria-label"] = v;
+      continue;
+    }
+    if (k === "style" || k === "numberOfLines" || k === "autoCapitalize" || k === "autoCorrect" || k === "secureTextEntry" || k === "placeholderTextColor" || k === "textAlignVertical" || k === "autoFocus" || k === "multiline" || k === "elevation" || k === "transparent" || k === "animationType" || k === "horizontal" || k === "showsHorizontalScrollIndicator" || k === "contentContainerStyle") continue;
+    out[k] = v;
+  }
+  return out;
+}
+
+export const View = ({ children, ...rest }: { children?: ReactNode } & Record<string, unknown>) =>
+  React.createElement("div", pass(rest), children);
+
+export const Text = ({ children, ...rest }: { children?: ReactNode } & Record<string, unknown>) =>
+  React.createElement("span", pass(rest), children);
+
+interface TextInputProps {
+  value?: string;
+  onChangeText?: (v: string) => void;
+  secureTextEntry?: boolean;
+}
+
+export const TextInput = React.forwardRef<HTMLInputElement, TextInputProps & Record<string, unknown>>(
+  (props, ref) => {
+    const onChange = (e: { target: { value: string } }) => {
+      const cb = props.onChangeText as ((v: string) => void) | undefined;
+      if (cb) cb(e.target.value);
+    };
+    return React.createElement("input", {
+      ref,
+      type: String(props.secureTextEntry) === "true" ? "password" : "text",
+      value: props.value,
+      onChange,
+      placeholder: props.placeholder as string | undefined,
+    });
+  },
+);
+
+export const TouchableOpacity = ({ children, onPress, ...rest }: { children?: ReactNode; onPress?: () => void } & Record<string, unknown>) =>
+  React.createElement("button", { onClick: onPress, ...pass(rest) }, children);
+
+export const FlatList = <T,>({ data, keyExtractor, renderItem, ListEmptyComponent }: {
+  data: T[] | undefined;
+  keyExtractor: (item: T) => string;
+  renderItem: ({ item }: { item: T }) => ReactNode;
+  ListEmptyComponent?: ReactNode;
+}) =>
+  React.createElement(
+    "div",
+    { "data-testid": "flatlist" },
+    (!data || data.length === 0) && ListEmptyComponent,
+    (data ?? []).map((item, i) =>
+      React.createElement("div", { key: keyExtractor(item), "data-index": i }, renderItem({ item })),
+    ),
+  );
+
+export const StyleSheet = {
+  create: <T extends Record<string, unknown>>(styles: T): T => styles,
+};
+
+export const ScrollView = ({ children, ...rest }: { children?: ReactNode } & Record<string, unknown>) =>
+  React.createElement("div", pass(rest), children);
+
+export const Modal = ({ children, visible = true, ...rest }: { children?: ReactNode; visible?: boolean } & Record<string, unknown>) =>
+  visible ? React.createElement("div", { "data-testid": "modal", ...pass(rest) }, children) : null;
+
+export const ActivityIndicator = ({ ...rest }: Record<string, unknown>) =>
+  React.createElement("div", { "data-testid": "activity-indicator", ...pass(rest) }, "Loading...");
+
+export const RefreshControl = ({ ...rest }: Record<string, unknown>) =>
+  React.createElement("div", { "data-testid": "refresh-control", ...pass(rest) });
+
+export const Alert = {
+  alert: () => {},
+};
+
+export const StatusBar = () => null;

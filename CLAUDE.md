@@ -4,7 +4,7 @@ Contexto para trabalhar neste repositório com Claude Code. Para visão de produ
 - `2026-07-06-z-notes-design.md` — app completo (3 colunas, espelho `.md`, offline)
 - `2026-07-06-backup-recorrente-design.md` — backup automático (retenção GFS, restore)
 - `2026-07-07-multi-usuario-google-design.md` — multi-usuário com login Google (implementado na branch `feat/login-google`; OAuth manual via `fetch`, sem `@fastify/oauth2`)
-- Issues GitHub: #3 (P0 login Google + isolamento), #4 (P1 app Flutter)
+- Issues GitHub: #3 (P0 login Google + isolamento), #4 (P1 mobile/desktop)
 
 ## Workflow obrigatório: worktree por tarefa
 
@@ -14,10 +14,10 @@ Toda tarefa (feature, fix, refactor, spike) roda em worktree limpa, nunca no che
 mkdir -p ~/ai-tmp
 git worktree add ~/ai-tmp/<nome-da-tarefa> -b <tipo>/<nome-da-tarefa>
 cd ~/ai-tmp/<nome-da-tarefa>
-pnpm install --ignore-scripts   # ver gotcha #4 (better-sqlite3/Node)
+pnpm install
 ```
 
-Ao finalizar (merge ou descarte): remover a worktree.
+Ao finalizar (merge ou descarte): remover a worktree e limpar o branch se descartado.
 
 ```bash
 cd /home/guiliznas/services/z-notes
@@ -27,7 +27,7 @@ git worktree prune
 
 Regras: um diretório por tarefa em `~/ai-tmp/`; nunca deixar worktree abandonada — toda tarefa termina com `worktree remove + prune`.
 
-## Estado atual (branch `feat/login-google`)
+## Estado atual
 
 Login Google implementado, sem senha. Fluxo: tela só com botão Google → `GET /api/auth/google` → callback server-side (`GET /api/auth/google/callback`: valida `state`, troca code, userinfo, upsert, adota órfãs no primeiro login, set cookie, redirect `/`) → app com as notas do usuário.
 
@@ -38,6 +38,7 @@ Login Google implementado, sem senha. Fluxo: tela só com botão Google → `GET
 - **Backup segue global** (banco inteiro + mirror inteiro). Migração gera snapshot de segurança via `createSnapshotIfChanged` no boot.
 - **Admin (branch `feat/admin-metrics`, issue #6):** papel `is_admin` em `users` (via `Z_NOTES_ADMIN_EMAILS`, CSV); `requireAdmin()` em `auth/session.ts` com auto-promoção; `preHandler` (`routes/index.ts`) exige admin em **toda** `/api/admin/*` (401 sem sessão, 403 sem papel) — frontend só esconde, nunca autoriza. Métricas em `metric_samples` via cron `0 */6 * * *` (`services/metrics.ts`: `collectMetrics`/`recordMetrics`/`readMetricSeries`, retenção 365d, backfill no boot); `GET /api/admin/metrics` + página `/admin` (só renderiza se `user.isAdmin`).
 - Envs: `GOOGLE_CLIENT_ID/SECRET/CALLBACK_URL` (sem elas, `/google` → 503); `Z_NOTES_SESSION_SECRET` obrigatório em prod (fail-fast, gotcha #2 mitigado). `docker-compose.yml` usa `:?` para exigir o segredo.
+
 
 ## Estrutura
 

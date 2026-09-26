@@ -11,3 +11,4 @@ coverage/
 plan/
 *.node
 apps/desktop/src-tauri/target/
+dist-installers/

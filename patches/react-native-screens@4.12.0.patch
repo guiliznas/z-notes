@@ -1,0 +1,50 @@
+diff --git a/android/src/versioned/backgroundcolor/latest/ViewBackgroundUtils.kt b/android/src/versioned/backgroundcolor/latest/ViewBackgroundUtils.kt
+index e83dbf5350d03ecccc050deaf6d4de7ecf386a85..4254b0bb12818d4247204c80c1fce299fc65721b 100644
+--- a/android/src/versioned/backgroundcolor/latest/ViewBackgroundUtils.kt
++++ b/android/src/versioned/backgroundcolor/latest/ViewBackgroundUtils.kt
+@@ -2,7 +2,6 @@ package com.swmansion.rnscreens.utils
+ 
+ import com.facebook.react.common.annotations.UnstableReactNativeAPI
+ import com.facebook.react.uimanager.BackgroundStyleApplicator
+-import com.facebook.react.uimanager.drawable.CSSBackgroundDrawable
+ import com.facebook.react.views.view.ReactViewGroup
+ 
+ internal fun ReactViewGroup.resolveBackgroundColor(): Int? = BackgroundStyleApplicator.getBackgroundColor(this)
+diff --git a/common/cpp/react/renderer/components/rnscreens/RNSScreenShadowNode.cpp b/common/cpp/react/renderer/components/rnscreens/RNSScreenShadowNode.cpp
+index 9e93139467570a7cecef4362d2771d41d6f299f9..d18b6d347e67e800cf6c6500b5c136fa069903a4 100644
+--- a/common/cpp/react/renderer/components/rnscreens/RNSScreenShadowNode.cpp
++++ b/common/cpp/react/renderer/components/rnscreens/RNSScreenShadowNode.cpp
+@@ -14,9 +14,9 @@ Point RNSScreenShadowNode::getContentOriginOffset(
+   return stateData.contentOffset;
+ }
+ 
+-std::optional<std::reference_wrapper<const ShadowNode::Shared>>
++std::optional<std::reference_wrapper<const std::shared_ptr<const ShadowNode>>>
+ findHeaderConfigChild(const YogaLayoutableShadowNode &screenShadowNode) {
+-  for (const ShadowNode::Shared &child : screenShadowNode.getChildren()) {
++  for (const auto &child : screenShadowNode.getChildren()) {
+     if (std::strcmp(child->getComponentName(), "RNSScreenStackHeaderConfig") ==
+         0) {
+       return {std::cref(child)};
+@@ -81,7 +81,7 @@ std::optional<float> findHeaderHeight(
+ }
+ #endif // ANDROID
+ 
+-void RNSScreenShadowNode::appendChild(const ShadowNode::Shared &child) {
++void RNSScreenShadowNode::appendChild(const std::shared_ptr<const ShadowNode> &child) {
+   YogaLayoutableShadowNode::appendChild(child);
+ #ifdef ANDROID
+   const auto &stateData = getStateData();
+diff --git a/common/cpp/react/renderer/components/rnscreens/RNSScreenShadowNode.h b/common/cpp/react/renderer/components/rnscreens/RNSScreenShadowNode.h
+index 6b4b72ec0e69162582e077b4ec5f5215898310f4..3379f89f24f8a6c176cde2583775ed04445fe04b 100644
+--- a/common/cpp/react/renderer/components/rnscreens/RNSScreenShadowNode.h
++++ b/common/cpp/react/renderer/components/rnscreens/RNSScreenShadowNode.h
+@@ -28,7 +28,7 @@ class JSI_EXPORT RNSScreenShadowNode final : public ConcreteViewShadowNode<
+ 
+   Point getContentOriginOffset(bool includeTransform) const override;
+ 
+-  void appendChild(const ShadowNode::Shared &child) override;
++  void appendChild(const std::shared_ptr<const ShadowNode> &child) override;
+ 
+   void layout(LayoutContext layoutContext) override;
+ 

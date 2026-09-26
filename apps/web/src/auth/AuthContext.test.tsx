@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { render, screen, fireEvent, waitFor, renderHook } from "@testing-library/react";
 import { AuthProvider, useAuth } from "./AuthContext";
 import { authMe, authLogout } from "@/api/resources";
 import { clearUserCache } from "@/offline/queryClient";
@@ -65,4 +65,9 @@ describe("AuthContext", () => {
     );
     await waitFor(() => expect(screen.getByTestId("status")).toHaveTextContent("unauthenticated"));
   });
+
+  it("lança erro se useAuth chamado fora do provider", () => {
+    expect(() => renderHook(() => useAuth()).result.current).toThrow("useAuth deve ser usado dentro de AuthProvider");
+  });
 });
+

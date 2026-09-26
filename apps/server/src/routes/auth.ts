@@ -62,10 +62,11 @@ export function registerAuthRoutes(app: FastifyInstance, ctx: AppContext): void 
   });
 
   app.get("/api/auth/me", async (req) => {
-    const userId = getSessionUserId(req);
+    const userId = getSessionUserId(req, ctx.cfg.sessionSecret);
     if (userId === null) return { authenticated: false as const };
     const user = getUserById(ctx, userId);
     if (!user) return { authenticated: false as const };
     return { authenticated: true as const, user: toPublicUser(user) };
   });
 }
+

@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { deriveTitle } from "@z-notes/shared";
 import { ApiError } from "@/api/http";
 import { useSelection } from "@/hooks/useSelection";
@@ -7,7 +9,9 @@ import { useNote, useTrashNote, useRestoreNote, useHardDeleteNote } from "@/hook
 import { useUpdateNote } from "@/hooks/useUpdateNote";
 import { useAutosave } from "@/hooks/useAutosave";
 import { useOnline } from "@/hooks/useOnline";
+import { useEditMode } from "@/hooks/useEditMode";
 import { sourcePath } from "@/lib/selection";
+import { toggleTaskListItem, isTaskListLine } from "@/lib/taskList";
 import { useToast } from "./ui/Toast";
 import { IconButton } from "./ui/IconButton";
 import { Button } from "./ui/Button";
@@ -70,6 +74,7 @@ export function Editor({ onBack }: Props) {
   };
 
   const autosave = useAutosave({ resetKey: note?.id ?? null, initialContent: note?.contentMd ?? "", commit });
+  const editMode = useEditMode(note?.id ?? null);
 
   if (noteId === null) return <EmptyEditor />;
   if (noteQuery.isError) {
@@ -131,14 +136,52 @@ export function Editor({ onBack }: Props) {
         </div>
       )}
 
-      <textarea
-        value={content}
-        onChange={(e) => autosave.setContent(e.target.value)}
-        readOnly={readOnly}
-        placeholder="Comece a escrever…"
-        spellCheck
-        className="flex-1 resize-none bg-transparent px-5 py-4 text-[15px] leading-relaxed outline-none placeholder:text-[var(--muted)]"
-      />
+      {!readOnly && editMode.editing ? (
+        <textarea
+          value={content}
+          onChange={(e) => autosave.setContent(e.target.value)}
+          onBlur={editMode.exitEdit}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") editMode.exitEdit();
+          }}
+          placeholder="Comece a escrever…"
+          spellCheck
+          autoFocus
+          className="flex-1 resize-none bg-transparent px-5 py-4 text-[15px] leading-relaxed outline-none placeholder:text-[var(--muted)]"
+        />
+      ) : (
+        <div
+          data-testid="preview"
+          onDoubleClick={() => {
+            if (!readOnly) editMode.enterEdit();
+          }}
+          className="flex-1 overflow-auto bg-transparent px-5 py-4 text-[15px] leading-relaxed"
+        >
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={{
+              input: ({ type, checked, ...props }) => {
+                if (type !== "checkbox") return <input type={type} {...props} />;
+                return (
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => {
+                      const lines = content.split("\n");
+                      const idx = lines.findIndex((l) => isTaskListLine(l));
+                      if (idx === -1) return;
+                      const updated = toggleTaskListItem(content, idx);
+                      autosave.setContent(updated);
+                    }}
+                  />
+                );
+              },
+            }}
+          >
+            {content}
+          </ReactMarkdown>
+        </div>
+      )}
 
       {dialog === "move" && (
         <MoveNoteDialog
