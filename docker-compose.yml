@@ -9,6 +9,8 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       GOOGLE_CALLBACK_URL: ${GOOGLE_CALLBACK_URL}
+      # Atrás de proxy/túnel (padrão): usa o IP real do X-Forwarded-For no rate limit. Ponha "false" se expuser a porta direto.
+      Z_NOTES_TRUST_PROXY: ${Z_NOTES_TRUST_PROXY:-true}
       Z_NOTES_ADMIN_EMAILS: ${Z_NOTES_ADMIN_EMAILS:-}
       Z_NOTES_SESSION_SECRET: ${Z_NOTES_SESSION_SECRET:?Z_NOTES_SESSION_SECRET é obrigatório}
       Z_NOTES_BACKUP_WEBHOOK_URL: ${Z_NOTES_BACKUP_WEBHOOK_URL:-}

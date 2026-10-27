@@ -21,6 +21,9 @@ import {
 import { adoptOrphanData, getUserById, upsertUserByGoogle, type UserRow } from "../auth/users.js";
 import { rebuildMirror } from "../services/mirror-sync.js";
 
+/** Início e fim do OAuth: bem abaixo do teto global, para frear força bruta/abuso do fluxo de login. */
+const LOGIN_RATE_LIMIT = { max: 20, timeWindow: "1 minute" };
+
 /** Deep link registrado pelos apps (mobile e desktop) para receber o JWT após o login Google. */
 const APP_DEEP_LINK = "znotes://auth";
 
@@ -29,7 +32,7 @@ function toPublicUser(user: UserRow) {
 }
 
 export function registerAuthRoutes(app: FastifyInstance, ctx: AppContext): void {
-  app.get("/api/auth/google", async (req, reply) => {
+  app.get("/api/auth/google", { config: { rateLimit: LOGIN_RATE_LIMIT } }, async (req, reply) => {
     if (!isGoogleConfigured(ctx.cfg)) throw serviceUnavailable("Login com Google não configurado no servidor");
     const { client } = req.query as { client?: string };
     const state = newOAuthState(client === "app" ? "app" : undefined);
@@ -39,7 +42,7 @@ export function registerAuthRoutes(app: FastifyInstance, ctx: AppContext): void 
 
   app.get(
     "/api/auth/google/callback",
-    { config: { rateLimit: { max: 20, timeWindow: "1 minute" } } },
+    { config: { rateLimit: LOGIN_RATE_LIMIT } },
     async (req, reply) => {
       const { code, state, error } = OAuthCallbackQuery.parse(req.query);
       // Destino fixo: o único redirect externo possível é o deep link do app, nunca uma URL vinda do cliente.
