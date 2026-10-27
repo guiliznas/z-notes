@@ -5,7 +5,8 @@ RUN corepack enable && apt-get update \
   && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY . .
-RUN pnpm install --frozen-lockfile
+# Só o que o servidor precisa (o "..." inclui @z-notes/shared); sem Expo/Tauri.
+RUN pnpm install --frozen-lockfile --filter "@z-notes/server..." --filter "@z-notes/web..."
 RUN pnpm build
 
 # Estágio de runtime: reaproveita node_modules (com binário nativo já compilado).
