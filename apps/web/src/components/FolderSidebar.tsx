@@ -73,7 +73,7 @@ export function FolderSidebar({ onNavigate }: Props) {
   return (
     <div className="flex h-full flex-col bg-[var(--sidebar)]">
       <div className="flex items-center justify-between px-3 pt-3 pb-1">
-        <span className="px-2 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">Pastas</span>
+        <span className="px-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">Pastas</span>
         <IconButton label="Nova pasta" onClick={() => setDialog({ type: "new-root" })}>
           <FolderPlusIcon />
         </IconButton>
@@ -190,13 +190,13 @@ function Row({ icon, label, count, active, onClick, indent, leading, menu }: Row
     <div
       className={cn(
         "group flex items-center gap-1.5 rounded-lg pr-1",
-        active ? "bg-[var(--accent-soft)]" : "hover:bg-[var(--surface-hover)]",
+        active ? "bg-[var(--surface-hover)] font-semibold" : "hover:bg-[var(--surface-hover)]",
         indent && "ml-5",
       )}
     >
       <button onClick={onClick} className="flex min-w-0 flex-1 items-center gap-2 py-1.5 pl-2 text-left text-sm">
         <span className="w-4 shrink-0 text-[var(--muted)]">{leading}</span>
-        <span className="text-base text-[var(--accent)]">{icon}</span>
+        <span className="text-base text-[var(--muted)]">{icon}</span>
         <span className="truncate">{label}</span>
       </button>
       {count !== undefined && count > 0 && (

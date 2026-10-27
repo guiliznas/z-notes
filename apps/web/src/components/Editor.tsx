@@ -5,12 +5,14 @@ import remarkGfm from "remark-gfm";
 import { deriveTitle } from "@z-notes/shared";
 import { ApiError } from "@/api/http";
 import { useSelection } from "@/hooks/useSelection";
+import { useFolders } from "@/hooks/useFolders";
 import { useNote, useTrashNote, useRestoreNote, useHardDeleteNote } from "@/hooks/useNotes";
 import { useUpdateNote } from "@/hooks/useUpdateNote";
 import { useAutosave } from "@/hooks/useAutosave";
 import { useOnline } from "@/hooks/useOnline";
 import { useEditMode } from "@/hooks/useEditMode";
 import { sourcePath } from "@/lib/selection";
+import { cn } from "@/lib/cn";
 import { toggleTaskListItem, isTaskListLine } from "@/lib/taskList";
 import { useToast } from "./ui/Toast";
 import { IconButton } from "./ui/IconButton";
@@ -42,6 +44,7 @@ export function Editor({ onBack }: Props) {
   const noteQuery = useNote(noteId);
   const note = noteQuery.data;
   const update = useUpdateNote();
+  const folders = useFolders();
   const trash = useTrashNote();
   const restore = useRestoreNote();
   const hardDelete = useHardDeleteNote();
@@ -115,14 +118,18 @@ export function Editor({ onBack }: Props) {
 
   return (
     <div className="flex h-full flex-col bg-[var(--panel)]">
-      <header className="flex items-center gap-1 border-b border-[var(--border)] px-2 py-2">
+      <header className="flex h-14 shrink-0 items-center gap-1 px-2 md:px-6">
         {onBack && (
           <IconButton label="Voltar" onClick={onBack}>
             <ChevronLeftIcon />
           </IconButton>
         )}
-        <span className="flex-1 truncate px-2 text-sm font-semibold">{title}</span>
+        <span className="hidden min-w-0 truncate px-2 text-sm text-[var(--muted)] sm:inline">
+          {folderLabel(folders.data, note.folderId) ?? title}
+        </span>
         <SaveIndicator status={status} />
+        <span className="flex-1" />
+        {!readOnly && <ModeToggle editing={editMode.editing} onEdit={editMode.enterEdit} onView={editMode.exitEdit} />}
         {!readOnly && (
           <IconButton
             label={note.pinned ? "Desafixar nota" : "Fixar nota"}
@@ -159,6 +166,8 @@ export function Editor({ onBack }: Props) {
         </div>
       )}
 
+      <div className="flex min-h-0 flex-1">
+      <div className="flex min-h-0 w-full max-w-[800px] flex-col">
       {!readOnly && editMode.editing ? (
         <textarea
           value={content}
@@ -170,7 +179,7 @@ export function Editor({ onBack }: Props) {
           placeholder="Comece a escrever…"
           spellCheck
           autoFocus
-          className="flex-1 resize-none bg-transparent px-5 py-4 text-[15px] leading-relaxed outline-none placeholder:text-[var(--muted)]"
+          className="flex-1 resize-none bg-transparent px-5 py-5 text-[15px] leading-[1.7] outline-none placeholder:text-[var(--muted)] md:px-12"
         />
       ) : (
         <div
@@ -178,7 +187,7 @@ export function Editor({ onBack }: Props) {
           onDoubleClick={() => {
             if (!readOnly) editMode.enterEdit();
           }}
-          className="flex-1 overflow-auto bg-transparent px-5 py-4 text-[15px] leading-relaxed"
+          className="md flex-1 overflow-auto bg-transparent px-5 py-5 md:px-12"
         >
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
@@ -205,6 +214,8 @@ export function Editor({ onBack }: Props) {
           </ReactMarkdown>
         </div>
       )}
+      </div>
+      </div>
 
       {dialog === "move" && (
         <MoveNoteDialog
@@ -235,6 +246,36 @@ export function Editor({ onBack }: Props) {
 function SaveIndicator({ status }: { status: "saving" | "saved" | "offline" }) {
   const text = status === "saving" ? "Salvando…" : status === "offline" ? "Offline" : "Salvo";
   return <span className="px-2 text-xs text-[var(--muted)]">{text}</span>;
+}
+
+function folderLabel(
+  folders: { id: number; name: string; children: { id: number; name: string }[] }[] | undefined,
+  id: number | null,
+): string | undefined {
+  if (!folders || id === null) return undefined;
+  for (const root of folders) {
+    if (root.id === id) return root.name;
+    const child = root.children.find((c) => c.id === id);
+    if (child) return `${root.name} / ${child.name}`;
+  }
+  return undefined;
+}
+
+/** Alternância Editar | Visualizar (duplo clique na nota e Esc continuam funcionando). */
+function ModeToggle({ editing, onEdit, onView }: { editing: boolean; onEdit: () => void; onView: () => void }) {
+  const base = "rounded-md px-3 py-1 text-xs transition";
+  const on = "bg-[var(--panel)] font-semibold text-[var(--text)] shadow-sm";
+  const off = "text-[var(--muted)] hover:text-[var(--text)]";
+  return (
+    <div role="group" aria-label="Modo da nota" className="mr-1 flex rounded-[9px] bg-[var(--sidebar)] p-[3px]">
+      <button type="button" aria-pressed={editing} onMouseDown={(e) => e.preventDefault()} onClick={onEdit} className={cn(base, editing ? on : off)}>
+        Editar
+      </button>
+      <button type="button" aria-pressed={!editing} onMouseDown={(e) => e.preventDefault()} onClick={onView} className={cn(base, !editing ? on : off)}>
+        Visualizar
+      </button>
+    </div>
+  );
 }
 
 interface ActionsProps {

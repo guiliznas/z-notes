@@ -5,9 +5,12 @@ vi.mock("react-router-dom", () => ({ useNavigate: () => vi.fn() }));
 vi.mock("@/hooks/useSelection", () => ({
   useSelection: () => ({ source: { kind: "all" }, noteId: 1, pane: "editor" }),
 }));
+vi.mock("@/hooks/useFolders", () => ({
+  useFolders: () => ({ data: [{ id: 3, name: "Trabalho", children: [] }] }),
+}));
 vi.mock("@/hooks/useOnline", () => ({ useOnline: () => true }));
 const h = vi.hoisted(() => ({
-  note: { id: 1, contentMd: "- [ ] tarefa", version: 1, archived: false, pinned: false, deleted: false },
+  note: { id: 1, folderId: 3, contentMd: "- [ ] tarefa", version: 1, archived: false, pinned: false, deleted: false },
   mutate: vi.fn(),
 }));
 vi.mock("@/hooks/useNotes", () => ({
@@ -27,7 +30,7 @@ describe("Editor", () => {
   beforeEach(() => {
   vi.clearAllMocks();
   localStorage.clear();
-  h.note = { id: 1, contentMd: "- [ ] tarefa", version: 1, archived: false, pinned: false, deleted: false };
+  h.note = { id: 1, folderId: 3, contentMd: "- [ ] tarefa", version: 1, archived: false, pinned: false, deleted: false };
 });
 
   it("renderiza preview por padrão com checkbox", () => {
@@ -98,5 +101,26 @@ describe("Editor", () => {
     h.note = { ...h.note, deleted: true };
     render(<Editor />);
     expect(screen.queryByRole("button", { name: /fixar nota/i })).toBeNull();
+  });
+
+  it("mostra o nome da pasta no cabeçalho", () => {
+    render(<Editor />);
+    expect(screen.getByText("Trabalho")).toBeInTheDocument();
+  });
+
+  it("botão Editar entra em edição e Visualizar volta à visualização", () => {
+    const { container } = render(<Editor />);
+    expect(screen.getByRole("button", { name: "Visualizar" })).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(screen.getByRole("button", { name: "Editar" }));
+    expect(container.querySelector("textarea")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Editar" })).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(screen.getByRole("button", { name: "Visualizar" }));
+    expect(container.querySelector("textarea")).toBeNull();
+  });
+
+  it("nota na lixeira não mostra a alternância de modo", () => {
+    h.note = { ...h.note, deleted: true };
+    render(<Editor />);
+    expect(screen.queryByRole("button", { name: "Editar" })).toBeNull();
   });
 });
