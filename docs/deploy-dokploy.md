@@ -6,7 +6,7 @@ dados persistentes. Complementa o [`deploy.md`](deploy.md) (deploy manual com
 
 ## 1. Análise
 
-### 1.1 A VPS (verificado em 2026-09-26 por SSH)
+### 1.1 A VPS (verificado em 2026-09-26 por SSH; acesso: `ssh ubuntu@137.131.172.218`, com `sudo`)
 
 | Item | Valor |
 |---|---|
@@ -116,8 +116,7 @@ ao `.dockerignore`.
 6. **Réplicas = 1 e nunca escalar** (resolve B3). Confirmar que o update é
    *stop-first* (para a task antiga antes de subir a nova) — SQLite não admite
    dois escritores.
-7. **Healthcheck:** `GET /api/auth/me` → 200 sem sessão
-   (`{"authenticated":false}`).
+7. **Healthcheck:** `GET /api/health` → 200 `{"ok":true}` (público, sem sessão).
 
 ### 3.3 Host + HTTPS
 
@@ -217,8 +216,6 @@ Passos 1–3 são pré-requisito; 4–8 são sequenciais e cada um é verificáv
 
 ## Pendências
 
-- [ ] **Fechar a porta 3000 do Dokploy ao público** (ainda responde 200 em `http://137.131.172.218:3000`,
-  verificado em 2026-10-27). O painel já abre em `https://dokploy.o.ziltro.dev`. Opções: remover a regra
-  de ingress da 3000 na security list da Oracle e/ou `docker service update --publish-rm 3000 dokploy`
-  (o Swarm publica a porta passando por cima do `ufw`). Depois conferir de fora com `curl -m 6 http://137.131.172.218:3000`.
-- [ ] Ativar 2FA no painel do Dokploy.
+- Fechar a porta 3000 do Dokploy ao público: [#19](https://github.com/guiliznas/z-notes/issues/19).
+- Ativar 2FA no painel do Dokploy: [#20](https://github.com/guiliznas/z-notes/issues/20).
+- Cópia dos backups na NAS: [#21](https://github.com/guiliznas/z-notes/issues/21).
