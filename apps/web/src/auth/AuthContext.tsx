@@ -1,7 +1,8 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { PublicUser } from "@z-notes/shared";
 import { authMe, authLogout } from "@/api/resources";
-import { setUnauthorizedHandler } from "@/api/http";
+import { clearToken, isTauriEnvironment, setToken, setUnauthorizedHandler } from "@/api/http";
+import { parseAppAuthRedirect } from "@/api/appAuth";
 import { clearUserCache } from "@/offline/queryClient";
 
 type AuthStatus = "loading" | "authenticated" | "unauthenticated";
@@ -43,11 +44,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void refresh();
   }, []);
 
+  // App desktop: o login Google roda no navegador do sistema e volta por deep link (znotes://auth?token=...).
+  useEffect(() => {
+    if (!isTauriEnvironment()) return;
+    let unlisten: (() => void) | undefined;
+    let cancelled = false;
+    void import("@tauri-apps/plugin-deep-link").then(({ onOpenUrl }) =>
+      onOpenUrl((urls) => {
+        for (const url of urls) {
+          const result = parseAppAuthRedirect(url);
+          if (result && "token" in result) {
+            setToken(result.token);
+            void refresh();
+          }
+        }
+      }).then((off) => {
+        if (cancelled) off();
+        else unlisten = off;
+      }),
+    );
+    return () => {
+      cancelled = true;
+      unlisten?.();
+    };
+  }, []);
+
   const logout = async () => {
     const id = user?.id;
     try {
       await authLogout();
     } finally {
+      clearToken();
       // Isolamento do cache offline: apaga o IndexedDB deste usuário para
       // que a próxima conta na mesma máquina não veja nada dele.
       if (id !== undefined && id !== null) await clearUserCache(id).catch(() => {});

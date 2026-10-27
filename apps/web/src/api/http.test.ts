@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ApiError, api, setUnauthorizedHandler } from "./http";
+import { ApiError, api, setUnauthorizedHandler, setToken, getToken, clearToken } from "./http";
 
 beforeEach(() => {
   vi.restoreAllMocks();
@@ -55,6 +55,30 @@ describe("api", () => {
     mockFetch(204, undefined, { contentType: undefined });
     const result = await api("/notes/1", { method: "DELETE" });
     expect(result).toBeUndefined();
+  });
+
+  it("envia Authorization Bearer quando há token salvo", async () => {
+    setToken("jwt123");
+    const spy = mockFetch(200, {});
+    await api("/notes");
+    const headers = spy.mock.calls[0][1]?.headers as Record<string, string>;
+    expect(headers["Authorization"]).toBe("Bearer jwt123");
+    clearToken();
+  });
+
+  it("não envia Authorization sem token", async () => {
+    clearToken();
+    const spy = mockFetch(200, {});
+    await api("/notes");
+    const headers = spy.mock.calls[0][1]?.headers as Record<string, string>;
+    expect(headers["Authorization"]).toBeUndefined();
+  });
+
+  it("401 descarta o token salvo", async () => {
+    setToken("expirado");
+    mockFetch(401, { error: "unauthorized" });
+    await expect(api("/notes")).rejects.toThrow(ApiError);
+    expect(getToken()).toBeNull();
   });
 
   it("lança ApiError com 401 e chama handler", async () => {

@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Permissões da janela principal: abrir o navegador do sistema e receber o deep link znotes://auth",
+  "windows": ["main"],
+  "permissions": ["core:default", "deep-link:default", "opener:default"]
+}

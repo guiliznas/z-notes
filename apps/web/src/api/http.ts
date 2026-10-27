@@ -61,6 +61,22 @@ export function resetBaseUrl(): void {
   }
 }
 
+export const STORAGE_TOKEN_KEY = "z_notes_token";
+
+/** JWT do login via navegador do sistema (app desktop). No web comum a sessão é o cookie e isto fica vazio. */
+export function getToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(STORAGE_TOKEN_KEY);
+}
+
+export function setToken(token: string): void {
+  localStorage.setItem(STORAGE_TOKEN_KEY, token);
+}
+
+export function clearToken(): void {
+  if (typeof window !== "undefined") localStorage.removeItem(STORAGE_TOKEN_KEY);
+}
+
 type UnauthorizedHandler = () => void;
 let unauthorizedHandler: UnauthorizedHandler | null = null;
 
@@ -77,12 +93,15 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const isForm = init?.body instanceof FormData;
   const headers: Record<string, string> = { ...(init?.headers as Record<string, string>) };
   if (!isForm && init?.body !== undefined) headers["Content-Type"] = "application/json";
+  const token = getToken();
+  if (token) headers["Authorization"] = `Bearer ${token}`;
 
   const base = getBaseUrl();
   const url = base ? `${base}/api${path}` : `/api${path}`;
   const res = await fetch(url, { credentials: "include", ...init, headers });
 
   if (res.status === 401) {
+    clearToken();
     unauthorizedHandler?.();
     throw new ApiError(401, "unauthorized", "Sessão expirada. Faça login novamente.");
   }
