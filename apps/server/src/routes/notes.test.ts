@@ -99,4 +99,21 @@ describe("notes", () => {
     expect(files).toContain("Trabalho/igual.md");
     expect(files).toContain("Trabalho/igual-2.md");
   });
+
+  it("PATCH pinned fixa a nota e GET ?view=pinned a lista", async () => {
+    const n = (await post("/api/notes", { folderId, contentMd: "Fixar esta" })).json();
+    await post("/api/notes", { folderId, contentMd: "Não fixar" });
+    const res = await patch(`/api/notes/${n.id}`, { pinned: true });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().pinned).toBe(true);
+    expect(res.json().version).toBe(n.version);
+
+    const list = (await get("/api/notes?view=pinned")).json();
+    expect(list.map((x: { id: number }) => x.id)).toEqual([n.id]);
+  });
+
+  it("view inválida continua retornando 400", async () => {
+    const res = await get("/api/notes?view=favoritas");
+    expect(res.statusCode).toBe(400);
+  });
 });

@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS notes (
   version INTEGER NOT NULL DEFAULT 1,
   mirror_path TEXT,
   archived_at INTEGER,
+  pinned_at INTEGER,
   deleted_at INTEGER,
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL
@@ -103,6 +104,10 @@ function migrateUserColumns(sqlite: Sqlite): boolean {
   }
   if (!hasColumn(sqlite, "users", "is_admin")) {
     sqlite.exec("ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0");
+    migrated = true;
+  }
+  if (!hasColumn(sqlite, "notes", "pinned_at")) {
+    sqlite.exec("ALTER TABLE notes ADD COLUMN pinned_at INTEGER");
     migrated = true;
   }
   return migrated;
