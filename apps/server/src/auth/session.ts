@@ -100,8 +100,12 @@ export function reqCtx(ctx: AppContext, request: FastifyRequest): RequestContext
   return { ...ctx, userId };
 }
 
-export function newOAuthState(): string {
-  return randomBytes(32).toString("hex");
+/** Prefixo do `state` que marca o fluxo de app (mobile/desktop): o callback devolve o JWT por deep link. */
+export const APP_STATE_PREFIX = "app-";
+
+export function newOAuthState(client?: "app"): string {
+  const random = randomBytes(32).toString("hex");
+  return client === "app" ? `${APP_STATE_PREFIX}${random}` : random;
 }
 
 /** `state` anti-CSRF em cookie assinado de vida curta. */
