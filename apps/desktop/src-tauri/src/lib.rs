@@ -1,37 +1,25 @@
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Olá, {}! Bem-vindo ao z-notes!", name)
-}
+use tauri::Manager;
+use tauri_plugin_deep_link::DeepLinkExt;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_shell::init())
-        .invoke_handler(tauri::generate_handler![greet])
+        // Deve ser o primeiro plugin: com a feature `deep-link`, o znotes://auth aberto pelo navegador
+        // chega na instância já rodando em vez de abrir uma segunda janela.
+        .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.unminimize();
+                let _ = window.set_focus();
+            }
+        }))
+        .plugin(tauri_plugin_deep_link::init())
+        .plugin(tauri_plugin_opener::init())
+        .setup(|app| {
+            // AppImage e `tauri dev` não instalam o .desktop do esquema: registra em runtime.
+            #[cfg(any(target_os = "linux", all(debug_assertions, windows)))]
+            app.deep_link().register_all()?;
+            Ok(())
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn greet_inclui_nome() {
-        let result = greet("Mundo");
-        assert!(result.contains("Mundo"));
-        assert!(result.contains("z-notes"));
-    }
-
-    #[test]
-    fn greet_vazio() {
-        let result = greet("");
-        assert!(result.contains("z-notes"));
-    }
-
-    #[test]
-    fn greet_com_nome_especial() {
-        let result = greet("João & Maria");
-        assert!(result.contains("João & Maria"));
-    }
 }

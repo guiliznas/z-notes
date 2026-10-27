@@ -10,6 +10,16 @@ vi.mock("@/offline/queryClient", async (importOriginal) => {
   return { ...mod, clearUserCache: vi.fn().mockResolvedValue(undefined) };
 });
 
+const deepLink = vi.hoisted(() => ({ handler: null as null | ((urls: string[]) => void) }));
+vi.mock("@tauri-apps/plugin-deep-link", () => ({
+  onOpenUrl: vi.fn(async (h: (urls: string[]) => void) => {
+    deepLink.handler = h;
+    return () => {
+      deepLink.handler = null;
+    };
+  }),
+}));
+
 const USER = { id: 7, email: "user@example.com", name: "User", avatarUrl: null, isAdmin: false };
 
 function Probe() {
@@ -69,5 +79,27 @@ describe("AuthContext", () => {
   it("lança erro se useAuth chamado fora do provider", () => {
     expect(() => renderHook(() => useAuth()).result.current).toThrow("useAuth deve ser usado dentro de AuthProvider");
   });
-});
 
+  it("no Tauri, deep link com token salva a sessão e recarrega o usuário", async () => {
+    (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__ = {};
+    try {
+      vi.mocked(authMe).mockResolvedValueOnce({ authenticated: false });
+      render(
+        <AuthProvider>
+          <Probe />
+        </AuthProvider>,
+      );
+      await waitFor(() => expect(screen.getByTestId("status")).toHaveTextContent("unauthenticated"));
+      await waitFor(() => expect(deepLink.handler).not.toBeNull());
+
+      vi.mocked(authMe).mockResolvedValueOnce({ authenticated: true, user: USER });
+      deepLink.handler!(["znotes://auth?token=jwt-do-app"]);
+
+      await waitFor(() => expect(screen.getByTestId("status")).toHaveTextContent("authenticated"));
+      expect(localStorage.getItem("z_notes_token")).toBe("jwt-do-app");
+    } finally {
+      delete (window as unknown as Record<string, unknown>).__TAURI_INTERNALS__;
+      localStorage.removeItem("z_notes_token");
+    }
+  });
+});

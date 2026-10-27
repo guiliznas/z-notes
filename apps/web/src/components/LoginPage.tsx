@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { googleLoginUrl } from "@/api/resources";
+import { appLoginUrl } from "@/api/appAuth";
 import { getBaseUrl, setBaseUrl, isTauriEnvironment } from "@/api/http";
 import { Button } from "./ui/Button";
 import { NoteIcon, SettingsIcon } from "./icons";
@@ -16,6 +17,7 @@ export function LoginPage() {
   const [showServerConfig, setShowServerConfig] = useState(isTauriEnvironment() && !getBaseUrl());
   const [serverUrl, setServerUrl] = useState(getBaseUrl());
   const [savedMessage, setSavedMessage] = useState(false);
+  const [waitingBrowser, setWaitingBrowser] = useState(false);
 
   const handleSaveServerUrl = () => {
     setBaseUrl(serverUrl.trim());
@@ -23,9 +25,16 @@ export function LoginPage() {
     setTimeout(() => setSavedMessage(false), 2000);
   };
 
-  const handleGoogleLogin = () => {
+  const handleGoogleLogin = async () => {
     setBaseUrl(serverUrl.trim());
     const base = getBaseUrl();
+    if (isTauriEnvironment()) {
+      // Google bloqueia OAuth em webview embutido: abre o navegador do sistema; o retorno vem por deep link.
+      const { openUrl } = await import("@tauri-apps/plugin-opener");
+      await openUrl(appLoginUrl(base));
+      setWaitingBrowser(true);
+      return;
+    }
     window.location.href = base ? `${base}/api/auth/google` : googleLoginUrl;
   };
 
@@ -74,6 +83,9 @@ export function LoginPage() {
         >
           Entrar com Google
         </Button>
+        {waitingBrowser && (
+          <p className="mt-3 text-sm text-[var(--muted)]">Conclua o login no navegador. Você volta para o app automaticamente.</p>
+        )}
       </div>
     </div>
   );
