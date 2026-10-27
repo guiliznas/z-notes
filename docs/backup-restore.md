@@ -7,11 +7,16 @@ fora do repo (`~/.config/cloudflare-r2/z-notes.env`, `~/.config/dokploy/token` n
 
 | O quê | Como | Caminho no bucket | Quando (UTC) | Retenção |
 |---|---|---|---|---|
-| Banco ativo + `mirror` (consistente, via API de backup do SQLite) | `z-notes-backup.timer` na VPS (`/usr/local/sbin/z-notes-backup`) | `z-notes/live/z-notes-live-<ts>.tgz` | 06:15 | 30 dias |
-| Snapshots internos do app (GFS) | Volume backup do Dokploy do volume `z-notes-backups` | `z-notes-ek9sdh/z-notes/volume-backups/*.tar` | 06:30 | 30 backups |
-| Configuração do Dokploy (apps, envs, domínios, segredos, banco do Dokploy) | Backup "web-server" do Dokploy | `*/dokploy-config/webserver-backup-*.zip` | 06:00 | 14 backups |
+| Banco ativo + `mirror` (consistente, via API de backup do SQLite) | `z-notes-backup.timer` na VPS (`/usr/local/sbin/z-notes-backup`) | `z-notes/live/z-notes-live-<ts>.tgz` | 06:15 | ver abaixo |
+| Snapshots internos do app (GFS) | Volume backup do Dokploy do volume `z-notes-backups` | `z-notes-ek9sdh/z-notes/volume-backups/*.tar` | 06:30 | ver abaixo |
+| Configuração do Dokploy (apps, envs, domínios, segredos, banco do Dokploy) | Backup "web-server" do Dokploy | `*/dokploy-config/webserver-backup-*.zip` | 06:00 | ver abaixo |
 | Código | GitHub `guiliznas/z-notes` | — | — | — |
 | DNS | Cloudflare (`*.o` e `o` → IP da VPS, DNS-only) | — | — | — |
+
+**Retenção (igual para os três):** todos os backups dos últimos **7 dias** + o mais recente de cada um dos
+**últimos 6 meses**. Quem poda é `/usr/local/sbin/z-notes-prune` (chamado ao fim do `z-notes-backup`;
+`--dry-run` mostra o que apagaria, `--selftest` valida a lógica). A limpeza por quantidade do Dokploy
+fica em 400 só para não conflitar com os mensais.
 
 **Alerta:** `~/.local/bin/check-r2-backups` roda às 09:00 (BRT) no zion-2 e avisa no Telegram se o
 backup do banco ou da config do Dokploy tiver mais de 30h (ou se o bucket não puder ser listado).
@@ -72,6 +77,7 @@ apaga objetos com mais de 30 dias em `z-notes/live/`.
 ## Verificação periódica
 
 Uma vez por mês, baixar o último `.tgz` de `z-notes/live/`, extrair e rodar
-`sqlite3 z-notes.db "pragma integrity_check; select count(*) from notes;"`. Última verificação
-completa: 2026-10-27 (snapshot de volume baixado do R2, 4 zips íntegros; backup do banco ativo
-gerado com `integrity_check` ok e 4 notas).
+`sqlite3 z-notes.db "pragma integrity_check; select count(*) from notes;"`. Teste de restauração feito em
+2026-10-27: o `.tgz` de `z-notes/live/` baixado do R2 subiu numa instância isolada do app (sem rede):
+`/api/health` ok, `integrity_check` ok e banco idêntico ao de produção (4 notas, soma de versões 97,
+mesmo `updated_at` máximo), com os 7 `.md` do `mirror`.
