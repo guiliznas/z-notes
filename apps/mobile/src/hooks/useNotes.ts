@@ -1,11 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Note } from "@z-notes/shared";
+import type { Note, NoteViewFilter } from "@z-notes/shared";
 import {
   fetchNotes, fetchNote, createNote, trashNote, hardDeleteNote, restoreNote,
 } from "../api/resources";
 import { FOLDERS_KEY } from "./useFolders";
 
-export function useNotes(folderId: number | null, view: "active" | "archived" | "trash" = "active") {
+export function useNotes(folderId: number | null, view: NoteViewFilter = "active") {
   return useQuery({
     queryKey: ["notes", folderId, view],
     queryFn: () => fetchNotes({ folderId, view }),

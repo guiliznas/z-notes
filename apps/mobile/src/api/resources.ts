@@ -1,6 +1,6 @@
 import type {
   FolderTreeNode, Folder, Note, NoteMeta, SearchHit,
-  CreateFolderInput, UpdateFolderInput, CreateNoteInput, UpdateNoteInput,
+  CreateFolderInput, UpdateFolderInput, CreateNoteInput, UpdateNoteInput, NoteViewFilter,
 } from "@z-notes/shared";
 import { api } from "./http";
 
@@ -11,7 +11,7 @@ export const updateFolder = (id: number, input: UpdateFolderInput) =>
   api<Folder>(`/folders/${id}`, { method: "PATCH", body: input });
 export const deleteFolder = (id: number) => api<void>(`/folders/${id}`, { method: "DELETE" });
 
-export interface ListNotesArgs { folderId: number | null; view: "active" | "archived" | "trash" }
+export interface ListNotesArgs { folderId: number | null; view: NoteViewFilter }
 export function fetchNotes({ folderId, view }: ListNotesArgs) {
   const params = new URLSearchParams({ view });
   if (folderId !== null) params.set("folder", String(folderId));
