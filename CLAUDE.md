@@ -37,6 +37,7 @@ Login Google implementado, sem senha. Fluxo: tela só com botão Google → `GET
 - **Artefatos por usuário:** espelho em `<mirrorDir>/<userId>/` (`userMirrorDir()` em `config.ts`); cache IndexedDB `z-notes-cache:<userId>` com limpeza no logout (`AuthContext` + `clearUserCache`); QueryClient instanciado por usuário (`PerUserProvider`, `key={user.id}`).
 - **Backup segue global** (banco inteiro + mirror inteiro). Migração gera snapshot de segurança via `createSnapshotIfChanged` no boot.
 - **Admin (branch `feat/admin-metrics`, issue #6):** papel `is_admin` em `users` (via `Z_NOTES_ADMIN_EMAILS`, CSV); `requireAdmin()` em `auth/session.ts` com auto-promoção; `preHandler` (`routes/index.ts`) exige admin em **toda** `/api/admin/*` (401 sem sessão, 403 sem papel) — frontend só esconde, nunca autoriza. Métricas em `metric_samples` via cron `0 */6 * * *` (`services/metrics.ts`: `collectMetrics`/`recordMetrics`/`readMetricSeries`, retenção 365d, backfill no boot); `GET /api/admin/metrics` + página `/admin` (só renderiza se `user.isAdmin`).
+- **Apps (mobile Expo / desktop Tauri):** login Google no **navegador do sistema** (Google bloqueia webview). `GET /api/auth/google?client=app` marca o `state` com prefixo `app-`; o callback redireciona para `znotes://auth?token=<jwt>` (destino fixo, nunca vindo do cliente) em vez de setar cookie. Os apps guardam o JWT (SecureStore / localStorage) e o enviam como `Authorization: Bearer` — `getSessionUserId` já aceita os dois. Mobile: `expo-web-browser` + `scheme: znotes`; desktop: plugins `deep-link` + `single-instance` + `opener`, capabilities em `src-tauri/capabilities/`.
 - Envs: `GOOGLE_CLIENT_ID/SECRET/CALLBACK_URL` (sem elas, `/google` → 503); `Z_NOTES_SESSION_SECRET` obrigatório em prod (fail-fast, gotcha #2 mitigado). `docker-compose.yml` usa `:?` para exigir o segredo.
 
 
@@ -53,9 +54,9 @@ packages/shared/  Tipos e helpers puros compartilhados entre web e server
 ## Comandos
 
 ```bash
-export PATH="/home/guiliznas/.local/share/mise/installs/node/25.8.1/bin:$PATH"  # ver gotcha #4
+export PATH="/home/guiliznas/.local/share/mise/installs/node/22.22.2/bin:$PATH"  # ver gotcha #4
 pnpm install --ignore-scripts
-pnpm test         # 115 testes (7 shared + 20 web + 88 server)
+pnpm test         # shared + web + server + mobile (contagem muda; ver a saída)
 pnpm typecheck
 pnpm build
 ```
@@ -80,7 +81,7 @@ Rodar só um pacote: `pnpm --filter @z-notes/server test`, `pnpm --filter @z-not
 
 3. **Restore de snapshot precisa limpar os sidecars `-wal`/`-shm`** do banco anterior (`backup/restore.ts`). Se deixados no lugar, uma transação não "checkpointada" do banco antigo pode ser reaplicada por cima do banco recém-restaurado, revertendo silenciosamente a restauração. Já corrigido — não remover essa limpeza num refactor futuro.
 
-4. **better-sqlite3 só funciona no Node 25 (ABI 141) nesta máquina.** O binário pré-compilado foi feito para `NODE_MODULE_VERSION 141`; no Node 26 (147) os testes do server falham. Use sempre `export PATH="/home/guiliznas/.local/share/mise/installs/node/25.8.1/bin:$PATH"` antes de `pnpm`. Em worktree nova, `pnpm install --ignore-scripts` (o postinstall nativo falha) e copie o binário: `build/Release/better_sqlite3.node` do checkout principal para o mesmo caminho na worktree.
+4. **better-sqlite3 depende do Node usado para compilar o binário.** O `.node` copiado do checkout principal hoje é `NODE_MODULE_VERSION 127` (Node 22); em Node 25 (141) os testes do server falham com "compiled against a different Node.js version". Use `export PATH="/home/guiliznas/.local/share/mise/installs/node/22.22.2/bin:$PATH"` antes de `pnpm`. Se trocar de versão, confira com `node -e "new (require('better-sqlite3'))(':memory:')"`. Em worktree nova: `pnpm install --ignore-scripts` (o postinstall nativo falha), copie `build/Release/better_sqlite3.node` do checkout principal para o mesmo caminho na worktree e rode `pnpm build:shared` (typecheck e testes do web/mobile dependem do `dist` do shared).
 
 5. **Índices sobre `user_id` SÓ depois do `ALTER` na migração** (`db/bootstrap.ts`: `USER_INDEXES` após `migrateUserColumns`). Em banco legado a coluna ainda não existe quando o DDL roda — `CREATE INDEX` antes quebra o boot com `no such column`.
 

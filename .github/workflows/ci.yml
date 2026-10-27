@@ -96,6 +96,8 @@ jobs:
 
   build-mobile:
     name: Build mobile APK (Android)
+    # Opcional enquanto o EXPO_TOKEN não está configurado: não bloqueia o release do desktop.
+    continue-on-error: true
     if: github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == 'mobile (android)'
     needs: [test]
     runs-on: ubuntu-latest
@@ -120,15 +122,17 @@ jobs:
       - name: Build shared
         run: pnpm build:shared
 
+      # --local compila no runner (SDK Android já vem no ubuntu-latest) e grava o .apk em disco;
+      # sem isso o EAS compila na nuvem e o upload abaixo não acharia arquivo nenhum.
       - name: Build APK
-        run: pnpm --filter @z-notes/mobile build:apk
+        run: pnpm --filter @z-notes/mobile build:apk --local --non-interactive --output "$GITHUB_WORKSPACE/z-notes.apk"
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
       - uses: actions/upload-artifact@v4
         with:
           name: mobile-apk
-          path: apps/mobile/*.apk
+          path: z-notes.apk
           retention-days: 7
 
   release:
