@@ -120,15 +120,17 @@ jobs:
       - name: Build shared
         run: pnpm build:shared
 
+      # --local compila no runner (SDK Android já vem no ubuntu-latest) e grava o .apk em disco;
+      # sem isso o EAS compila na nuvem e o upload abaixo não acharia arquivo nenhum.
       - name: Build APK
-        run: pnpm --filter @z-notes/mobile build:apk
+        run: pnpm --filter @z-notes/mobile build:apk --local --non-interactive --output "$GITHUB_WORKSPACE/z-notes.apk"
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
       - uses: actions/upload-artifact@v4
         with:
           name: mobile-apk
-          path: apps/mobile/*.apk
+          path: z-notes.apk
           retention-days: 7
 
   release:

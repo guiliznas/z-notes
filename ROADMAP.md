@@ -1,60 +1,23 @@
 # ROADMAP — z-notes
 
-Prioridades vigentes (2026-09-14). Detalhe de implementação do P0 em
-`docs/superpowers/specs/2026-07-07-multi-usuario-google-design.md`.
+Estado em 2026-10-27. Specs de design em `docs/superpowers/specs/`.
 
-## P0 — Login com Google + notas individuais isoladas
+## Entregue
+- App web (3 colunas, espelho `.md`, offline, backup GFS) e PWA instalável.
+- **P0** Login Google + isolamento por usuário (issue #3).
+- Métricas periódicas + `/admin` (issue #6).
+- Login Google nos apps (mobile e desktop) por deep link `znotes://auth` + Bearer.
 
-**Problema:** hoje o backend é single-tenant (senha única compartilhada,
-sessão fixa `"authenticated"`). Notas/pastas são globais, sem coluna de dono —
-qualquer pessoa autenticada enxerga tudo.
+## Em andamento — apps (issue #4)
+Decisão: **React Native / Expo** no mobile (só Android) e **Tauri** no desktop (só Linux).
+Referência visual: Simplenote (lista limpa, editor sem ruído); funcionalidades seguem as do z-notes.
 
-**Objetivo:** cada pessoa loga com Google e enxerga **apenas o próprio
-ambiente**, sem possibilidade de acessar notas de outra pessoa (nem via ID
-direto — sem IDOR).
+Falta validar em dispositivo real (não dá para automatizar aqui):
+- [ ] Mobile: APK via EAS (`EXPO_TOKEN`), login Google ponta a ponta, 2 usuários isolados, CRUD + busca + offline.
+- [ ] Desktop: `.deb`/AppImage do CI, deep link `znotes://auth` abrindo a instância já rodando, URL do servidor de produção.
+- [ ] Mobile: trocar o chaveamento por `useState` do `App.tsx` por React Navigation (hoje só o botão voltar do Android é tratado).
+- [ ] Mobile: cache offline por usuário (hoje uma chave única, limpa no logout).
 
-**Escopo:**
-1. Identidade: tabela `users`, OAuth Google server-side (`@fastify/oauth2`),
-   sessão passa a carregar `userId`. Remove senha única.
-2. Isolamento de dados: coluna `userId` em `notes`/`folders`, filtro por dono
-   em **todas** as queries (services + FTS raw), `userId` em todo `insert`.
-3. Migração: `ALTER TABLE` idempotente + backfill das linhas existentes para o
-   admin (primeiro e-mail da allowlist), com snapshot de backup antes.
-4. Artefatos: espelho `.md` por usuário (`<mirrorDir>/<userId>/...`), cache
-   offline do web namespaced por usuário + limpeza no logout.
-5. Acesso: allowlist de e-mails (`Z_NOTES_ALLOWED_EMAILS`), fail-safe.
-6. Testes: isolamento (A não lê/edita/deleta de B → 404), allowlist (403),
-   migração/backfill, mirror por usuário.
-
-**Pré-requisito fora do código:** credenciais OAuth no Google Cloud Console
-com redirect URI para `/api/auth/google/callback`.
-
-**Verificação:** login ponta a ponta, `GET /api/notes/<id-do-outro>` → 404,
-mirror separado por usuário, B não vê nada de A no mesmo navegador, backup
-global continua funcionando.
-
-## P1 — App mobile (React Native / Expo)
-
-**Problema:** hoje só existe web responsivo (drill-down no mobile). Falta um
-app instalável.
-
-**Decisão consolidada:** continuar no **React Native / Expo** já existente
-em `apps/mobile` (aproveitando os 69 testes unitários, os componentes de telas
-e o compartilhamento direto de tipos e regras com `@z-notes/shared`).
-Plano detalhado documentado em `plan/app-mobile.md`.
-
-**Estado atual:** `apps/mobile` já possui autenticação por Bearer token via
-SecureStore, lista e detalhe com visualização Markdown, e testes cobrindo
-hooks, storage e chamadas de API.
-
-**Pré-requisito para multi-usuário:** P0 pronto antes de qualquer versão
-multi-usuário final — o app poderá autenticar via Google e consumir a API
-já isolada por usuário (embora possa operar com a autenticação atual por senha/token
-durante o desenvolvimento).
-
-**Escopo:** navegação completa (pastas, arquivadas, lixeira), busca global FTS,
-editor markdown com autosave debounced, offline-first resiliente (cache persistido +
-fila de mutações), tela de configurações/logout e build do APK Android via EAS.
-
-**Verificação:** instalar APK no Android, CRUD + busca + pastas + offline funcionando,
-testes unitários verdes.
+## Aberto
+- Issue #8 (PWA): falta validar login no app instalado, modo avião e iOS; depois fechar.
+- Futuro: push, Background Sync, Web Share Target, badging; fixar notas, tags e histórico de versões por nota.
