@@ -10,14 +10,19 @@ import { notePath, sourceFolderId, type NoteSource } from "@/lib/selection";
 import { relativeTime } from "@/lib/time";
 import { cn } from "@/lib/cn";
 import { IconButton } from "./ui/IconButton";
-import { ChevronLeftIcon, FolderIcon, ComposeIcon, SearchIcon, CloseIcon } from "./icons";
+import { ChevronLeftIcon, FolderIcon, ComposeIcon, SearchIcon, CloseIcon, PinFilledIcon } from "./icons";
 
 interface Props {
   onBack?: () => void;
   onOpenFolders?: () => void;
 }
 
-const TITLES: Record<string, string> = { all: "Todas as notas", archived: "Arquivadas", trash: "Lixeira" };
+const TITLES: Record<string, string> = {
+  pinned: "Fixadas",
+  all: "Todas as notas",
+  archived: "Arquivadas",
+  trash: "Lixeira",
+};
 
 export function NoteList({ onBack, onOpenFolders }: Props) {
   const { source, noteId } = useSelection();
@@ -67,7 +72,9 @@ export function NoteList({ onBack, onOpenFolders }: Props) {
   };
 
   const searching = canSearch && query.trim().length > 0;
-  const items = searching ? (search.data ?? []).map((h) => h.note) : notes.data ?? [];
+  // Em "Fixadas" a busca é global; mantém só as fixadas para a lista continuar sendo a pasta virtual.
+  const searchItems = (search.data ?? []).map((h) => h.note).filter((n) => source.kind !== "pinned" || n.pinned);
+  const items = searching ? searchItems : notes.data ?? [];
   const snippets = new Map((search.data ?? []).map((h) => [h.note.id, h.snippet]));
 
   return (
@@ -161,6 +168,7 @@ function NoteRow({ note, active, snippet, onClick }: RowProps) {
         )}
       >
         <div className="flex items-center gap-2">
+          {note.pinned && <PinFilledIcon aria-label="Fixada" role="img" className="shrink-0 text-xs text-[var(--accent)]" />}
           <span className="flex-1 truncate text-sm font-semibold">{note.title}</span>
           {note.archived && <span className="rounded bg-[var(--surface-2)] px-1.5 py-0.5 text-[10px] text-[var(--muted)]">arquivada</span>}
         </div>
@@ -191,12 +199,11 @@ function Snippet({ text }: { text: string }) {
 }
 
 function EmptyState({ searching, kind }: { searching: boolean; kind: NoteSource["kind"] }) {
-  const message = searching
-    ? "Nenhuma nota encontrada."
-    : kind === "trash"
-      ? "A lixeira está vazia."
-      : kind === "archived"
-        ? "Nenhuma nota arquivada."
-        : "Nenhuma nota aqui ainda.";
+  const EMPTY: Record<string, string> = {
+    pinned: "Nenhuma nota fixada. Abra uma nota e use o alfinete para fixar.",
+    trash: "A lixeira está vazia.",
+    archived: "Nenhuma nota arquivada.",
+  };
+  const message = searching ? "Nenhuma nota encontrada." : (EMPTY[kind] ?? "Nenhuma nota aqui ainda.");
   return <li className="px-3 py-10 text-center text-sm text-[var(--muted)]">{message}</li>;
 }

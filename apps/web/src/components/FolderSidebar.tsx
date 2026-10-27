@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import type { FolderWithCount } from "@z-notes/shared";
 import { useFolders, useCreateFolder, useUpdateFolder, useDeleteFolder } from "@/hooks/useFolders";
 import { useSelection } from "@/hooks/useSelection";
+import { useNotes } from "@/hooks/useNotes";
 import { sourcePath, type NoteSource } from "@/lib/selection";
 import { cn } from "@/lib/cn";
 import { useToast } from "./ui/Toast";
@@ -13,6 +14,7 @@ import { ConfirmDialog } from "./ui/ConfirmDialog";
 import {
   FolderIcon,
   NoteIcon,
+  PinIcon,
   ArchiveIcon,
   TrashIcon,
   ChevronRightIcon,
@@ -36,6 +38,7 @@ export function FolderSidebar({ onNavigate }: Props) {
   const navigate = useNavigate();
   const { notify } = useToast();
   const folders = useFolders();
+  const pinned = useNotes({ kind: "pinned" });
   const createFolder = useCreateFolder();
   const updateFolder = useUpdateFolder();
   const deleteFolder = useDeleteFolder();
@@ -77,6 +80,13 @@ export function FolderSidebar({ onNavigate }: Props) {
       </div>
 
       <nav className="flex-1 overflow-y-auto px-2 pb-2">
+        <Row
+          icon={<PinIcon />}
+          label="Fixadas"
+          count={pinned.data?.length}
+          active={source.kind === "pinned"}
+          onClick={() => go({ kind: "pinned" })}
+        />
         <Row
           icon={<NoteIcon />}
           label="Todas as notas"

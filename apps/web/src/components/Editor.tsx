@@ -18,7 +18,16 @@ import { Button } from "./ui/Button";
 import { Menu } from "./ui/Menu";
 import { ConfirmDialog } from "./ui/ConfirmDialog";
 import { MoveNoteDialog } from "./MoveNoteDialog";
-import { ChevronLeftIcon, MoveIcon, ArchiveIcon, TrashIcon, RestoreIcon, NoteIcon } from "./icons";
+import {
+  ChevronLeftIcon,
+  MoveIcon,
+  ArchiveIcon,
+  TrashIcon,
+  RestoreIcon,
+  NoteIcon,
+  PinIcon,
+  PinFilledIcon,
+} from "./icons";
 
 interface Props {
   onBack?: () => void;
@@ -76,6 +85,12 @@ export function Editor({ onBack }: Props) {
   const autosave = useAutosave({ resetKey: note?.id ?? null, initialContent: note?.contentMd ?? "", commit });
   const editMode = useEditMode(note?.id ?? null);
 
+  // Nota recém-criada (vazia) já abre pronta para digitar; as demais abrem sempre em visualização.
+  useEffect(() => {
+    if (note && note.contentMd === "" && !note.deleted) editMode.enterEdit();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [note?.id]);
+
   if (noteId === null) return <EmptyEditor />;
   if (noteQuery.isError) {
     const gone = noteQuery.error instanceof ApiError && noteQuery.error.status === 404;
@@ -108,6 +123,14 @@ export function Editor({ onBack }: Props) {
         )}
         <span className="flex-1 truncate px-2 text-sm font-semibold">{title}</span>
         <SaveIndicator status={status} />
+        {!readOnly && (
+          <IconButton
+            label={note.pinned ? "Desafixar nota" : "Fixar nota"}
+            onClick={() => update.mutate({ id: note.id, pinned: !note.pinned })}
+          >
+            {note.pinned ? <PinFilledIcon className="text-[var(--accent)]" /> : <PinIcon />}
+          </IconButton>
+        )}
         <NoteActions
           readOnly={readOnly}
           archived={note.archived}

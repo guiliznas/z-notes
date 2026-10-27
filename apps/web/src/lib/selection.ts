@@ -2,11 +2,13 @@ import type { NoteViewFilter } from "@z-notes/shared";
 
 export type NoteSource =
   | { kind: "all" }
+  | { kind: "pinned" }
   | { kind: "archived" }
   | { kind: "trash" }
   | { kind: "folder"; folderId: number };
 
 export function sourceViewFilter(source: NoteSource): NoteViewFilter {
+  if (source.kind === "pinned") return "pinned";
   if (source.kind === "archived") return "archived";
   if (source.kind === "trash") return "trash";
   return "active";
@@ -20,6 +22,8 @@ export function sourcePath(source: NoteSource): string {
   switch (source.kind) {
     case "all":
       return "/all";
+    case "pinned":
+      return "/pinned";
     case "archived":
       return "/archived";
     case "trash":
@@ -39,6 +43,7 @@ export function sourceKey(source: NoteSource): string {
 }
 
 export function parseSource(pathname: string, folderIdParam?: string): NoteSource {
+  if (pathname.startsWith("/pinned")) return { kind: "pinned" };
   if (pathname.startsWith("/archived")) return { kind: "archived" };
   if (pathname.startsWith("/trash")) return { kind: "trash" };
   if (folderIdParam) return { kind: "folder", folderId: Number(folderIdParam) };

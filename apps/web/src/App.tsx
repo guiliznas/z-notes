@@ -31,6 +31,8 @@ export function App() {
         {adminRoutes}
         <Route path="/all" element={<NotesPage />} />
         <Route path="/all/note/:noteId" element={<NotesPage />} />
+        <Route path="/pinned" element={<NotesPage />} />
+        <Route path="/pinned/note/:noteId" element={<NotesPage />} />
         <Route path="/archived" element={<NotesPage />} />
         <Route path="/archived/note/:noteId" element={<NotesPage />} />
         <Route path="/trash" element={<NotesPage />} />
