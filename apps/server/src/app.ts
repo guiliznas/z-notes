@@ -16,6 +16,8 @@ import { scheduleBackups } from "./backup/scheduler.js";
 import { hasMetricSamples, runMetricsJob, scheduleMetrics } from "./services/metrics.js";
 
 const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
+/** Teto global por IP (autosave + navegação normal ficam muito abaixo); rotas de login têm limite próprio, mais baixo. */
+const GLOBAL_RATE_LIMIT = { max: 600, timeWindow: "1 minute" };
 
 export async function buildApp(cfg: AppConfig): Promise<FastifyInstance> {
   const { sqlite, db, migrated } = openDatabase(cfg.dbPath);
@@ -25,7 +27,7 @@ export async function buildApp(cfg: AppConfig): Promise<FastifyInstance> {
     const result = await createSnapshotIfChanged(ctx);
     if (result.created) console.log(`[z-notes] snapshot de segurança pós-migração: ${result.filename}`);
   }
-  const app = Fastify({ logger: cfg.isProd, bodyLimit: MAX_UPLOAD_BYTES });
+  const app = Fastify({ logger: cfg.isProd, bodyLimit: MAX_UPLOAD_BYTES, trustProxy: cfg.trustProxy });
 
   await app.register(cors, {
     origin: true,
@@ -33,7 +35,7 @@ export async function buildApp(cfg: AppConfig): Promise<FastifyInstance> {
   });
   await app.register(cookie, { secret: cfg.sessionSecret });
   await app.register(multipart, { limits: { fileSize: MAX_UPLOAD_BYTES, files: 500 } });
-  await app.register(rateLimit, { global: false });
+  await app.register(rateLimit, { global: true, ...GLOBAL_RATE_LIMIT });
 
   app.setErrorHandler((err, req, reply) => {
     if (err instanceof ZodError) {
@@ -48,7 +50,7 @@ export async function buildApp(cfg: AppConfig): Promise<FastifyInstance> {
     const statusCode = typeof anyErr.statusCode === "number" ? anyErr.statusCode : 500;
     if (statusCode >= 500) req.log.error(err);
     reply.code(statusCode).send({
-      error: "internal",
+      error: statusCode === 429 ? "too_many_requests" : "internal",
       message: statusCode >= 500 ? "Erro interno" : anyErr.message ?? "Erro",
     });
   });

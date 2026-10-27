@@ -20,9 +20,12 @@ export interface AppConfig {
   /** e-mails com acesso admin (CSV em Z_NOTES_ADMIN_EMAILS, minúsculos). */
   adminEmails: string[];
   sessionSecret: string;
-  /** segredo para assinar tokens JWT (Bearer auth para apps mobile/desktop). */
-  jwtSecret: string;
   isProd: boolean;
+  /**
+   * Confia no X-Forwarded-For (app atrás de Cloudflare/Dokploy/Traefik) para obter o IP real do cliente.
+   * Só ligue se a porta do app NÃO for alcançável direto: senão o header é forjável e burla o rate limit.
+   */
+  trustProxy: boolean;
   /** diretório dos snapshots de backup (separado do dataDir ativo). */
   backupDir: string;
   /** expressão cron do agendamento diário de backup. */
@@ -72,8 +75,8 @@ export function configFromEnv(): AppConfig {
     google,
     adminEmails: parseEmailList(process.env.Z_NOTES_ADMIN_EMAILS),
     sessionSecret: resolveSessionSecret(isProd),
-    jwtSecret: process.env.Z_NOTES_JWT_SECRET ?? resolveSessionSecret(isProd),
     isProd,
+    trustProxy: process.env.Z_NOTES_TRUST_PROXY ? process.env.Z_NOTES_TRUST_PROXY === "true" : isProd,
     backupDir: process.env.Z_NOTES_BACKUP_DIR ?? path.join(REPO_ROOT, "backups"),
     backupCron: process.env.Z_NOTES_BACKUP_CRON ?? DEFAULT_BACKUP_CRON,
     backupWebhookUrl: process.env.Z_NOTES_BACKUP_WEBHOOK_URL,
@@ -97,8 +100,8 @@ export function makeConfig(overrides: Partial<AppConfig> & { dataDir: string }):
     google: { clientId: "", clientSecret: "", callbackUrl: "" },
     adminEmails: [],
     sessionSecret: DEV_SECRET,
-    jwtSecret: DEV_SECRET,
     isProd: false,
+    trustProxy: false,
     backupDir: path.join(overrides.dataDir, "backups"),
     backupCron: DEFAULT_BACKUP_CRON,
     ...overrides,
