@@ -43,6 +43,8 @@ export const notes = sqliteTable("notes", {
   /** caminho relativo do arquivo no espelho .md, ou null se não espelhada. */
   mirrorPath: text("mirror_path"),
   archivedAt: integer("archived_at"),
+  /** instante em que foi fixada; null = não fixada. */
+  pinnedAt: integer("pinned_at"),
   deletedAt: integer("deleted_at"),
   createdAt: integer("created_at").notNull(),
   updatedAt: integer("updated_at").notNull(),

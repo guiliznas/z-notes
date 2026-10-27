@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import type { FolderWithCount } from "@z-notes/shared";
 import { useFolders, useCreateFolder, useUpdateFolder, useDeleteFolder } from "@/hooks/useFolders";
 import { useSelection } from "@/hooks/useSelection";
+import { useNotes } from "@/hooks/useNotes";
 import { sourcePath, type NoteSource } from "@/lib/selection";
 import { cn } from "@/lib/cn";
 import { useToast } from "./ui/Toast";
@@ -13,6 +14,7 @@ import { ConfirmDialog } from "./ui/ConfirmDialog";
 import {
   FolderIcon,
   NoteIcon,
+  PinIcon,
   ArchiveIcon,
   TrashIcon,
   ChevronRightIcon,
@@ -36,6 +38,7 @@ export function FolderSidebar({ onNavigate }: Props) {
   const navigate = useNavigate();
   const { notify } = useToast();
   const folders = useFolders();
+  const pinned = useNotes({ kind: "pinned" });
   const createFolder = useCreateFolder();
   const updateFolder = useUpdateFolder();
   const deleteFolder = useDeleteFolder();
@@ -70,13 +73,20 @@ export function FolderSidebar({ onNavigate }: Props) {
   return (
     <div className="flex h-full flex-col bg-[var(--sidebar)]">
       <div className="flex items-center justify-between px-3 pt-3 pb-1">
-        <span className="px-2 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">Pastas</span>
+        <span className="px-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">Pastas</span>
         <IconButton label="Nova pasta" onClick={() => setDialog({ type: "new-root" })}>
           <FolderPlusIcon />
         </IconButton>
       </div>
 
       <nav className="flex-1 overflow-y-auto px-2 pb-2">
+        <Row
+          icon={<PinIcon />}
+          label="Fixadas"
+          count={pinned.data?.length}
+          active={source.kind === "pinned"}
+          onClick={() => go({ kind: "pinned" })}
+        />
         <Row
           icon={<NoteIcon />}
           label="Todas as notas"
@@ -180,13 +190,13 @@ function Row({ icon, label, count, active, onClick, indent, leading, menu }: Row
     <div
       className={cn(
         "group flex items-center gap-1.5 rounded-lg pr-1",
-        active ? "bg-[var(--accent-soft)]" : "hover:bg-[var(--surface-hover)]",
+        active ? "bg-[var(--surface-hover)] font-semibold" : "hover:bg-[var(--surface-hover)]",
         indent && "ml-5",
       )}
     >
       <button onClick={onClick} className="flex min-w-0 flex-1 items-center gap-2 py-1.5 pl-2 text-left text-sm">
         <span className="w-4 shrink-0 text-[var(--muted)]">{leading}</span>
-        <span className="text-base text-[var(--accent)]">{icon}</span>
+        <span className="text-base text-[var(--muted)]">{icon}</span>
         <span className="truncate">{label}</span>
       </button>
       {count !== undefined && count > 0 && (

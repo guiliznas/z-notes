@@ -21,6 +21,7 @@ function toMeta(row: NoteRow): NoteMeta {
     title: deriveTitle(row.contentMd),
     excerpt: deriveExcerpt(row.contentMd),
     archived: row.archivedAt !== null,
+    pinned: row.pinnedAt !== null,
     deleted: row.deletedAt !== null,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
@@ -67,6 +68,11 @@ function buildListFilters(ctx: RequestContext, params: ListNotesParams) {
   } else {
     filters.push(isNull(notes.archivedAt));
   }
+  // "Fixadas" é uma pasta virtual: ignora a pasta e junta as fixadas ativas de todas.
+  if (view === "pinned") {
+    filters.push(isNotNull(notes.pinnedAt));
+    return filters;
+  }
   if (folderId !== undefined && folderId !== null) {
     filters.push(eq(notes.folderId, folderId));
   }
@@ -98,6 +104,13 @@ export function updateNote(ctx: RequestContext, id: number, input: UpdateNoteInp
   if (!existing) throw notFound("Nota não encontrada");
   if (existing.deletedAt !== null) throw badRequest("Nota na lixeira não pode ser editada; restaure antes");
 
+  // Fixar é só metadado: não mexe em versão/updatedAt nem no espelho, para não derrubar o autosave
+  // de quem está com a nota aberta (conflito 409) nem reordenar a lista por "editada em".
+  if (isPinOnly(input)) {
+    ctx.db.update(notes).set({ pinnedAt: input.pinned ? (existing.pinnedAt ?? Date.now()) : null }).where(owned(ctx, id)).run();
+    return toNote(getNoteRow(ctx, id)!);
+  }
+
   if (input.version !== undefined && input.version !== existing.version) {
     throw conflict("A nota foi alterada em outro lugar. Recarregue para ver a versão mais recente.");
   }
@@ -112,9 +125,22 @@ export function updateNote(ctx: RequestContext, id: number, input: UpdateNoteInp
     patch.archivedAt = input.archived ? (existing.archivedAt ?? Date.now()) : null;
   }
 
+  if (input.pinned !== undefined) {
+    patch.pinnedAt = input.pinned ? (existing.pinnedAt ?? Date.now()) : null;
+  }
+
   ctx.db.update(notes).set(patch).where(owned(ctx, id)).run();
   syncNoteMirror(ctx, id);
   return toNote(getNoteRow(ctx, id)!);
+}
+
+function isPinOnly(input: UpdateNoteInput): boolean {
+  return (
+    input.pinned !== undefined &&
+    input.contentMd === undefined &&
+    input.folderId === undefined &&
+    input.archived === undefined
+  );
 }
 
 /** Move para a lixeira (soft delete). */

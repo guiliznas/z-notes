@@ -25,20 +25,16 @@ describe("useEditMode", () => {
     expect(result.current.editing).toBe(false);
   });
 
-  it("persiste preferência no localStorage", () => {
-    const { result } = renderHook(() => useEditMode());
-    act(() => result.current.enterEdit());
-    expect(localStorage.getItem("z-notes-edit-mode")).toBe("edit");
+  it("não lembra o modo edição entre sessões: abre sempre em visualização", () => {
+    const first = renderHook(() => useEditMode());
+    act(() => first.result.current.enterEdit());
+    first.unmount();
+    const second = renderHook(() => useEditMode());
+    expect(second.result.current.editing).toBe(false);
   });
 
-  it("restaura preferência 'edit' do localStorage", () => {
+  it("ignora preferência antiga 'edit' que versões anteriores gravavam no localStorage", () => {
     localStorage.setItem("z-notes-edit-mode", "edit");
-    const { result } = renderHook(() => useEditMode());
-    expect(result.current.editing).toBe(true);
-  });
-
-  it("ignora valor inválido no localStorage e cai em preview", () => {
-    localStorage.setItem("z-notes-edit-mode", "blah");
     const { result } = renderHook(() => useEditMode());
     expect(result.current.editing).toBe(false);
   });

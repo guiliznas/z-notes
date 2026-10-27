@@ -59,6 +59,7 @@ export default function NoteListScreen({
   const { data: searchHits, isPending: searchPending } = useSearch(searchQuery, folderId);
 
   const getHeaderTitle = () => {
+    if (view === "pinned") return "Fixadas";
     if (view === "trash") return "Lixeira";
     if (view === "archived") return "Arquivadas";
     if (folderName) return folderName;

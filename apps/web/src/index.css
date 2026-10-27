@@ -5,14 +5,14 @@
   --bg: #f5f5f0;
   --surface: #ffffff;
   --surface-2: #dde5e9;
-  --surface-hover: #cfd8dc;
+  --surface-hover: #e1e8eb;
   --text: #263238;
-  --muted: #607d8b;
-  --border: #cfd8dc;
+  --muted: #546e7a;
+  --border: #e3e9ec;
   --accent: #ffc107;
-  --accent-soft: #ffecb3;
+  --accent-soft: #fff4cf;
   --danger: #e53935;
-  --sidebar: var(--surface-2);
+  --sidebar: #eef1f2;
   --panel: var(--surface);
 }
 
@@ -21,12 +21,12 @@
     --bg: #1c1c1e;
     --surface: #37474f;
     --surface-2: #2e383e;
-    --surface-hover: #455a64;
+    --surface-hover: #3a3a3d;
     --text: #eceff1;
     --muted: #b0bec5;
-    --border: #455a64;
+    --border: #414144;
     --accent: #ffc107;
-    --accent-soft: #544800;
+    --accent-soft: #4a4120;
     --danger: #ef5350;
     --sidebar: #28282a;
     --panel: #303032;
@@ -68,4 +68,103 @@ body {
   background: var(--accent-soft);
   border-radius: 2px;
   padding: 0 1px;
+}
+
+/* Tipografia do conteúdo markdown (visualização). O Tailwind zera os estilos de h1/ul/etc. */
+.md {
+  line-height: 1.7;
+  font-size: 15px;
+}
+.md > :first-child {
+  margin-top: 0;
+}
+.md h1 {
+  margin: 0 0 0.35em;
+  font-size: 1.9rem;
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.md h2 {
+  margin: 1.4em 0 0.4em;
+  font-size: 1.15rem;
+  font-weight: 650;
+}
+.md h3 {
+  margin: 1.2em 0 0.3em;
+  font-size: 1rem;
+  font-weight: 650;
+}
+.md p {
+  margin: 0 0 1em;
+}
+.md ul,
+.md ol {
+  margin: 0 0 1em;
+  padding-left: 1.4em;
+}
+.md ul {
+  list-style: disc;
+}
+.md ol {
+  list-style: decimal;
+}
+.md ul.contains-task-list {
+  list-style: none;
+  padding-left: 0;
+}
+.md li.task-list-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  margin: 0.25em 0;
+}
+.md input[type="checkbox"] {
+  width: 1.1em;
+  height: 1.1em;
+  accent-color: var(--accent);
+  flex: none;
+}
+.md blockquote {
+  margin: 0 0 1em;
+  padding-left: 1em;
+  border-left: 3px solid var(--border);
+  color: var(--muted);
+}
+.md code {
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  background: var(--sidebar);
+  font-size: 0.9em;
+}
+.md pre {
+  margin: 0 0 1em;
+  padding: 0.9em 1em;
+  overflow-x: auto;
+  border-radius: 8px;
+  background: var(--sidebar);
+}
+.md pre code {
+  padding: 0;
+  background: none;
+}
+.md a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-underline-offset: 3px;
+}
+.md hr {
+  margin: 1.5em 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+.md table {
+  margin: 0 0 1em;
+  border-collapse: collapse;
+}
+.md th,
+.md td {
+  padding: 0.35em 0.7em;
+  border: 1px solid var(--border);
 }

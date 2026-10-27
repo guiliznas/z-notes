@@ -7,6 +7,7 @@ interface FtsRow {
   folder_id: number | null;
   content_md: string;
   archived_at: number | null;
+  pinned_at: number | null;
   created_at: number;
   updated_at: number;
   snip: string;
@@ -21,7 +22,7 @@ export function searchNotes(ctx: RequestContext, query: string, folderId?: numbe
 
   const params: (string | number)[] = [match, ctx.userId];
   let sql = `
-    SELECT n.id, n.folder_id, n.content_md, n.archived_at, n.created_at, n.updated_at,
+    SELECT n.id, n.folder_id, n.content_md, n.archived_at, n.pinned_at, n.created_at, n.updated_at,
            snippet(notes_fts, 0, '[', ']', '…', 12) AS snip
     FROM notes_fts
     JOIN notes n ON n.id = notes_fts.rowid
@@ -40,6 +41,7 @@ export function searchNotes(ctx: RequestContext, query: string, folderId?: numbe
       title: deriveTitle(r.content_md),
       excerpt: deriveExcerpt(r.content_md),
       archived: r.archived_at !== null,
+      pinned: r.pinned_at !== null,
       deleted: false,
       createdAt: r.created_at,
       updatedAt: r.updated_at,

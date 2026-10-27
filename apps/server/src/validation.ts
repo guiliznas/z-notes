@@ -27,11 +27,12 @@ export const UpdateNoteSchema = z.object({
   version: z.number().int().nonnegative().optional(),
   folderId: z.number().int().positive().optional(),
   archived: z.boolean().optional(),
+  pinned: z.boolean().optional(),
 });
 
 export const ListNotesQuery = z.object({
   folder: z.coerce.number().int().positive().optional(),
-  view: z.enum(["active", "archived", "trash"]).default("active"),
+  view: z.enum(["active", "archived", "trash", "pinned"]).default("active"),
 });
 
 export const SearchQuery = z.object({

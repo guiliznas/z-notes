@@ -82,4 +82,26 @@ describe("migração multi-usuário", () => {
       sqlite.close();
     }
   });
+
+  it("banco sem pinned_at ganha a coluna (nota existente continua não fixada)", () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "z-notes-pin-"));
+    dirs.push(dir);
+    const dbPath = path.join(dir, "z-notes.db");
+    const legacy = new Database(dbPath);
+    legacy.exec(LEGACY_DDL);
+    const now = Date.now();
+    legacy.exec(`INSERT INTO folders (name, position, created_at, updated_at) VALUES ('F', 0, ${now}, ${now})`);
+    legacy.exec(`INSERT INTO notes (folder_id, content_md, created_at, updated_at) VALUES (1, 'x', ${now}, ${now})`);
+    legacy.close();
+
+    const { sqlite, db, migrated } = openDatabase(dbPath);
+    try {
+      expect(migrated).toBe(true);
+      const cols = (sqlite.prepare("PRAGMA table_info(notes)").all() as { name: string }[]).map((c) => c.name);
+      expect(cols).toContain("pinned_at");
+      expect(db.select().from(notes).all()[0].pinnedAt).toBeNull();
+    } finally {
+      sqlite.close();
+    }
+  });
 });

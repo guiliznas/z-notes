@@ -12,6 +12,8 @@ describe("parseSource", () => {
   it("reconhece cada tipo de origem pela URL", () => {
     expect(parseSource("/all")).toEqual({ kind: "all" });
     expect(parseSource("/")).toEqual({ kind: "all" });
+    expect(parseSource("/pinned")).toEqual({ kind: "pinned" });
+    expect(parseSource("/pinned/note/4")).toEqual({ kind: "pinned" });
     expect(parseSource("/archived")).toEqual({ kind: "archived" });
     expect(parseSource("/trash")).toEqual({ kind: "trash" });
     expect(parseSource("/folder/7", "7")).toEqual({ kind: "folder", folderId: 7 });
@@ -21,6 +23,8 @@ describe("parseSource", () => {
 describe("sourcePath / notePath", () => {
   it("gera caminhos consistentes", () => {
     expect(sourcePath({ kind: "all" })).toBe("/all");
+    expect(sourcePath({ kind: "pinned" })).toBe("/pinned");
+    expect(notePath({ kind: "pinned" }, 2)).toBe("/pinned/note/2");
     expect(sourcePath({ kind: "archived" })).toBe("/archived");
     expect(sourcePath({ kind: "folder", folderId: 3 })).toBe("/folder/3");
     expect(notePath({ kind: "folder", folderId: 3 }, 9)).toBe("/folder/3/note/9");
@@ -32,6 +36,7 @@ describe("mapeamentos de origem", () => {
   it("view filter", () => {
     expect(sourceViewFilter({ kind: "all" })).toBe("active");
     expect(sourceViewFilter({ kind: "folder", folderId: 1 })).toBe("active");
+    expect(sourceViewFilter({ kind: "pinned" })).toBe("pinned");
     expect(sourceViewFilter({ kind: "archived" })).toBe("archived");
     expect(sourceViewFilter({ kind: "trash" })).toBe("trash");
   });

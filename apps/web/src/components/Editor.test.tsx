@@ -5,15 +5,22 @@ vi.mock("react-router-dom", () => ({ useNavigate: () => vi.fn() }));
 vi.mock("@/hooks/useSelection", () => ({
   useSelection: () => ({ source: { kind: "all" }, noteId: 1, pane: "editor" }),
 }));
+vi.mock("@/hooks/useFolders", () => ({
+  useFolders: () => ({ data: [{ id: 3, name: "Trabalho", children: [] }] }),
+}));
 vi.mock("@/hooks/useOnline", () => ({ useOnline: () => true }));
+const h = vi.hoisted(() => ({
+  note: { id: 1, folderId: 3, contentMd: "- [ ] tarefa", version: 1, archived: false, pinned: false, deleted: false },
+  mutate: vi.fn(),
+}));
 vi.mock("@/hooks/useNotes", () => ({
-  useNote: () => ({ data: { id: 1, contentMd: "- [ ] tarefa", version: 1, archived: false, deleted: false } }),
+  useNote: () => ({ data: h.note }),
   useTrashNote: () => ({ mutate: vi.fn() }),
   useRestoreNote: () => ({ mutate: vi.fn() }),
   useHardDeleteNote: () => ({ mutate: vi.fn() }),
 }));
 vi.mock("@/hooks/useUpdateNote", () => ({
-  useUpdateNote: () => ({ mutate: vi.fn(), isPending: false }),
+  useUpdateNote: () => ({ mutate: h.mutate, isPending: false }),
 }));
 vi.mock("./ui/Toast", () => ({ useToast: () => ({ notify: vi.fn() }) }));
 
@@ -23,6 +30,7 @@ describe("Editor", () => {
   beforeEach(() => {
   vi.clearAllMocks();
   localStorage.clear();
+  h.note = { id: 1, folderId: 3, contentMd: "- [ ] tarefa", version: 1, archived: false, pinned: false, deleted: false };
 });
 
   it("renderiza preview por padrão com checkbox", () => {
@@ -61,5 +69,58 @@ describe("Editor", () => {
     const cb = document.querySelector('input[type="checkbox"]') as HTMLInputElement;
     fireEvent.click(cb);
     expect(cb).toBeChecked();
+  });
+
+  it("abre em visualização mesmo que a sessão anterior tenha terminado em edição", () => {
+    localStorage.setItem("z-notes-edit-mode", "edit");
+    const { container } = render(<Editor />);
+    expect(container.querySelector("textarea")).toBeNull();
+    expect(container.querySelector("[data-testid='preview']")).toBeTruthy();
+  });
+
+  it("nota vazia (recém-criada) abre direto em edição", () => {
+    h.note = { ...h.note, contentMd: "" };
+    const { container } = render(<Editor />);
+    expect(container.querySelector("textarea")).toBeTruthy();
+  });
+
+  it("botão Fixar nota envia pinned:true sem version", () => {
+    render(<Editor />);
+    fireEvent.click(screen.getByRole("button", { name: "Fixar nota" }));
+    expect(h.mutate).toHaveBeenCalledWith({ id: 1, pinned: true });
+  });
+
+  it("nota fixada mostra Desafixar nota e envia pinned:false", () => {
+    h.note = { ...h.note, pinned: true };
+    render(<Editor />);
+    fireEvent.click(screen.getByRole("button", { name: "Desafixar nota" }));
+    expect(h.mutate).toHaveBeenCalledWith({ id: 1, pinned: false });
+  });
+
+  it("nota na lixeira não oferece fixar", () => {
+    h.note = { ...h.note, deleted: true };
+    render(<Editor />);
+    expect(screen.queryByRole("button", { name: /fixar nota/i })).toBeNull();
+  });
+
+  it("mostra o nome da pasta no cabeçalho", () => {
+    render(<Editor />);
+    expect(screen.getByText("Trabalho")).toBeInTheDocument();
+  });
+
+  it("botão Editar entra em edição e Visualizar volta à visualização", () => {
+    const { container } = render(<Editor />);
+    expect(screen.getByRole("button", { name: "Visualizar" })).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(screen.getByRole("button", { name: "Editar" }));
+    expect(container.querySelector("textarea")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Editar" })).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(screen.getByRole("button", { name: "Visualizar" }));
+    expect(container.querySelector("textarea")).toBeNull();
+  });
+
+  it("nota na lixeira não mostra a alternância de modo", () => {
+    h.note = { ...h.note, deleted: true };
+    render(<Editor />);
+    expect(screen.queryByRole("button", { name: "Editar" })).toBeNull();
   });
 });

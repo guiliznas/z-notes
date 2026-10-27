@@ -25,6 +25,8 @@ export interface NoteMeta {
   title: string;
   excerpt: string;
   archived: boolean;
+  /** fixada: aparece na pasta virtual "Fixadas" e com alfinete nas listas. */
+  pinned: boolean;
   deleted: boolean;
   createdAt: number;
   updatedAt: number;
@@ -41,7 +43,8 @@ export interface SearchHit {
   snippet: string;
 }
 
-export type NoteViewFilter = "active" | "archived" | "trash";
+/** "pinned" = notas ativas fixadas, de todas as pastas. */
+export type NoteViewFilter = "active" | "archived" | "trash" | "pinned";
 
 export interface CreateFolderInput {
   name: string;
@@ -65,6 +68,7 @@ export interface UpdateNoteInput {
   version?: number;
   folderId?: number;
   archived?: boolean;
+  pinned?: boolean;
 }
 
 export interface PublicUser {

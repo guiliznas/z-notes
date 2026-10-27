@@ -10,14 +10,19 @@ import { notePath, sourceFolderId, type NoteSource } from "@/lib/selection";
 import { relativeTime } from "@/lib/time";
 import { cn } from "@/lib/cn";
 import { IconButton } from "./ui/IconButton";
-import { ChevronLeftIcon, FolderIcon, ComposeIcon, SearchIcon, CloseIcon } from "./icons";
+import { ChevronLeftIcon, FolderIcon, ComposeIcon, SearchIcon, CloseIcon, PinFilledIcon } from "./icons";
 
 interface Props {
   onBack?: () => void;
   onOpenFolders?: () => void;
 }
 
-const TITLES: Record<string, string> = { all: "Todas as notas", archived: "Arquivadas", trash: "Lixeira" };
+const TITLES: Record<string, string> = {
+  pinned: "Fixadas",
+  all: "Todas as notas",
+  archived: "Arquivadas",
+  trash: "Lixeira",
+};
 
 export function NoteList({ onBack, onOpenFolders }: Props) {
   const { source, noteId } = useSelection();
@@ -67,7 +72,9 @@ export function NoteList({ onBack, onOpenFolders }: Props) {
   };
 
   const searching = canSearch && query.trim().length > 0;
-  const items = searching ? (search.data ?? []).map((h) => h.note) : notes.data ?? [];
+  // Em "Fixadas" a busca é global; mantém só as fixadas para a lista continuar sendo a pasta virtual.
+  const searchItems = (search.data ?? []).map((h) => h.note).filter((n) => source.kind !== "pinned" || n.pinned);
+  const items = searching ? searchItems : notes.data ?? [];
   const snippets = new Map((search.data ?? []).map((h) => [h.note.id, h.snippet]));
 
   return (
@@ -83,17 +90,23 @@ export function NoteList({ onBack, onOpenFolders }: Props) {
             <FolderIcon />
           </IconButton>
         )}
-        <h1 className="flex-1 truncate px-2 text-lg font-bold">{title}</h1>
+        <h1 className="flex-1 truncate px-2 text-[15px] font-bold">{title}</h1>
         {canCreate && (
-          <IconButton label="Nova nota" onClick={handleCreate}>
+          <button
+            type="button"
+            aria-label="Nova nota"
+            title="Nova nota"
+            onClick={handleCreate}
+            className="mr-1 inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--accent)] text-lg text-[#1c1c1e] transition hover:brightness-95"
+          >
             <ComposeIcon />
-          </IconButton>
+          </button>
         )}
       </header>
 
       {canSearch && (
         <div className="px-3 pb-2">
-          <div className="flex items-center gap-2 rounded-lg bg-[var(--surface-2)] px-3 py-1.5 text-sm text-[var(--muted)]">
+          <div className="flex items-center gap-2 rounded-[10px] bg-[var(--sidebar)] px-3 py-2 text-sm text-[var(--muted)]">
             <SearchIcon />
             <input
               ref={searchInput}
@@ -111,7 +124,7 @@ export function NoteList({ onBack, onOpenFolders }: Props) {
         </div>
       )}
 
-      <ul className="flex-1 overflow-y-auto px-2 pb-3">
+      <ul className="flex-1 overflow-y-auto border-t border-[var(--border)]">
         {items.length === 0 ? (
           <EmptyState searching={searching} kind={source.kind} />
         ) : (
@@ -121,6 +134,7 @@ export function NoteList({ onBack, onOpenFolders }: Props) {
               note={note}
               active={note.id === noteId}
               snippet={snippets.get(note.id)}
+              folder={folderLabel(folders.data, note.folderId, source)}
               onClick={() => openNote(note.id)}
             />
           ))
@@ -128,6 +142,16 @@ export function NoteList({ onBack, onOpenFolders }: Props) {
       </ul>
     </div>
   );
+}
+
+/** Nome da pasta na linha da nota; dentro de uma pasta específica seria redundante. */
+function folderLabel(
+  folders: Parameters<typeof folderName>[0],
+  folderId: number | null,
+  source: NoteSource,
+): string | undefined {
+  if (source.kind === "folder" || folderId === null) return undefined;
+  return folderName(folders, folderId) || undefined;
 }
 
 function folderName(
@@ -147,26 +171,31 @@ interface RowProps {
   note: NoteMeta;
   active: boolean;
   snippet?: string;
+  folder?: string;
   onClick: () => void;
 }
 
-function NoteRow({ note, active, snippet, onClick }: RowProps) {
+function NoteRow({ note, active, snippet, folder, onClick }: RowProps) {
   return (
     <li>
       <button
         onClick={onClick}
         className={cn(
-          "w-full rounded-lg px-3 py-2.5 text-left",
+          "w-full border-b border-[var(--border)] px-4 py-3 text-left",
           active ? "bg-[var(--accent-soft)]" : "hover:bg-[var(--surface-hover)]",
         )}
       >
         <div className="flex items-center gap-2">
+          {note.pinned && <PinFilledIcon aria-label="Fixada" role="img" className="shrink-0 text-xs text-[var(--accent)]" />}
           <span className="flex-1 truncate text-sm font-semibold">{note.title}</span>
           {note.archived && <span className="rounded bg-[var(--surface-2)] px-1.5 py-0.5 text-[10px] text-[var(--muted)]">arquivada</span>}
         </div>
-        <div className="mt-0.5 flex items-center gap-2 text-xs text-[var(--muted)]">
-          <span className="shrink-0">{relativeTime(note.updatedAt)}</span>
-          <span className="truncate">{snippet ? <Snippet text={snippet} /> : note.excerpt || "Sem texto adicional"}</span>
+        <div className="mt-0.5 truncate text-[13px] text-[var(--muted)]">
+          {snippet ? <Snippet text={snippet} /> : note.excerpt || "Sem texto adicional"}
+        </div>
+        <div className="mt-1.5 truncate text-xs text-[var(--muted)]">
+          {relativeTime(note.updatedAt)}
+          {folder ? ` · ${folder}` : ""}
         </div>
       </button>
     </li>
@@ -191,12 +220,11 @@ function Snippet({ text }: { text: string }) {
 }
 
 function EmptyState({ searching, kind }: { searching: boolean; kind: NoteSource["kind"] }) {
-  const message = searching
-    ? "Nenhuma nota encontrada."
-    : kind === "trash"
-      ? "A lixeira está vazia."
-      : kind === "archived"
-        ? "Nenhuma nota arquivada."
-        : "Nenhuma nota aqui ainda.";
+  const EMPTY: Record<string, string> = {
+    pinned: "Nenhuma nota fixada. Abra uma nota e use o alfinete para fixar.",
+    trash: "A lixeira está vazia.",
+    archived: "Nenhuma nota arquivada.",
+  };
+  const message = searching ? "Nenhuma nota encontrada." : (EMPTY[kind] ?? "Nenhuma nota aqui ainda.");
   return <li className="px-3 py-10 text-center text-sm text-[var(--muted)]">{message}</li>;
 }
