@@ -12,7 +12,6 @@ describe("configFromEnv", () => {
     delete process.env.Z_NOTES_ADMIN_EMAILS;
     delete process.env.Z_NOTES_DATA_DIR;
     delete process.env.Z_NOTES_SESSION_SECRET;
-    delete process.env.Z_NOTES_JWT_SECRET;
     delete process.env.NODE_ENV;
     delete process.env.Z_NOTES_BACKUP_DIR;
     delete process.env.Z_NOTES_BACKUP_CRON;
@@ -24,7 +23,6 @@ describe("configFromEnv", () => {
     expect(cfg.google.clientId).toBe("");
     expect(cfg.adminEmails).toEqual([]);
     expect(cfg.sessionSecret).toBe("dev-insecure-secret-change-me");
-    expect(cfg.jwtSecret).toBe("dev-insecure-secret-change-me");
     expect(cfg.isProd).toBe(false);
     expect(cfg.backupCron).toBe("0 3 * * *");
     expect(cfg.backupWebhookUrl).toBeUndefined();
@@ -89,7 +87,6 @@ describe("makeConfig", () => {
     expect(cfg.mirrorDir).toBe("/tmp/test/mirror");
     expect(cfg.google.clientId).toBe("");
     expect(cfg.sessionSecret).toBe("dev-insecure-secret-change-me");
-    expect(cfg.jwtSecret).toBe("dev-insecure-secret-change-me");
     expect(cfg.isProd).toBe(false);
     expect(cfg.backupDir).toBe("/tmp/test/backups");
     expect(cfg.backupCron).toBe("0 3 * * *");
