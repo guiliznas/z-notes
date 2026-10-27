@@ -24,7 +24,7 @@ export interface FakeGoogleProfile {
   picture?: string;
 }
 
-const DEFAULT_PROFILE: FakeGoogleProfile = {
+export const DEFAULT_PROFILE: FakeGoogleProfile = {
   sub: "google-sub-1",
   email: "user1@example.com",
   name: "User Um",
@@ -70,7 +70,7 @@ export function makeTestCtx(): TestCtx {
   return { ctx, cfg, userId: user.id, cleanup };
 }
 
-function mockGoogleFetch(profile: FakeGoogleProfile) {
+export function mockGoogleFetch(profile: FakeGoogleProfile) {
   return async (url: unknown) => {
     const u = String(url);
     if (u.includes("oauth2.googleapis.com/token")) {

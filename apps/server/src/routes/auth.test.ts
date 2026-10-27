@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { buildApp } from "../app.js";
 import { makeConfig } from "../config.js";
-import { makeTestApp, loginWithGoogle, startOAuth, finishOAuth, type TestApp } from "../test-helpers.js";
+import { makeTestApp, loginWithGoogle, startOAuth, finishOAuth, mockGoogleFetch, DEFAULT_PROFILE, type TestApp } from "../test-helpers.js";
 import { signSessionValue } from "../auth/session.js";
 import fs from "node:fs";
 import os from "node:os";
@@ -77,6 +77,43 @@ describe("auth", () => {
     const res = await t.app.inject({ method: "GET", url: "/api/auth/google/callback?error=access_denied" });
     expect(res.statusCode).toBe(302);
     expect(res.headers.location).toBe("/?auth=denied");
+  });
+
+  it("GET /google?client=app gera state marcado como app", async () => {
+    const res = await t.app.inject({ method: "GET", url: "/api/auth/google?client=app" });
+    expect(res.statusCode).toBe(302);
+    const state = new URL(res.headers.location as string).searchParams.get("state");
+    expect(state).toMatch(/^app-[0-9a-f]{64}$/);
+  });
+
+  it("callback do fluxo app redireciona para znotes://auth com JWT válido, sem cookie de sessão", async () => {
+    const start = await t.app.inject({ method: "GET", url: "/api/auth/google?client=app" });
+    const stateCookie = start.cookies.find((c) => c.name === "z_oauth_state")!;
+    const state = new URL(start.headers.location as string).searchParams.get("state")!;
+    stubFetch(mockGoogleFetch(DEFAULT_PROFILE));
+    const cb = await finishOAuth(t.app, state, `z_oauth_state=${stateCookie.value}`);
+    expect(cb.statusCode).toBe(302);
+    const location = new URL(cb.headers.location as string);
+    expect(location.protocol).toBe("znotes:");
+    expect(location.host).toBe("auth");
+    expect(cb.cookies.find((c) => c.name === "z_session")).toBeUndefined();
+    const token = location.searchParams.get("token")!;
+    const me = await t.app.inject({ method: "GET", url: "/api/auth/me", headers: { authorization: `Bearer ${token}` } });
+    expect(me.json().authenticated).toBe(true);
+    const notes = await t.app.inject({ method: "GET", url: "/api/folders", headers: { authorization: `Bearer ${token}` } });
+    expect(notes.statusCode).toBe(200);
+  });
+
+  it("erro do Google no fluxo app volta para znotes://auth?error=denied", async () => {
+    const res = await t.app.inject({ method: "GET", url: "/api/auth/google/callback?error=access_denied&state=app-abc" });
+    expect(res.statusCode).toBe(302);
+    expect(res.headers.location).toBe("znotes://auth?error=denied");
+  });
+
+  it("client desconhecido cai no fluxo web (state sem prefixo, redirect /)", async () => {
+    const res = await t.app.inject({ method: "GET", url: "/api/auth/google?client=evil" });
+    const state = new URL(res.headers.location as string).searchParams.get("state");
+    expect(state).toMatch(/^[0-9a-f]{64}$/);
   });
 
   it("me retorna o usuário logado", async () => {
