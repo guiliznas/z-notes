@@ -96,6 +96,8 @@ jobs:
 
   build-mobile:
     name: Build mobile APK (Android)
+    # Opcional enquanto o EXPO_TOKEN não está configurado: não bloqueia o release do desktop.
+    continue-on-error: true
     if: github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == 'mobile (android)'
     needs: [test]
     runs-on: ubuntu-latest
