@@ -15,13 +15,16 @@ export interface TaskCardActions {
   onDelete: () => void;
 }
 
-interface Props extends TaskCardActions {
-  task: Task;
-  /** ganchos do arrastar (preenchidos por SortableTask). */
+/** Ganchos do arrastar, preenchidos por SortableTask (ver TaskDnd). */
+export interface DndCardProps {
   innerRef?: Ref<HTMLDivElement>;
   style?: CSSProperties;
   dragging?: boolean;
   handle?: ReactNode;
+}
+
+interface Props extends TaskCardActions, DndCardProps {
+  task: Task;
 }
 
 export function TaskCard({

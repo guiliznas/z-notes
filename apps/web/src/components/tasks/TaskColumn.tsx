@@ -4,7 +4,7 @@ import { cn } from "@/lib/cn";
 import { doneTasks, openTasks } from "@/lib/taskBoard";
 import { Menu } from "../ui/Menu";
 import { ArchiveIcon, ChevronDownIcon, ChevronRightIcon, PlusIcon, TrashIcon } from "../icons";
-import { TaskCard, type TaskCardActions } from "./TaskCard";
+import { TaskCard, type DndCardProps, type TaskCardActions } from "./TaskCard";
 
 export interface ColumnActions {
   onAddTask: (title: string) => void;
@@ -20,8 +20,8 @@ export interface ColumnActions {
 interface Props extends ColumnActions {
   list: TaskListWithTasks;
   sortedByPriority: boolean;
-  /** como renderizar as tarefas abertas (o arrastar envolve cada uma). */
-  renderOpenTask?: (task: Task, card: ReactNode) => ReactNode;
+  /** como renderizar cada tarefa aberta (o arrastar injeta alça e ganchos no cartão). */
+  renderOpenTask?: (task: Task, render: (dnd?: DndCardProps) => ReactNode) => ReactNode;
   /** envolve a lista de tarefas abertas (contexto de ordenação do arrastar). */
   wrapOpenList?: (tasks: Task[], children: ReactNode) => ReactNode;
   /** ocupa a largura toda (modo abas no celular). */
@@ -47,10 +47,10 @@ export function TaskColumn({
   const shown = sortedByPriority ? sortByPriority(open) : open;
   const done = doneTasks(list.tasks);
 
-  const cards = shown.map((task) => {
-    const card = <TaskCard key={task.id} task={task} {...taskActions(task)} />;
-    return renderOpenTask && !sortedByPriority ? renderOpenTask(task, card) : card;
-  });
+  const card = (task: Task, dnd?: DndCardProps) => <TaskCard key={task.id} task={task} {...taskActions(task)} {...dnd} />;
+  const cards = shown.map((task) =>
+    renderOpenTask && !sortedByPriority ? renderOpenTask(task, (dnd) => card(task, dnd)) : card(task),
+  );
 
   return (
     <section

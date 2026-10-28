@@ -140,10 +140,6 @@ export function TaskBoard({ folderId, onBack }: Props) {
 
   const addTask = (listId: number, title: string) => createTask.mutate({ listId, title }, { onError: fail });
 
-  const renderColumn = (list: TaskListWithTasks, fluid = false) => (
-    <TaskColumn key={list.id} list={list} sortedByPriority={sortedByPriority} fluid={fluid} {...columnActions(list)} />
-  );
-
   return (
     <div className="flex h-full flex-col bg-[var(--panel)]">
       <header className="flex shrink-0 items-center gap-2 px-2 pb-3 pt-4 md:gap-3 md:px-7">
@@ -232,7 +228,18 @@ export function TaskBoard({ folderId, onBack }: Props) {
             })}
           </div>
           <div role="tabpanel" className="min-h-0 flex-1 overflow-y-auto bg-[var(--sidebar)] p-3">
-            {renderColumn(currentList, true)}
+            <TaskDnd board={board} enabled={!sortedByPriority}>
+              {(wrapper) => (
+                <TaskColumn
+                  list={currentList}
+                  sortedByPriority={sortedByPriority}
+                  fluid
+                  {...columnActions(currentList)}
+                  renderOpenTask={wrapper.renderOpenTask}
+                  wrapOpenList={wrapper.wrapOpenList(currentList)}
+                />
+              )}
+            </TaskDnd>
           </div>
         </>
       ) : (
