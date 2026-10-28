@@ -9,7 +9,9 @@ vi.mock("@/hooks/useSelection", () => ({
 }));
 vi.mock("@/hooks/useNotes", () => ({ useNotes: () => ({ data: h.pinned }) }));
 vi.mock("@/hooks/useFolders", () => ({
-  useFolders: () => ({ data: [{ id: 5, name: "Trabalho", noteCount: 3, children: [] }] }),
+  useFolders: () => ({
+    data: [{ id: 5, name: "Trabalho", noteCount: 3, children: [{ id: 6, name: "Reuniões", noteCount: 1 }] }],
+  }),
   useCreateFolder: () => ({ mutate: vi.fn() }),
   useUpdateFolder: () => ({ mutate: vi.fn() }),
   useDeleteFolder: () => ({ mutate: vi.fn() }),
@@ -43,5 +45,21 @@ describe("FolderSidebar", () => {
     render(<FolderSidebar />);
     expect(screen.queryByText("0")).toBeNull();
     h.pinned = [{ id: 1 }, { id: 2 }];
+  });
+
+  it("não aninha botão dentro de botão (HTML inválido / aviso de hidratação do React)", () => {
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { container } = render(<FolderSidebar />);
+    expect(container.querySelector("button button")).toBeNull();
+    expect(errors.mock.calls.flat().join(" ")).not.toMatch(/cannot (be a descendant|contain)/i);
+    errors.mockRestore();
+  });
+
+  it("a seta recolhe a subpasta sem navegar para a pasta", () => {
+    render(<FolderSidebar />);
+    expect(screen.getByRole("button", { name: /Reuniões/ })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Recolher" }));
+    expect(screen.queryByRole("button", { name: /Reuniões/ })).toBeNull();
+    expect(h.navigate).not.toHaveBeenCalled();
   });
 });
