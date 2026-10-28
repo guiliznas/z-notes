@@ -3,7 +3,8 @@ import { TASK_PRIORITIES, type Task, type TaskPriority } from "@z-notes/shared";
 import { cn } from "@/lib/cn";
 import { PRIORITY_LABEL } from "@/lib/taskPriority";
 import { Menu } from "../ui/Menu";
-import { ArchiveIcon, CheckIcon, MoveIcon, TrashIcon } from "../icons";
+import { IconButton } from "../ui/IconButton";
+import { ArchiveIcon, CheckIcon, DotsIcon, MoveIcon, TrashIcon } from "../icons";
 import { PriorityBars, PriorityChip } from "./PriorityChip";
 
 export interface TaskCardActions {
@@ -121,41 +122,66 @@ export function TaskCard({
           </button>
         )}
 
-        {!task.done && !editing && (
+        {!task.done && !editing && task.priority !== "none" && (
           <div className="mt-1.5">
-            <Menu
-              label={`Prioridade de ${task.title}`}
-              align="left"
-              items={TASK_PRIORITIES.map((p) => ({
-                label: PRIORITY_LABEL[p],
-                icon: <PriorityBars priority={p} size={14} />,
-                checked: p === task.priority,
-                onClick: () => onPriority(p),
-              }))}
-              trigger={
-                task.priority === "none" ? (
-                  <button
-                    type="button"
-                    aria-label="Definir prioridade"
-                    className="inline-flex h-5 items-center gap-1 rounded-full px-1.5 text-[11px] text-[var(--muted)] hover:bg-[var(--surface-hover)] md:opacity-0 md:group-focus-within:opacity-100 md:group-hover:opacity-100"
-                  >
-                    <PriorityBars priority="none" />
-                    Prioridade
-                  </button>
-                ) : (
-                  <button type="button" aria-label={`Prioridade ${PRIORITY_LABEL[task.priority]}: alterar`}>
-                    <PriorityChip priority={task.priority} />
-                  </button>
-                )
-              }
-            />
+            <PriorityMenu task={task} onPriority={onPriority} align="left">
+              <button type="button" aria-label={`Prioridade ${PRIORITY_LABEL[task.priority]}: alterar`}>
+                <PriorityChip priority={task.priority} />
+              </button>
+            </PriorityMenu>
           </div>
         )}
       </div>
 
-      <div className="-mr-1 shrink-0 self-start md:opacity-0 md:group-focus-within:opacity-100 md:group-hover:opacity-100">
-        <Menu label={`Ações da tarefa: ${task.title}`} items={menuItems} />
+      <div className="-mr-1.5 -mt-0.5 flex shrink-0 items-center self-start">
+        {/* Sem prioridade: o atalho mora junto do ⋯ (aparece ao passar o mouse) e não ocupa uma linha do cartão. */}
+        {!task.done && !editing && task.priority === "none" && (
+          <div className="md:opacity-0 md:group-focus-within:opacity-100 md:group-hover:opacity-100">
+            <PriorityMenu task={task} onPriority={onPriority} align="right">
+              <IconButton label="Definir prioridade" compact>
+                <PriorityBars priority="none" size={14} />
+              </IconButton>
+            </PriorityMenu>
+          </div>
+        )}
+        <div className="md:opacity-0 md:group-focus-within:opacity-100 md:group-hover:opacity-100">
+          <Menu
+            label={`Ações da tarefa: ${task.title}`}
+            items={menuItems}
+            trigger={
+              <IconButton label={`Ações da tarefa: ${task.title}`} compact>
+                <DotsIcon />
+              </IconButton>
+            }
+          />
+        </div>
       </div>
     </div>
+  );
+}
+
+function PriorityMenu({
+  task,
+  onPriority,
+  align,
+  children,
+}: {
+  task: Task;
+  onPriority: (priority: TaskPriority) => void;
+  align: "left" | "right";
+  children: ReactNode;
+}) {
+  return (
+    <Menu
+      label={`Prioridade de ${task.title}`}
+      align={align}
+      items={TASK_PRIORITIES.map((p) => ({
+        label: PRIORITY_LABEL[p],
+        icon: <PriorityBars priority={p} size={14} />,
+        checked: p === task.priority,
+        onClick: () => onPriority(p),
+      }))}
+      trigger={children}
+    />
   );
 }

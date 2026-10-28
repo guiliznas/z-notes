@@ -121,7 +121,7 @@ function SortableTask({ task, render }: { task: Task; render: (dnd?: DndCardProp
         type="button"
         ref={setActivatorNodeRef}
         aria-label={`Arrastar tarefa: ${task.title}`}
-        className="-ml-1.5 -mr-1 mt-0.5 flex h-[18px] w-3 shrink-0 cursor-grab touch-none items-center justify-center text-[#90a4ae] active:cursor-grabbing md:opacity-0 md:focus-visible:opacity-100 md:group-hover:opacity-100"
+        className="absolute left-0.5 top-3 flex h-[18px] w-2.5 cursor-grab touch-none items-center justify-center text-[#90a4ae] active:cursor-grabbing md:opacity-0 md:focus-visible:opacity-100 md:group-hover:opacity-100"
         {...attributes}
         {...listeners}
       >
