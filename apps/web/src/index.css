@@ -14,6 +14,14 @@
   --danger: #e53935;
   --sidebar: #eef1f2;
   --panel: var(--surface);
+  /* Chips de prioridade (texto sobre fundo com contraste AA). */
+  --hi-bg: #fdecea;
+  --hi-fg: #b71c1c;
+  --md-bg: #fff4cf;
+  --md-fg: #7a5600;
+  --lo-bg: #e3eaed;
+  --lo-fg: #37474f;
+  --card: #ffffff;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -30,6 +38,13 @@
     --danger: #ef5350;
     --sidebar: #28282a;
     --panel: #303032;
+    --hi-bg: #4d2b2b;
+    --hi-fg: #ff9e94;
+    --md-bg: #4a4120;
+    --md-fg: #ffd54f;
+    --lo-bg: #454548;
+    --lo-fg: #cfd8dc;
+    --card: #38383b;
   }
 }
 

@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { IconButton } from "./IconButton";
-import { DotsIcon } from "@/components/icons";
+import { CheckIcon, DotsIcon } from "@/components/icons";
 
 export interface MenuItem {
   label: string;
   icon?: ReactNode;
   onClick: () => void;
   danger?: boolean;
+  /** mostra um check (item de opção/ordem ativo). */
+  checked?: boolean;
 }
 
 interface Props {
@@ -64,7 +66,8 @@ export function Menu({ items, label, align = "right", trigger }: Props) {
                 )}
               >
                 {item.icon && <span className="text-base">{item.icon}</span>}
-                {item.label}
+                <span className="flex-1">{item.label}</span>
+                {item.checked && <CheckIcon aria-hidden={false} aria-label="ativo" role="img" className="text-base" />}
               </button>
             </li>
           ))}
