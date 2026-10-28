@@ -1,4 +1,4 @@
-import { sqliteTable, integer, text } from "drizzle-orm/sqlite-core";
+import { sqliteTable, integer, real, text } from "drizzle-orm/sqlite-core";
 
 export const users = sqliteTable("users", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -50,7 +50,47 @@ export const notes = sqliteTable("notes", {
   updatedAt: integer("updated_at").notNull(),
 });
 
+/** Pasta de tarefas = um quadro; suas listas são as colunas. */
+export const taskFolders = sqliteTable("task_folders", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").notNull(),
+  name: text("name").notNull(),
+  /** REAL: reordenar insere entre vizinhos sem reescrever a coluna toda (ver task-position.ts). */
+  position: real("position").notNull().default(0),
+  archivedAt: integer("archived_at"),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+});
+
+export const taskLists = sqliteTable("task_lists", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").notNull(),
+  folderId: integer("folder_id").notNull(),
+  name: text("name").notNull(),
+  position: real("position").notNull().default(0),
+  archivedAt: integer("archived_at"),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+});
+
+export const tasks = sqliteTable("tasks", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").notNull(),
+  listId: integer("list_id").notNull(),
+  title: text("title").notNull(),
+  /** "none" | "low" | "medium" | "high". */
+  priority: text("priority").notNull().default("none"),
+  position: real("position").notNull().default(0),
+  doneAt: integer("done_at"),
+  archivedAt: integer("archived_at"),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+});
+
 export type UserRow = typeof users.$inferSelect;
 export type FolderRow = typeof folders.$inferSelect;
 export type NoteRow = typeof notes.$inferSelect;
+export type TaskFolderRow = typeof taskFolders.$inferSelect;
+export type TaskListRow = typeof taskLists.$inferSelect;
+export type TaskRow = typeof tasks.$inferSelect;
 export type MetricSampleRow = typeof metricSamples.$inferSelect;

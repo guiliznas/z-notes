@@ -144,3 +144,15 @@ export const PinFilledIcon = (p: IconProps) => (
     <path d={PIN_PATH} />
   </Svg>
 );
+export const CheckIcon = (p: IconProps) => (
+  <Svg strokeWidth={2.4} {...p}>
+    <path d="m5 12 4.5 4.5L19 7" />
+  </Svg>
+);
+export const BoardIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="3" y="4" width="5" height="16" rx="1.5" />
+    <rect x="10" y="4" width="5" height="10" rx="1.5" />
+    <rect x="17" y="4" width="4" height="13" rx="1.5" />
+  </Svg>
+);

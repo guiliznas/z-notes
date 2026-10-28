@@ -50,3 +50,53 @@ export const DeleteNoteQuery = z.object({
     .optional()
     .transform((v) => v === "true"),
 });
+
+/* ───────────── tarefas ───────────── */
+
+const TaskName = z.string().trim().min(1, "nome é obrigatório").max(100, "nome muito longo");
+const TaskTitle = z.string().trim().min(1, "título é obrigatório").max(500, "título muito longo");
+const TaskPriority = z.enum(["none", "low", "medium", "high"]);
+const AfterId = z.number().int().positive().nullable().optional();
+
+export const TaskFoldersQuery = z.object({
+  view: z.enum(["active", "archived"]).default("active"),
+});
+
+export const CreateTaskFolderSchema = z.object({ name: TaskName });
+
+export const UpdateTaskFolderSchema = z.object({
+  name: TaskName.optional(),
+  archived: z.boolean().optional(),
+  afterId: AfterId,
+});
+
+export const CreateTaskListSchema = z.object({
+  folderId: z.number().int().positive(),
+  name: TaskName,
+});
+
+export const UpdateTaskListSchema = z.object({
+  name: TaskName.optional(),
+  archived: z.boolean().optional(),
+  afterId: AfterId,
+});
+
+export const CreateTaskSchema = z.object({
+  listId: z.number().int().positive(),
+  title: TaskTitle,
+  priority: TaskPriority.optional(),
+});
+
+export const UpdateTaskSchema = z.object({
+  title: TaskTitle.optional(),
+  priority: TaskPriority.optional(),
+  done: z.boolean().optional(),
+  archived: z.boolean().optional(),
+  listId: z.number().int().positive().optional(),
+  afterId: AfterId,
+});
+
+export const BatchArchiveTasksSchema = z.object({
+  ids: z.array(z.number().int().positive()).min(1).max(500),
+  archived: z.boolean(),
+});

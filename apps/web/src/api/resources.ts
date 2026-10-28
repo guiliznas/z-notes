@@ -11,6 +11,20 @@ import type {
   UpdateNoteInput,
   AuthMeResponse,
   MetricsResponse,
+  Task,
+  TaskArchive,
+  TaskBoard,
+  TaskFolder,
+  TaskFolderWithCount,
+  TaskList,
+  CreateTaskFolderInput,
+  UpdateTaskFolderInput,
+  CreateTaskListInput,
+  UpdateTaskListInput,
+  CreateTaskInput,
+  UpdateTaskInput,
+  BatchArchiveTasksInput,
+  ArchiveCompletedResponse,
 } from "@z-notes/shared";
 import { api } from "./http.js";
 
@@ -40,6 +54,33 @@ export const updateNote = (id: number, input: UpdateNoteInput) =>
 export const trashNote = (id: number) => api<void>(`/notes/${id}`, { method: "DELETE" });
 export const hardDeleteNote = (id: number) => api<void>(`/notes/${id}?hard=true`, { method: "DELETE" });
 export const restoreNote = (id: number) => api<Note>(`/notes/${id}/restore`, { method: "POST" });
+
+// Tarefas: pastas (quadros), listas (colunas) e tarefas
+export const fetchTaskFolders = (view: "active" | "archived" = "active") =>
+  api<TaskFolderWithCount[]>(`/task-folders?view=${view}`);
+export const fetchTaskBoard = (folderId: number) => api<TaskBoard>(`/task-folders/${folderId}/board`);
+export const createTaskFolder = (input: CreateTaskFolderInput) =>
+  api<TaskFolder>("/task-folders", { method: "POST", body: JSON.stringify(input) });
+export const updateTaskFolder = (id: number, input: UpdateTaskFolderInput) =>
+  api<TaskFolder>(`/task-folders/${id}`, { method: "PATCH", body: JSON.stringify(input) });
+export const deleteTaskFolder = (id: number) => api<void>(`/task-folders/${id}`, { method: "DELETE" });
+
+export const createTaskList = (input: CreateTaskListInput) =>
+  api<TaskList>("/task-lists", { method: "POST", body: JSON.stringify(input) });
+export const updateTaskList = (id: number, input: UpdateTaskListInput) =>
+  api<TaskList>(`/task-lists/${id}`, { method: "PATCH", body: JSON.stringify(input) });
+export const deleteTaskList = (id: number) => api<void>(`/task-lists/${id}`, { method: "DELETE" });
+export const archiveCompletedTasks = (listId: number) =>
+  api<ArchiveCompletedResponse>(`/task-lists/${listId}/archive-completed`, { method: "POST", body: "{}" });
+
+export const createTask = (input: CreateTaskInput) =>
+  api<Task>("/tasks", { method: "POST", body: JSON.stringify(input) });
+export const updateTask = (id: number, input: UpdateTaskInput) =>
+  api<Task>(`/tasks/${id}`, { method: "PATCH", body: JSON.stringify(input) });
+export const deleteTask = (id: number) => api<void>(`/tasks/${id}`, { method: "DELETE" });
+export const setTasksArchived = (input: BatchArchiveTasksInput) =>
+  api<Task[]>("/tasks/archive", { method: "POST", body: JSON.stringify(input) });
+export const fetchTaskArchive = () => api<TaskArchive>("/task-archive");
 
 // Busca
 export function searchNotes(q: string, folderId: number | null) {
