@@ -51,6 +51,45 @@ CREATE TABLE IF NOT EXISTS notes (
 CREATE INDEX IF NOT EXISTS idx_notes_folder ON notes(folder_id);
 CREATE INDEX IF NOT EXISTS idx_notes_updated ON notes(updated_at);
 
+CREATE TABLE IF NOT EXISTS task_folders (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  name TEXT NOT NULL,
+  position REAL NOT NULL DEFAULT 0,
+  archived_at INTEGER,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS task_lists (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  folder_id INTEGER NOT NULL REFERENCES task_folders(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  position REAL NOT NULL DEFAULT 0,
+  archived_at INTEGER,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS tasks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  list_id INTEGER NOT NULL REFERENCES task_lists(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  priority TEXT NOT NULL DEFAULT 'none',
+  position REAL NOT NULL DEFAULT 0,
+  done_at INTEGER,
+  archived_at INTEGER,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_task_folders_user ON task_folders(user_id);
+CREATE INDEX IF NOT EXISTS idx_task_lists_folder ON task_lists(folder_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_list ON tasks(list_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_user ON tasks(user_id);
+
 CREATE VIRTUAL TABLE IF NOT EXISTS notes_fts USING fts5(
   content_md,
   content='notes',
