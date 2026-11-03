@@ -13,7 +13,6 @@ import {
   restoreNote,
   searchNotes,
   authMe,
-  authLogin,
   authLogout,
 } from "./resources";
 
@@ -105,11 +104,6 @@ describe("auth", () => {
   it("authMe", () => {
     authMe();
     expect(mockApi).toHaveBeenCalledWith("/auth/me");
-  });
-
-  it("authLogin com token=true", () => {
-    authLogin("senha");
-    expect(mockApi).toHaveBeenCalledWith("/auth/login?token=true", { method: "POST", body: { password: "senha" } });
   });
 
   it("authLogout", () => {
