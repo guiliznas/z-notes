@@ -57,6 +57,34 @@ vi.mock("@/hooks/useInbox", () => ({
     failedItems: mockFailedItems,
     retryFailed: vi.fn(),
   }),
+  useArchiveInboxItem: () => ({
+    mutate: vi.fn(),
+    isPending: false,
+  }),
+  useDeleteInboxItem: () => ({
+    mutate: vi.fn(),
+    isPending: false,
+  }),
+  useConvertInboxToTask: () => ({
+    mutate: vi.fn(),
+    isPending: false,
+  }),
+  useConvertInboxToNote: () => ({
+    mutate: vi.fn(),
+    isPending: false,
+  }),
+  useBatchArchiveInbox: () => ({
+    mutate: vi.fn(),
+    isPending: false,
+  }),
+  useBatchDeleteInbox: () => ({
+    mutate: vi.fn(),
+    isPending: false,
+  }),
+  useBatchConvertToTask: () => ({
+    mutate: vi.fn(),
+    isPending: false,
+  }),
 }));
 
 function makeItem(id: number, content: string, capturedAt: number, clientId = `client-${id}`): InboxItem {

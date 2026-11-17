@@ -28,6 +28,10 @@ import type {
   InboxItem,
   CreateInboxItemInput,
   UpdateInboxItemInput,
+  ConvertInboxToTaskInput,
+  ConvertInboxToTaskResponse,
+  ConvertInboxToNoteInput,
+  ConvertInboxToNoteResponse,
   InboxStatusFilter,
   InboxCountResponse,
 } from "@z-notes/shared";
@@ -124,3 +128,7 @@ export const createInboxItem = (input: CreateInboxItemInput) =>
 export const updateInboxItem = (id: number, input: UpdateInboxItemInput) =>
   api<InboxItem>(`/inbox/${id}`, { method: "PATCH", body: JSON.stringify(input) });
 export const deleteInboxItem = (id: number) => api<void>(`/inbox/${id}`, { method: "DELETE" });
+export const convertInboxToTask = (id: number, input: ConvertInboxToTaskInput) =>
+  api<ConvertInboxToTaskResponse>(`/inbox/${id}/to-task`, { method: "POST", body: JSON.stringify(input) });
+export const convertInboxToNote = (id: number, input: ConvertInboxToNoteInput) =>
+  api<ConvertInboxToNoteResponse>(`/inbox/${id}/to-note`, { method: "POST", body: JSON.stringify(input) });

@@ -9,6 +9,8 @@ import {
   type InfiniteData,
 } from "@tanstack/react-query";
 import type {
+  ConvertInboxToNoteInput,
+  ConvertInboxToTaskInput,
   CreateInboxItemInput,
   InboxCountResponse,
   InboxItem,
@@ -17,6 +19,8 @@ import type {
 } from "@z-notes/shared";
 import type { ApiError } from "@/api/http";
 import {
+  convertInboxToNote,
+  convertInboxToTask,
   createInboxItem,
   deleteInboxItem,
   fetchInbox,
@@ -218,6 +222,77 @@ export function useDeleteInboxItem() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: INBOX_KEY });
       qc.invalidateQueries({ queryKey: INBOX_COUNT_KEY });
+    },
+  });
+}
+
+export function useConvertInboxToTask() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, listId }: { id: number; listId: number }) =>
+      convertInboxToTask(id, { listId }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: INBOX_KEY });
+      qc.invalidateQueries({ queryKey: INBOX_COUNT_KEY });
+      qc.invalidateQueries({ queryKey: ["task-folders"] });
+      qc.invalidateQueries({ queryKey: ["task-board"] });
+    },
+  });
+}
+
+export function useConvertInboxToNote() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, folderId }: { id: number; folderId: number }) =>
+      convertInboxToNote(id, { folderId }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: INBOX_KEY });
+      qc.invalidateQueries({ queryKey: INBOX_COUNT_KEY });
+      qc.invalidateQueries({ queryKey: ["folders"] });
+      qc.invalidateQueries({ queryKey: ["notes"] });
+    },
+  });
+}
+
+export function useBatchArchiveInbox() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ ids, archived }: { ids: number[]; archived: boolean }) => {
+      await Promise.all(ids.map((id) => updateInboxItem(id, { archived })));
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: INBOX_KEY });
+      qc.invalidateQueries({ queryKey: INBOX_COUNT_KEY });
+    },
+  });
+}
+
+export function useBatchDeleteInbox() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (ids: number[]) => {
+      await Promise.all(ids.map((id) => deleteInboxItem(id)));
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: INBOX_KEY });
+      qc.invalidateQueries({ queryKey: INBOX_COUNT_KEY });
+    },
+  });
+}
+
+export function useBatchConvertToTask() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ ids, listId }: { ids: number[]; listId: number }) => {
+      for (const id of ids) {
+        await convertInboxToTask(id, { listId });
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: INBOX_KEY });
+      qc.invalidateQueries({ queryKey: INBOX_COUNT_KEY });
+      qc.invalidateQueries({ queryKey: ["task-folders"] });
+      qc.invalidateQueries({ queryKey: ["task-board"] });
     },
   });
 }
