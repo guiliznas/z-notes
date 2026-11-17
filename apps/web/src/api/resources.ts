@@ -25,6 +25,11 @@ import type {
   UpdateTaskInput,
   BatchArchiveTasksInput,
   ArchiveCompletedResponse,
+  InboxItem,
+  CreateInboxItemInput,
+  UpdateInboxItemInput,
+  InboxStatusFilter,
+  InboxCountResponse,
 } from "@z-notes/shared";
 import { api } from "./http.js";
 
@@ -103,3 +108,19 @@ export function importFiles(files: File[]) {
   for (const file of files) form.append("files", file, file.webkitRelativePath || file.name);
   return api<{ notesImported: number }>("/import", { method: "POST", body: form });
 }
+
+// Inbox
+export function fetchInbox(params: { status?: InboxStatusFilter; before?: number; limit?: number } = {}) {
+  const sp = new URLSearchParams();
+  if (params.status) sp.set("status", params.status);
+  if (params.before !== undefined) sp.set("before", String(params.before));
+  if (params.limit !== undefined) sp.set("limit", String(params.limit));
+  const qs = sp.toString();
+  return api<InboxItem[]>(`/inbox${qs ? `?${qs}` : ""}`);
+}
+export const fetchInboxCount = () => api<InboxCountResponse>("/inbox/count");
+export const createInboxItem = (input: CreateInboxItemInput) =>
+  api<InboxItem>("/inbox", { method: "POST", body: JSON.stringify(input) });
+export const updateInboxItem = (id: number, input: UpdateInboxItemInput) =>
+  api<InboxItem>(`/inbox/${id}`, { method: "PATCH", body: JSON.stringify(input) });
+export const deleteInboxItem = (id: number) => api<void>(`/inbox/${id}`, { method: "DELETE" });

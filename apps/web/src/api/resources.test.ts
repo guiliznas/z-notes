@@ -16,6 +16,11 @@ import {
   authLogout,
   fetchAdminMetrics,
   importFiles,
+  fetchInbox,
+  fetchInboxCount,
+  createInboxItem,
+  updateInboxItem,
+  deleteInboxItem,
 } from "./resources";
 
 const mockApi = vi.hoisted(() => vi.fn());
@@ -124,5 +129,43 @@ describe("import/export", () => {
     const file = new File(["conteudo"], "nota.md", { type: "text/markdown" });
     importFiles([file]);
     expect(mockApi).toHaveBeenCalledWith("/import", { method: "POST", body: expect.any(FormData) });
+  });
+});
+
+describe("inbox", () => {
+  it("fetchInbox com filtros", () => {
+    fetchInbox({ status: "pending", before: 10, limit: 20 });
+    expect(mockApi).toHaveBeenCalledWith("/inbox?status=pending&before=10&limit=20");
+  });
+
+  it("fetchInbox padrão", () => {
+    fetchInbox();
+    expect(mockApi).toHaveBeenCalledWith("/inbox");
+  });
+
+  it("fetchInboxCount", () => {
+    fetchInboxCount();
+    expect(mockApi).toHaveBeenCalledWith("/inbox/count");
+  });
+
+  it("createInboxItem", () => {
+    createInboxItem({ clientId: "c1", content: "oi" });
+    expect(mockApi).toHaveBeenCalledWith("/inbox", {
+      method: "POST",
+      body: JSON.stringify({ clientId: "c1", content: "oi" }),
+    });
+  });
+
+  it("updateInboxItem", () => {
+    updateInboxItem(5, { archived: true });
+    expect(mockApi).toHaveBeenCalledWith("/inbox/5", {
+      method: "PATCH",
+      body: JSON.stringify({ archived: true }),
+    });
+  });
+
+  it("deleteInboxItem", () => {
+    deleteInboxItem(7);
+    expect(mockApi).toHaveBeenCalledWith("/inbox/7", { method: "DELETE" });
   });
 });
