@@ -22,7 +22,7 @@ interface NotesState extends CountAndMax {
 export function computeFingerprint(ctx: AppContext): string {
   const notes = notesState(ctx);
   const folders = countAndMax(ctx, "folders");
-  return `${notes.maxUpdated}:${notes.count}:${notes.versionSum}:${notes.pinnedSum}:${folders.maxUpdated}:${folders.count}:${tasksState(ctx)}:${inboxState(ctx)}`;
+  return `${notes.maxUpdated}:${notes.count}:${notes.versionSum}:${notes.pinnedSum}:${folders.maxUpdated}:${folders.count}:${tasksState(ctx)}:${inboxState(ctx)}:${tokensState(ctx)}`;
 }
 
 function notesState(ctx: AppContext): NotesState {
@@ -76,4 +76,21 @@ function inboxState(ctx: AppContext): string {
     )
     .get() as { count: number; maxUpdated: number; archivedSum: number };
   return `${row.count}.${row.maxUpdated}.${row.archivedSum}`;
+}
+
+/**
+ * Tokens de API: COUNT + MAX(created_at) + soma de revoked_at.
+ * last_used_at é propositalmente omitido para evitar snapshots a cada requisição externa.
+ */
+function tokensState(ctx: AppContext): string {
+  const row = ctx.sqlite
+    .prepare(
+      `SELECT
+         COUNT(*) AS count,
+         COALESCE(MAX(created_at), 0) AS maxCreated,
+         COALESCE(SUM(COALESCE(revoked_at, 0)), 0) AS revokedSum
+       FROM api_tokens`,
+    )
+    .get() as { count: number; maxCreated: number; revokedSum: number };
+  return `${row.count}.${row.maxCreated}.${row.revokedSum}`;
 }
