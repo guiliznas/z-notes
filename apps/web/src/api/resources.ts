@@ -134,3 +134,30 @@ export const convertInboxToTask = (id: number, input: ConvertInboxToTaskInput) =
   api<ConvertInboxToTaskResponse>(`/inbox/${id}/to-task`, { method: "POST", body: JSON.stringify(input) });
 export const convertInboxToNote = (id: number, input: ConvertInboxToNoteInput) =>
   api<ConvertInboxToNoteResponse>(`/inbox/${id}/to-note`, { method: "POST", body: JSON.stringify(input) });
+
+// Tokens de Acesso Pessoal (API)
+export interface ApiTokenItem {
+  id: number;
+  name: string;
+  prefix: string;
+  scope: string;
+  createdAt: number;
+  lastUsedAt: number | null;
+  revokedAt: number | null;
+  active: boolean;
+}
+
+export interface CreatedApiToken {
+  id: number;
+  name: string;
+  token: string;
+  prefix: string;
+  scope: string;
+  createdAt: number;
+}
+
+export const fetchApiTokens = () => api<ApiTokenItem[]>("/tokens");
+export const createApiToken = (input: { name: string }) =>
+  api<CreatedApiToken>("/tokens", { method: "POST", body: JSON.stringify(input) });
+export const revokeApiToken = (id: number) =>
+  api<{ success: boolean; id: number; revokedAt: number }>(`/tokens/${id}`, { method: "DELETE" });
