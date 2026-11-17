@@ -22,7 +22,7 @@ interface NotesState extends CountAndMax {
 export function computeFingerprint(ctx: AppContext): string {
   const notes = notesState(ctx);
   const folders = countAndMax(ctx, "folders");
-  return `${notes.maxUpdated}:${notes.count}:${notes.versionSum}:${notes.pinnedSum}:${folders.maxUpdated}:${folders.count}:${tasksState(ctx)}`;
+  return `${notes.maxUpdated}:${notes.count}:${notes.versionSum}:${notes.pinnedSum}:${folders.maxUpdated}:${folders.count}:${tasksState(ctx)}:${inboxState(ctx)}`;
 }
 
 function notesState(ctx: AppContext): NotesState {
@@ -60,4 +60,20 @@ function tasksState(ctx: AppContext): string {
     )
     .get() as Record<string, number>;
   return `${row.fc}.${row.fm}.${row.fs}:${row.lc}.${row.lm}.${row.ls}:${row.tc}.${row.tm}.${row.ts}`;
+}
+
+/**
+ * Itens do inbox: COUNT + MAX(updated_at) + soma de archived_at.
+ */
+function inboxState(ctx: AppContext): string {
+  const row = ctx.sqlite
+    .prepare(
+      `SELECT
+         COUNT(*) AS count,
+         COALESCE(MAX(updated_at), 0) AS maxUpdated,
+         COALESCE(SUM(COALESCE(archived_at, 0)), 0) AS archivedSum
+       FROM inbox_items`,
+    )
+    .get() as { count: number; maxUpdated: number; archivedSum: number };
+  return `${row.count}.${row.maxUpdated}.${row.archivedSum}`;
 }

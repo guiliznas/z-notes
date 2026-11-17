@@ -87,10 +87,25 @@ export const tasks = sqliteTable("tasks", {
   updatedAt: integer("updated_at").notNull(),
 });
 
+export const inboxItems = sqliteTable("inbox_items", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").notNull(),
+  clientId: text("client_id").notNull(),
+  content: text("content").notNull(),
+  source: text("source").notNull(),
+  capturedAt: integer("captured_at").notNull(),
+  archivedAt: integer("archived_at"),
+  resolvedKind: text("resolved_kind"),
+  resolvedId: integer("resolved_id"),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+});
+
 export type UserRow = typeof users.$inferSelect;
 export type FolderRow = typeof folders.$inferSelect;
 export type NoteRow = typeof notes.$inferSelect;
 export type TaskFolderRow = typeof taskFolders.$inferSelect;
 export type TaskListRow = typeof taskLists.$inferSelect;
 export type TaskRow = typeof tasks.$inferSelect;
+export type InboxItemRow = typeof inboxItems.$inferSelect;
 export type MetricSampleRow = typeof metricSamples.$inferSelect;

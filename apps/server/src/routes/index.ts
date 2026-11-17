@@ -5,6 +5,7 @@ import { registerAuthRoutes } from "./auth.js";
 import { registerFolderRoutes } from "./folders.js";
 import { registerNoteRoutes } from "./notes.js";
 import { registerTaskRoutes } from "./tasks.js";
+import { registerInboxRoutes } from "./inbox.js";
 import { registerSearchRoutes } from "./search.js";
 import { registerIoRoutes } from "./io.js";
 import { registerAdminRoutes } from "./admin.js";
@@ -26,6 +27,7 @@ export function registerApiRoutes(app: FastifyInstance, ctx: AppContext): void {
   registerFolderRoutes(app, ctx);
   registerNoteRoutes(app, ctx);
   registerTaskRoutes(app, ctx);
+  registerInboxRoutes(app, ctx);
   registerSearchRoutes(app, ctx);
   registerIoRoutes(app, ctx);
   registerAdminRoutes(app, ctx);

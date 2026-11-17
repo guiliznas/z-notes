@@ -100,3 +100,34 @@ export const BatchArchiveTasksSchema = z.object({
   ids: z.array(z.number().int().positive()).min(1).max(500),
   archived: z.boolean(),
 });
+
+/* ───────────── inbox ───────────── */
+
+export const InboxSourceSchema = z.enum(["app", "share", "desktop", "api"]);
+export const InboxStatusSchema = z.enum(["pending", "archived", "resolved"]);
+
+export const CreateInboxItemSchema = z.object({
+  clientId: z.string().trim().min(1, "clientId é obrigatório"),
+  content: z.string().trim().min(1, "conteúdo é obrigatório").max(20000, "conteúdo muito longo"),
+  source: InboxSourceSchema.optional().default("api"),
+  capturedAt: z.number().int().positive().optional(),
+});
+
+export const ListInboxQuery = z.object({
+  status: InboxStatusSchema.optional().default("pending"),
+  before: z.coerce.number().int().positive().optional(),
+  limit: z.coerce.number().int().min(1).max(100).optional().default(50),
+});
+
+export const UpdateInboxItemSchema = z.object({
+  archived: z.boolean(),
+});
+
+export const ConvertInboxToTaskSchema = z.object({
+  listId: z.number().int().positive(),
+});
+
+export const ConvertInboxToNoteSchema = z.object({
+  folderId: z.number().int().positive(),
+});
+
