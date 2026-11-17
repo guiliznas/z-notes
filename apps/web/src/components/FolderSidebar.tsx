@@ -22,6 +22,7 @@ import {
   FolderPlusIcon,
 } from "./icons";
 import { SidebarFooter } from "./SidebarFooter";
+import { SectionSwitch } from "./SectionSwitch";
 
 interface Props {
   onNavigate?: () => void;
@@ -72,6 +73,9 @@ export function FolderSidebar({ onNavigate }: Props) {
 
   return (
     <div className="flex h-full flex-col bg-[var(--sidebar)]">
+      <div className="px-3 pt-3">
+        <SectionSwitch current="notes" />
+      </div>
       <div className="flex items-center justify-between px-3 pt-3 pb-1">
         <span className="px-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">Pastas</span>
         <IconButton label="Nova pasta" onClick={() => setDialog({ type: "new-root" })}>

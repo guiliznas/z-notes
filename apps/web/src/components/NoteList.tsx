@@ -186,7 +186,7 @@ function NoteRow({ note, active, snippet, folder, onClick }: RowProps) {
         )}
       >
         <div className="flex items-center gap-2">
-          {note.pinned && <PinFilledIcon aria-label="Fixada" role="img" className="shrink-0 text-xs text-[var(--accent)]" />}
+          {note.pinned && <PinFilledIcon aria-hidden={false} aria-label="Fixada" role="img" className="shrink-0 text-xs text-[var(--accent)]" />}
           <span className="flex-1 truncate text-sm font-semibold">{note.title}</span>
           {note.archived && <span className="rounded bg-[var(--surface-2)] px-1.5 py-0.5 text-[10px] text-[var(--muted)]">arquivada</span>}
         </div>
