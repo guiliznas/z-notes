@@ -77,6 +77,7 @@ CREATE TABLE IF NOT EXISTS tasks (
   user_id INTEGER NOT NULL REFERENCES users(id),
   list_id INTEGER NOT NULL REFERENCES task_lists(id) ON DELETE CASCADE,
   title TEXT NOT NULL,
+  content_md TEXT NOT NULL DEFAULT '',
   priority TEXT NOT NULL DEFAULT 'none',
   position REAL NOT NULL DEFAULT 0,
   done_at INTEGER,
@@ -164,6 +165,10 @@ function migrateUserColumns(sqlite: Sqlite): boolean {
   }
   if (!hasColumn(sqlite, "notes", "pinned_at")) {
     sqlite.exec("ALTER TABLE notes ADD COLUMN pinned_at INTEGER");
+    migrated = true;
+  }
+  if (!hasColumn(sqlite, "tasks", "content_md")) {
+    sqlite.exec("ALTER TABLE tasks ADD COLUMN content_md TEXT NOT NULL DEFAULT ''");
     migrated = true;
   }
   return migrated;

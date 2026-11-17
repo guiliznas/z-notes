@@ -176,11 +176,45 @@ describe("inbox service", () => {
       expect(res1.item.resolvedId).toBe(res1.task.id);
       expect(res1.task.listId).toBe(taskList.id);
       expect(res1.task.title).toBe("Título da tarefa principal");
+      expect(res1.task.contentMd).toBe("Linha dois com detalhes\nLinha três");
 
       // Repetição devolve a mesma tarefa sem duplicar
       const res2 = convertInboxToTask(t.ctx, item.id, taskList.id);
       expect(res2.task.id).toBe(res1.task.id);
       expect(res2.item.id).toBe(item.id);
+    });
+
+    it("preserva todo o texto de mensagem longa do Inbox ao virar tarefa (critério 1)", () => {
+      const taskFolder = createTaskFolder(t.ctx, { name: "Quadro" });
+      const taskList = createTaskList(t.ctx, { folderId: taskFolder.id, name: "Inbox Coluna" });
+
+      // Mensagem com primeira linha normal e corpo extenso
+      const longMessage = `Comprar suprimentos para o escritório
+- 10 cadernos pautados
+- 5 caixas de caneta esferográfica preta
+- 2 resmas de papel A4
+- Café em grãos e filtros
+Obs: Pegar a nota fiscal com o CNPJ da empresa para reembolso imediato.`;
+
+      const { item } = createInboxItem(t.ctx, { clientId: "long-msg-1", content: longMessage });
+      const res = convertInboxToTask(t.ctx, item.id, taskList.id);
+
+      expect(res.task.title).toBe("Comprar suprimentos para o escritório");
+      expect(res.task.contentMd).toBe(`- 10 cadernos pautados
+- 5 caixas de caneta esferográfica preta
+- 2 resmas de papel A4
+- Café em grãos e filtros
+Obs: Pegar a nota fiscal com o CNPJ da empresa para reembolso imediato.`);
+
+      // Mensagem de linha única muito longa (> 500 caracteres) não perde os caracteres excedentes
+      const singleLongLine = "A".repeat(600) + " e final do texto preservado";
+      const { item: item2 } = createInboxItem(t.ctx, { clientId: "long-line-2", content: singleLongLine });
+      const res2 = convertInboxToTask(t.ctx, item2.id, taskList.id);
+
+      expect(res2.task.title).toBe("A".repeat(500));
+      expect(res2.task.contentMd).toBe("A".repeat(100) + " e final do texto preservado");
+      // Total de caracteres de título + contentMd recupera a string original
+      expect(res2.task.title + res2.task.contentMd).toBe(singleLongLine);
     });
 
     it("falha conversão para tarefa se lista estiver arquivada", () => {

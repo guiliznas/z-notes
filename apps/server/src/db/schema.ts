@@ -78,6 +78,7 @@ export const tasks = sqliteTable("tasks", {
   userId: integer("user_id").notNull(),
   listId: integer("list_id").notNull(),
   title: text("title").notNull(),
+  contentMd: text("content_md").notNull().default(""),
   /** "none" | "low" | "medium" | "high". */
   priority: text("priority").notNull().default("none"),
   position: real("position").notNull().default(0),

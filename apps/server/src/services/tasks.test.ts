@@ -1,9 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { makeTestCtx, type TestCtx } from "../test-helpers.js";
 import { upsertUserByGoogle } from "../auth/users.js";
+import { createFolder } from "./folders.js";
+import { getNote } from "./notes.js";
 import { computeFingerprint } from "../backup/fingerprint.js";
 import {
   archiveCompleted,
+  convertTaskToNote,
   createTask,
   createTaskFolder,
   createTaskList,
@@ -163,7 +166,7 @@ describe("tarefas", () => {
     });
 
     it("muitas reordenações no mesmo vão preservam a ordem (rebalanceamento)", () => {
-      const { folder, todo, a, b } = seed();
+      const { folder, todo, a, b, c } = seed();
       const extra = Array.from({ length: 60 }, (_, i) => createTask(t.ctx, { listId: todo.id, title: `E${i}` }));
       for (const e of extra) updateTask(t.ctx, e.id, { afterId: a.id });
       const order = boardTasks(folder.id, todo.id);
@@ -302,7 +305,7 @@ describe("tarefas", () => {
     });
 
     it("arquivar em lote com um id alheio falha inteiro e não altera nada", () => {
-      const { folder, todo, a, b } = seed();
+      const { folder, todo, a, b, c } = seed();
       const other = upsertUserByGoogle(t.ctx, { sub: "outro", email: "outro@example.com" });
       const o = { ...t.ctx, userId: other.id };
       const f = createTaskFolder(o, { name: "F" });
@@ -330,6 +333,85 @@ describe("tarefas", () => {
       step(() => updateTask(t.ctx, a.id, { archived: true }));
       step(() => updateTaskList(t.ctx, todo.id, { name: "renomeada" }));
       step(() => deleteTask(t.ctx, b.id));
+    });
+  });
+  describe("conteúdo da tarefa e conversão para nota", () => {
+    it("cria tarefa com contentMd e atualiza contentMd sem alterar a ordem", () => {
+      const { folder, todo, a, b, c } = seed();
+      const taskWithContent = createTask(t.ctx, {
+        listId: todo.id,
+        title: "Tarefa com detalhes",
+        contentMd: "## Especificação\n- Detalhe 1\n- Detalhe 2",
+      });
+      expect(taskWithContent.contentMd).toBe("## Especificação\n- Detalhe 1\n- Detalhe 2");
+
+      // Atualiza contentMd da tarefa 'a'
+      const updatedA = updateTask(t.ctx, a.id, {
+        contentMd: "Novo conteúdo markdown",
+      });
+      expect(updatedA.contentMd).toBe("Novo conteúdo markdown");
+
+      // Verifica que a ordem da coluna permanece exatamente a mesma (critério 2)
+      const tasksOrder = boardTasks(folder.id, todo.id);
+      expect(tasksOrder).toEqual([a.id, b.id, c.id, taskWithContent.id]);
+    });
+
+    it("convertTaskToNote cria uma nova nota com título e conteúdo da tarefa", () => {
+      const { todo } = seed();
+      const task = createTask(t.ctx, {
+        listId: todo.id,
+        title: "Planejamento 2027",
+        contentMd: "Metas e objetivos da equipe.",
+      });
+
+      const noteFolder = createFolder(t.ctx, { name: "Projetos" });
+      const note = convertTaskToNote(t.ctx, task.id, noteFolder.id);
+
+      expect(note.folderId).toBe(noteFolder.id);
+      expect(note.title).toBe("Planejamento 2027");
+      expect(note.contentMd).toBe("# Planejamento 2027\n\nMetas e objetivos da equipe.");
+
+      // Confirma que a nota foi persistida no banco
+      const fetched = getNote(t.ctx, note.id);
+      expect(fetched.contentMd).toBe("# Planejamento 2027\n\nMetas e objetivos da equipe.");
+    });
+
+    it("convertTaskToNote cria nota mesmo se contentMd for vazio", () => {
+      const { todo } = seed();
+      const task = createTask(t.ctx, {
+        listId: todo.id,
+        title: "Apenas título",
+      });
+
+      const noteFolder = createFolder(t.ctx, { name: "Geral" });
+      const note = convertTaskToNote(t.ctx, task.id, noteFolder.id);
+
+      expect(note.title).toBe("Apenas título");
+      expect(note.contentMd).toBe("# Apenas título");
+    });
+
+    it("convertTaskToNote rejeita pasta inexistente ou de outro usuário", () => {
+      const { todo } = seed();
+      const task = createTask(t.ctx, { listId: todo.id, title: "T" });
+      expect(() => convertTaskToNote(t.ctx, task.id, 99999)).toThrow(/Pasta de destino não existe/);
+
+      const other = upsertUserByGoogle(t.ctx, { sub: "outro-nota", email: "outro-nota@example.com" });
+      const o = { ...t.ctx, userId: other.id };
+      const otherFolder = createFolder(o, { name: "Privada" });
+
+      // Usuário t.ctx não pode converter para a pasta do outro usuário
+      expect(() => convertTaskToNote(t.ctx, task.id, otherFolder.id)).toThrow(/Pasta de destino não existe/);
+    });
+
+    it("editar só o contentMd muda o fingerprint do backup", () => {
+      const { todo } = seed();
+      const task = createTask(t.ctx, { listId: todo.id, title: "Tarefa para fp" });
+      const fpBefore = computeFingerprint(t.ctx);
+
+      updateTask(t.ctx, task.id, { contentMd: "Novo conteúdo adicionado" });
+      const fpAfter = computeFingerprint(t.ctx);
+
+      expect(fpAfter).not.toBe(fpBefore);
     });
   });
 });

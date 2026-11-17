@@ -1,5 +1,6 @@
 import { and, asc, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import type {
+  Note,
   ArchivedTask,
   ArchivedTaskFolder,
   ArchivedTaskList,
@@ -28,6 +29,8 @@ import {
 } from "../db/schema.js";
 import { badRequest, notFound } from "../errors.js";
 import { endPosition, placeAfter, type Sibling } from "./task-position.js";
+import { getFolderRow as getNoteFolderRow } from "./folders.js";
+import { createNote } from "./notes.js";
 
 /* ───────────── mapeamento ───────────── */
 
@@ -59,6 +62,7 @@ function taskToApi(row: TaskRow): Task {
     id: row.id,
     listId: row.listId,
     title: row.title,
+    contentMd: row.contentMd ?? "",
     priority: row.priority as TaskPriority,
     position: row.position,
     done: row.doneAt !== null,
@@ -338,6 +342,7 @@ export function createTask(ctx: RequestContext, input: CreateTaskInput): Task {
       userId: ctx.userId,
       listId: list.id,
       title: input.title,
+      contentMd: input.contentMd ?? "",
       priority: input.priority ?? "none",
       position: endPosition(taskSiblings(ctx, list.id)),
       createdAt: now,
@@ -354,6 +359,7 @@ export function updateTask(ctx: RequestContext, id: number, input: UpdateTaskInp
   ctx.sqlite.transaction(() => {
     const patch: Partial<TaskRow> = { updatedAt: now };
     if (input.title !== undefined) patch.title = input.title;
+    if (input.contentMd !== undefined) patch.contentMd = input.contentMd;
     if (input.priority !== undefined) patch.priority = input.priority;
     if (input.done !== undefined) patch.doneAt = input.done ? (existing.doneAt ?? now) : null;
 
@@ -464,6 +470,7 @@ export function getTaskArchive(ctx: RequestContext): TaskArchive {
     id: r.id as number,
     listId: r.list_id as number,
     title: r.title as string,
+    contentMd: (r.content_md as string) ?? "",
     priority: r.priority as TaskPriority,
     position: r.position as number,
     done: r.done_at !== null,
@@ -477,4 +484,16 @@ export function getTaskArchive(ctx: RequestContext): TaskArchive {
   }));
 
   return { folders, lists, tasks: archivedTasks };
+}
+
+export function convertTaskToNote(ctx: RequestContext, id: number, folderId: number): Note {
+  const task = getTaskRow(ctx, id);
+  const folder = getNoteFolderRow(ctx, folderId);
+  if (!folder) throw badRequest("Pasta de destino não existe");
+
+  const noteContent = task.contentMd?.trim()
+    ? `# ${task.title}\n\n${task.contentMd}`
+    : `# ${task.title}`;
+
+  return createNote(ctx, { folderId, contentMd: noteContent });
 }

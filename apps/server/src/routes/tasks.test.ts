@@ -143,4 +143,50 @@ describe("rotas de tarefas", () => {
     const board = (await get(`/api/task-folders/${folderId}/board`)).json();
     expect(board.lists[0].tasks[0].title).toBe("privada");
   });
+  it("suporta contentMd na criação, atualização e valida limite de tamanho", async () => {
+    const created = (
+      await post("/api/tasks", {
+        listId,
+        title: "Tarefa com detalhes",
+        contentMd: "Primeiro detalhe",
+      })
+    ).json();
+    expect(created.contentMd).toBe("Primeiro detalhe");
+
+    const patched = (
+      await patch(`/api/tasks/${created.id}`, {
+        contentMd: "Detalhe atualizado via PATCH",
+      })
+    ).json();
+    expect(patched.contentMd).toBe("Detalhe atualizado via PATCH");
+
+    // Rejeita conteúdo excedendo limite de 50.000 caracteres com 400
+    const tooLong = "c".repeat(50001);
+    const badRes = await patch(`/api/tasks/${created.id}`, { contentMd: tooLong });
+    expect(badRes.statusCode).toBe(400);
+  });
+
+  it("POST /api/tasks/:id/to-note converte tarefa em nota na pasta indicada", async () => {
+    // Cria pasta de notas
+    const noteFolder = (await post("/api/folders", { name: "Projetos 2026" })).json();
+
+    const task = (
+      await post("/api/tasks", {
+        listId,
+        title: "Documentar arquitetura",
+        contentMd: "## Diagramas\n- Backend Fastify\n- Frontend React",
+      })
+    ).json();
+
+    const res = await post(`/api/tasks/${task.id}/to-note`, { folderId: noteFolder.id });
+    expect(res.statusCode).toBe(201);
+    const note = res.json();
+    expect(note.folderId).toBe(noteFolder.id);
+    expect(note.title).toBe("Documentar arquitetura");
+    expect(note.contentMd).toBe("# Documentar arquitetura\n\n## Diagramas\n- Backend Fastify\n- Frontend React");
+
+    // Usuário B não pode converter tarefa de A (404)
+    const resB = await post(`/api/tasks/${task.id}/to-note`, { folderId: noteFolder.id }, cookieB);
+    expect(resB.statusCode).toBe(404);
+  });
 });

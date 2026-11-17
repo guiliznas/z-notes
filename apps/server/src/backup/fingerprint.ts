@@ -56,7 +56,7 @@ function tasksState(ctx: AppContext): string {
          (SELECT COALESCE(SUM(position) + SUM(COALESCE(archived_at, 0)), 0) FROM task_lists) AS ls,
          (SELECT COUNT(*) FROM tasks) AS tc,
          (SELECT COALESCE(MAX(updated_at), 0) FROM tasks) AS tm,
-         (SELECT COALESCE(SUM(position) + SUM(COALESCE(archived_at, 0)) + SUM(COALESCE(done_at, 0)), 0) FROM tasks) AS ts`,
+         (SELECT COALESCE(SUM(position) + SUM(COALESCE(archived_at, 0)) + SUM(COALESCE(done_at, 0)) + SUM(LENGTH(content_md)), 0) FROM tasks) AS ts`,
     )
     .get() as Record<string, number>;
   return `${row.fc}.${row.fm}.${row.fs}:${row.lc}.${row.lm}.${row.ls}:${row.tc}.${row.tm}.${row.ts}`;

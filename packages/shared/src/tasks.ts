@@ -45,6 +45,7 @@ export interface Task {
   id: number;
   listId: number;
   title: string;
+  contentMd: string;
   priority: TaskPriority;
   position: number;
   done: boolean;
@@ -116,11 +117,13 @@ export interface UpdateTaskListInput {
 export interface CreateTaskInput {
   listId: number;
   title: string;
+  contentMd?: string;
   priority?: TaskPriority;
 }
 
 export interface UpdateTaskInput {
   title?: string;
+  contentMd?: string;
   priority?: TaskPriority;
   done?: boolean;
   archived?: boolean;
@@ -128,6 +131,10 @@ export interface UpdateTaskInput {
   listId?: number;
   /** posição na lista de destino: depois desta tarefa (null = primeira). */
   afterId?: number | null;
+}
+
+export interface ConvertTaskToNoteInput {
+  folderId: number;
 }
 
 export interface BatchArchiveTasksInput {

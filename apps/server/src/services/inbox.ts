@@ -40,6 +40,7 @@ function taskToApi(row: TaskRow): Task {
     id: row.id,
     listId: row.listId,
     title: row.title,
+    contentMd: row.contentMd ?? "",
     priority: row.priority as Task["priority"],
     position: row.position,
     done: row.doneAt !== null,
@@ -235,15 +236,28 @@ export function convertInboxToTask(
   if (!folder) throw badRequest("Pasta da lista não existe");
   if (folder.archivedAt !== null) throw badRequest("Pasta de destino está arquivada");
 
-  const firstLine = existing.content.split("\n")[0].trim();
-  const title = firstLine.slice(0, 500) || "Sem título";
+  const trimmed = existing.content.trim();
+  const newlineIdx = trimmed.indexOf("\n");
+  let title: string;
+  let contentMd = "";
+
+  if (newlineIdx !== -1) {
+    const firstLine = trimmed.slice(0, newlineIdx).trim();
+    const remainder = trimmed.slice(newlineIdx + 1).trim();
+    title = firstLine.slice(0, 500) || "Sem título";
+    const overflow = firstLine.length > 500 ? firstLine.slice(500).trim() : "";
+    contentMd = overflow ? (remainder ? `${overflow}\n\n${remainder}` : overflow) : remainder;
+  } else {
+    title = trimmed.slice(0, 500) || "Sem título";
+    contentMd = trimmed.length > 500 ? trimmed.slice(500).trim() : "";
+  }
   const now = Date.now();
 
   let createdTask: Task;
   let updatedItem: InboxItemRow;
 
   ctx.sqlite.transaction(() => {
-    createdTask = createTask(ctx, { listId: list.id, title });
+    createdTask = createTask(ctx, { listId: list.id, title, contentMd });
 
     updatedItem = ctx.db
       .update(inboxItems)

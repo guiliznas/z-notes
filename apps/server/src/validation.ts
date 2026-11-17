@@ -55,6 +55,7 @@ export const DeleteNoteQuery = z.object({
 
 const TaskName = z.string().trim().min(1, "nome é obrigatório").max(100, "nome muito longo");
 const TaskTitle = z.string().trim().min(1, "título é obrigatório").max(500, "título muito longo");
+export const TaskContent = z.string().max(50000, "conteúdo muito longo");
 const TaskPriority = z.enum(["none", "low", "medium", "high"]);
 const AfterId = z.number().int().positive().nullable().optional();
 
@@ -84,16 +85,22 @@ export const UpdateTaskListSchema = z.object({
 export const CreateTaskSchema = z.object({
   listId: z.number().int().positive(),
   title: TaskTitle,
+  contentMd: TaskContent.optional(),
   priority: TaskPriority.optional(),
 });
 
 export const UpdateTaskSchema = z.object({
   title: TaskTitle.optional(),
+  contentMd: TaskContent.optional(),
   priority: TaskPriority.optional(),
   done: z.boolean().optional(),
   archived: z.boolean().optional(),
   listId: z.number().int().positive().optional(),
   afterId: AfterId,
+});
+
+export const ConvertTaskToNoteSchema = z.object({
+  folderId: z.number().int().positive(),
 });
 
 export const BatchArchiveTasksSchema = z.object({

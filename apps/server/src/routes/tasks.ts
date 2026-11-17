@@ -3,6 +3,7 @@ import type { AppContext } from "../context.js";
 import { reqCtx } from "../auth/session.js";
 import {
   BatchArchiveTasksSchema,
+  ConvertTaskToNoteSchema,
   CreateTaskFolderSchema,
   CreateTaskListSchema,
   CreateTaskSchema,
@@ -14,6 +15,7 @@ import {
 } from "../validation.js";
 import {
   archiveCompleted,
+  convertTaskToNote,
   createTask,
   createTaskFolder,
   createTaskList,
@@ -100,6 +102,13 @@ export function registerTaskRoutes(app: FastifyInstance, ctx: AppContext): void 
     deleteTask(reqCtx(ctx, req), id);
     reply.code(204);
     return null;
+  });
+
+  app.post("/api/tasks/:id/to-note", async (req, reply) => {
+    const { id } = IdParam.parse(req.params);
+    const { folderId } = ConvertTaskToNoteSchema.parse(req.body);
+    reply.code(201);
+    return convertTaskToNote(reqCtx(ctx, req), id, folderId);
   });
 
   app.post("/api/tasks/archive", async (req) => {
