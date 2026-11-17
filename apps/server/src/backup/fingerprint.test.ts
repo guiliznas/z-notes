@@ -3,6 +3,12 @@ import { makeTestCtx, type TestCtx } from "../test-helpers.js";
 import { computeFingerprint } from "./fingerprint.js";
 import { createFolder } from "../services/folders.js";
 import { createNote, updateNote, trashNote, hardDeleteNote } from "../services/notes.js";
+import {
+  createInboxItem,
+  updateInboxItem,
+  convertInboxToNote,
+  deleteInboxItem,
+} from "../services/inbox.js";
 
 describe("computeFingerprint", () => {
   let t: TestCtx;
@@ -53,6 +59,38 @@ describe("computeFingerprint", () => {
     trashNote(t.ctx, note.id);
     const fp1 = computeFingerprint(t.ctx);
     hardDeleteNote(t.ctx, note.id);
+    const fp2 = computeFingerprint(t.ctx);
+    expect(fp2).not.toBe(fp1);
+  });
+
+  it("muda ao criar item no inbox", () => {
+    const fp1 = computeFingerprint(t.ctx);
+    createInboxItem(t.ctx, { clientId: "c1", content: "Lembrar de comprar pão" });
+    const fp2 = computeFingerprint(t.ctx);
+    expect(fp2).not.toBe(fp1);
+  });
+
+  it("muda ao arquivar item no inbox", () => {
+    const { item } = createInboxItem(t.ctx, { clientId: "c2", content: "Item para arquivar" });
+    const fp1 = computeFingerprint(t.ctx);
+    updateInboxItem(t.ctx, item.id, { archived: true });
+    const fp2 = computeFingerprint(t.ctx);
+    expect(fp2).not.toBe(fp1);
+  });
+
+  it("muda ao converter item do inbox", () => {
+    const folder = createFolder(t.ctx, { name: "Ideias" });
+    const { item } = createInboxItem(t.ctx, { clientId: "c3", content: "Nova ideia\nDetalhes aqui" });
+    const fp1 = computeFingerprint(t.ctx);
+    convertInboxToNote(t.ctx, item.id, folder.id);
+    const fp2 = computeFingerprint(t.ctx);
+    expect(fp2).not.toBe(fp1);
+  });
+
+  it("muda ao excluir item do inbox (COUNT muda)", () => {
+    const { item } = createInboxItem(t.ctx, { clientId: "c4", content: "Item para deletar" });
+    const fp1 = computeFingerprint(t.ctx);
+    deleteInboxItem(t.ctx, item.id);
     const fp2 = computeFingerprint(t.ctx);
     expect(fp2).not.toBe(fp1);
   });
