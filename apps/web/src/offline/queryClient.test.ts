@@ -1,8 +1,15 @@
 import { describe, it, expect, vi } from "vitest";
-import { createQueryClient, UPDATE_NOTE_KEY, cacheKeyFor, clearUserCache } from "./queryClient";
+import {
+  createQueryClient,
+  UPDATE_NOTE_KEY,
+  CREATE_INBOX_ITEM_KEY,
+  cacheKeyFor,
+  clearUserCache,
+} from "./queryClient";
 
 vi.mock("@/api/resources", () => ({
   updateNote: vi.fn(),
+  createInboxItem: vi.fn(),
 }));
 
 vi.mock("idb-keyval", () => {
@@ -34,6 +41,13 @@ describe("createQueryClient", () => {
   it("registra mutation defaults para updateNote", () => {
     const client = createQueryClient();
     const defaults = client.getMutationDefaults(UPDATE_NOTE_KEY);
+    expect(defaults).toBeDefined();
+    expect(typeof defaults?.mutationFn).toBe("function");
+  });
+
+  it("registra mutation defaults para createInboxItem", () => {
+    const client = createQueryClient();
+    const defaults = client.getMutationDefaults(CREATE_INBOX_ITEM_KEY);
     expect(defaults).toBeDefined();
     expect(typeof defaults?.mutationFn).toBe("function");
   });

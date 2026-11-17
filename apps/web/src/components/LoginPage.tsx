@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { googleLoginUrl } from "@/api/resources";
 import { appLoginUrl } from "@/api/appAuth";
 import { getBaseUrl, setBaseUrl, isTauriEnvironment } from "@/api/http";
+import { getPendingShare } from "@/lib/shareTarget";
 import { Button } from "./ui/Button";
 import { NoteIcon, SettingsIcon } from "./icons";
 
@@ -18,6 +19,7 @@ export function LoginPage() {
   const [serverUrl, setServerUrl] = useState(getBaseUrl());
   const [savedMessage, setSavedMessage] = useState(false);
   const [waitingBrowser, setWaitingBrowser] = useState(false);
+  const pendingShare = getPendingShare();
 
   const handleSaveServerUrl = () => {
     setBaseUrl(serverUrl.trim());
@@ -71,6 +73,17 @@ export function LoginPage() {
                 {savedMessage ? "Salvo!" : "Salvar"}
               </Button>
             </div>
+          </div>
+        )}
+
+        {pendingShare && (
+          <div
+            data-testid="pending-share-alert"
+            className="mb-4 rounded-xl border border-[var(--accent)]/30 bg-[var(--accent)]/10 p-3 text-xs text-[var(--text)]"
+          >
+            <p className="font-medium text-[var(--accent)]">Conteúdo compartilhado recebido</p>
+            <p className="mt-1 line-clamp-2 text-[var(--muted)]">“{pendingShare.content}”</p>
+            <p className="mt-1 text-[11px] text-[var(--muted)]">Entre na sua conta para enviar ao Inbox.</p>
           </div>
         )}
 
