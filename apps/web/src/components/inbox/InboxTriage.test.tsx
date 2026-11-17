@@ -20,6 +20,8 @@ const mockItemsData = vi.hoisted(() => ({
 
 vi.mock("react-router-dom", () => ({
   useNavigate: () => mockNavigate,
+  useLocation: () => ({ pathname: "/inbox", search: "" }),
+  useSearchParams: () => [new URLSearchParams(), vi.fn()],
 }));
 
 vi.mock("@/hooks/useInbox", () => ({

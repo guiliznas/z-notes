@@ -5,10 +5,11 @@ import { SendIcon } from "@/components/icons";
 interface Props {
   onSend: (content: string) => void;
   disabled?: boolean;
+  initialText?: string;
 }
 
-export function InboxComposer({ onSend, disabled }: Props) {
-  const [text, setText] = useState("");
+export function InboxComposer({ onSend, disabled, initialText }: Props) {
+  const [text, setText] = useState(initialText ?? "");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const bp = useBreakpoint();
   const isMobile = bp === "mobile";
@@ -23,6 +24,19 @@ export function InboxComposer({ onSend, disabled }: Props) {
   useEffect(() => {
     adjustHeight();
   }, [text]);
+
+  useEffect(() => {
+    if (initialText !== undefined && initialText !== "") {
+      setText(initialText);
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+          textareaRef.current.setSelectionRange(initialText.length, initialText.length);
+          adjustHeight();
+        }
+      }, 50);
+    }
+  }, [initialText]);
 
   const handleSubmit = (e?: FormEvent) => {
     e?.preventDefault();

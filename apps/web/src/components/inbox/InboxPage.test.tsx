@@ -20,6 +20,8 @@ const mockFailedItems = vi.hoisted(() => new Map());
 
 vi.mock("react-router-dom", () => ({
   useNavigate: () => mockNavigate,
+  useLocation: () => ({ pathname: "/inbox", search: "" }),
+  useSearchParams: () => [new URLSearchParams(), vi.fn()],
   Link: ({ children, to }: { children: React.ReactNode; to: string }) => <a href={to}>{children}</a>,
 }));
 

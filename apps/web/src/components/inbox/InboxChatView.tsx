@@ -1,6 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import type { InboxItem, InboxStatusFilter } from "@z-notes/shared";
+import {
+  extractSharePayload,
+  normalizeSharePayload,
+  hasShareParams,
+  getPendingShare,
+  clearPendingShare,
+} from "@/lib/shareTarget";
 import {
   useInbox,
   useCreateInboxItem,
@@ -30,7 +37,12 @@ interface Props {
 
 export function InboxChatView({ currentFilter, onSelectFilter, onOpenSidebar }: Props) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { notify } = useToast();
+
+  const [prefilledText, setPrefilledText] = useState("");
+  const [prefilledSource, setPrefilledSource] = useState<"app" | "share">("app");
 
   const {
     items,
@@ -74,6 +86,35 @@ export function InboxChatView({ currentFilter, onSelectFilter, onOpenSidebar }: 
   // Agrupa mensagens cronologicamente com separadores de dia
   const timeline = buildInboxTimeline(items);
 
+  // Receptor do Web Share Target (Android):
+  // 1. Verifica rota /inbox/share ou parâmetros de busca (title, text, url)
+  // 2. Ou recupera do localStorage se veio do fluxo pós-login
+  // Em ambos os casos, pré-preenche o composer sem gravar sozinho e limpa a URL para /inbox
+  useEffect(() => {
+    const isShareRoute = location.pathname === "/inbox/share";
+    if (isShareRoute || hasShareParams(searchParams)) {
+      const payload = extractSharePayload(searchParams);
+      const normalized = normalizeSharePayload(payload);
+      if (normalized) {
+        setPrefilledText(normalized);
+        setPrefilledSource("share");
+        clearPendingShare();
+      }
+      navigate("/inbox", { replace: true });
+      return;
+    }
+
+    const pending = getPendingShare();
+    if (pending && pending.content) {
+      setPrefilledText(pending.content);
+      setPrefilledSource("share");
+      clearPendingShare();
+      if (isShareRoute) {
+        navigate("/inbox", { replace: true });
+      }
+    }
+  }, [location.pathname, searchParams, navigate]);
+
   // Rola até o final ao abrir e ao receber/enviar nova mensagem
   useEffect(() => {
     if (items.length > 0 && typeof bottomRef.current?.scrollIntoView === "function") {
@@ -94,9 +135,14 @@ export function InboxChatView({ currentFilter, onSelectFilter, onOpenSidebar }: 
     createItem.mutate({
       clientId,
       content,
-      source: "app",
+      source: prefilledSource,
       capturedAt: Date.now(),
     });
+
+    if (prefilledSource === "share") {
+      setPrefilledSource("app");
+    }
+    setPrefilledText("");
   };
 
   // Alterna seleção individual
@@ -511,7 +557,13 @@ export function InboxChatView({ currentFilter, onSelectFilter, onOpenSidebar }: 
       )}
 
       {/* Composer fixo na base (quando não está no modo de seleção) */}
-      {!isSelectionMode && <InboxComposer onSend={handleSend} />}
+      {!isSelectionMode && (
+        <InboxComposer
+          onSend={handleSend}
+          initialText={prefilledText}
+          disabled={createItem.isPending}
+        />
+      )}
 
       {/* Modal: Virar tarefa (individual ou lote) */}
       {taskModalIds && (
