@@ -1,13 +1,13 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { PublicUser } from "@z-notes/shared";
-import { authMe, authLogout } from "@/api/resources";
-import { clearToken, isTauriEnvironment, setToken, setUnauthorizedHandler } from "@/api/http";
-import { parseAppAuthRedirect } from "@/api/appAuth";
+import { authLogout, authMe } from "@/api/resources";
+import { clearToken, setUnauthorizedHandler } from "@/api/http";
 import { clearUserCache } from "@/offline/queryClient";
+import { DeepLinkRouter } from "@/lib/DeepLinkRouter";
 
-type AuthStatus = "loading" | "authenticated" | "unauthenticated";
+export type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 
-interface AuthValue {
+export interface AuthValue {
   status: AuthStatus;
   user: PublicUser | null;
   refresh: () => Promise<void>;
@@ -22,9 +22,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refresh = async () => {
     try {
-      const r = await authMe();
-      if (r.authenticated) {
-        setUser(r.user);
+      const data = await authMe();
+      if (data.authenticated && data.user) {
+        setUser(data.user);
         setStatus("authenticated");
       } else {
         setUser(null);
@@ -44,31 +44,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void refresh();
   }, []);
 
-  // App desktop: o login Google roda no navegador do sistema e volta por deep link (znotes://auth?token=...).
-  useEffect(() => {
-    if (!isTauriEnvironment()) return;
-    let unlisten: (() => void) | undefined;
-    let cancelled = false;
-    void import("@tauri-apps/plugin-deep-link").then(({ onOpenUrl }) =>
-      onOpenUrl((urls) => {
-        for (const url of urls) {
-          const result = parseAppAuthRedirect(url);
-          if (result && "token" in result) {
-            setToken(result.token);
-            void refresh();
-          }
-        }
-      }).then((off) => {
-        if (cancelled) off();
-        else unlisten = off;
-      }),
-    );
-    return () => {
-      cancelled = true;
-      unlisten?.();
-    };
-  }, []);
-
   const logout = async () => {
     const id = user?.id;
     try {
@@ -83,7 +58,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  return <AuthContext.Provider value={{ status, user, refresh, logout }}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ status, user, refresh, logout }}>
+      <DeepLinkRouter />
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth(): AuthValue {
