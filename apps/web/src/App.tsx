@@ -3,6 +3,8 @@ import { useAuth } from "@/auth/AuthContext";
 import { PerUserProvider } from "@/offline/PerUserProvider";
 import { LoginPage } from "@/components/LoginPage";
 import { NotesPage } from "@/components/NotesPage";
+import { TasksPage } from "@/components/tasks/TasksPage";
+import { InboxPage } from "@/components/inbox/InboxPage";
 import { AdminPage } from "@/components/AdminPage";
 import { UpdatePrompt } from "@/components/UpdatePrompt";
 
@@ -39,6 +41,10 @@ export function App() {
         <Route path="/trash/note/:noteId" element={<NotesPage />} />
         <Route path="/folder/:folderId" element={<NotesPage />} />
         <Route path="/folder/:folderId/note/:noteId" element={<NotesPage />} />
+        <Route path="/tasks" element={<TasksPage />} />
+        <Route path="/tasks/folder/:folderId" element={<TasksPage />} />
+        <Route path="/tasks/archived" element={<TasksPage />} />
+        <Route path="/inbox" element={<InboxPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <UpdatePrompt />

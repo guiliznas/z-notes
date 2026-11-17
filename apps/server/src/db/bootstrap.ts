@@ -51,6 +51,63 @@ CREATE TABLE IF NOT EXISTS notes (
 CREATE INDEX IF NOT EXISTS idx_notes_folder ON notes(folder_id);
 CREATE INDEX IF NOT EXISTS idx_notes_updated ON notes(updated_at);
 
+CREATE TABLE IF NOT EXISTS task_folders (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  name TEXT NOT NULL,
+  position REAL NOT NULL DEFAULT 0,
+  archived_at INTEGER,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS task_lists (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  folder_id INTEGER NOT NULL REFERENCES task_folders(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  position REAL NOT NULL DEFAULT 0,
+  archived_at INTEGER,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS tasks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  list_id INTEGER NOT NULL REFERENCES task_lists(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  content_md TEXT NOT NULL DEFAULT '',
+  priority TEXT NOT NULL DEFAULT 'none',
+  position REAL NOT NULL DEFAULT 0,
+  done_at INTEGER,
+  archived_at INTEGER,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS inbox_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  client_id TEXT NOT NULL,
+  content TEXT NOT NULL,
+  source TEXT NOT NULL,
+  captured_at INTEGER NOT NULL,
+  archived_at INTEGER,
+  resolved_kind TEXT,
+  resolved_id INTEGER,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  UNIQUE(user_id, client_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_task_folders_user ON task_folders(user_id);
+CREATE INDEX IF NOT EXISTS idx_task_lists_folder ON task_lists(folder_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_list ON tasks(list_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_user ON tasks(user_id);
+CREATE INDEX IF NOT EXISTS idx_inbox_items_user_captured ON inbox_items(user_id, captured_at DESC, id DESC);
+CREATE INDEX IF NOT EXISTS idx_inbox_items_user_archived ON inbox_items(user_id, archived_at);
+
 CREATE VIRTUAL TABLE IF NOT EXISTS notes_fts USING fts5(
   content_md,
   content='notes',
@@ -108,6 +165,10 @@ function migrateUserColumns(sqlite: Sqlite): boolean {
   }
   if (!hasColumn(sqlite, "notes", "pinned_at")) {
     sqlite.exec("ALTER TABLE notes ADD COLUMN pinned_at INTEGER");
+    migrated = true;
+  }
+  if (!hasColumn(sqlite, "tasks", "content_md")) {
+    sqlite.exec("ALTER TABLE tasks ADD COLUMN content_md TEXT NOT NULL DEFAULT ''");
     migrated = true;
   }
   return migrated;
