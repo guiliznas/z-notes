@@ -1,15 +1,17 @@
 import { useEffect, type ReactNode } from "react";
 import { IconButton } from "./IconButton";
 import { CloseIcon } from "@/components/icons";
+import { cn } from "@/lib/cn";
 
 interface Props {
   title: string;
   onClose: () => void;
   children: ReactNode;
   footer?: ReactNode;
+  className?: string;
 }
 
-export function Modal({ title, onClose, children, footer }: Props) {
+export function Modal({ title, onClose, children, footer, className }: Props) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     document.addEventListener("keydown", onKey);
@@ -22,7 +24,10 @@ export function Modal({ title, onClose, children, footer }: Props) {
       onMouseDown={onClose}
     >
       <div
-        className="w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-2xl"
+        className={cn(
+          "w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-2xl",
+          className,
+        )}
         onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-3.5">
