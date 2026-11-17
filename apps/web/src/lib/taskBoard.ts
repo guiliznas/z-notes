@@ -25,6 +25,7 @@ export function applyTaskUpdate(board: TaskBoard, taskId: number, patch: UpdateT
   const updated: Task = {
     ...found.task,
     title: patch.title ?? found.task.title,
+    contentMd: patch.contentMd !== undefined ? patch.contentMd : found.task.contentMd,
     priority: patch.priority ?? found.task.priority,
     updatedAt: now,
   };

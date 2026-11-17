@@ -22,7 +22,7 @@ describe("ids do arrastar", () => {
 
 let id = 0;
 const task = (title: string, over: Partial<Task> = {}): Task => ({
-  id: ++id, listId: 10, title, priority: "none", position: id,
+  id: ++id, listId: 10, title, contentMd: "", priority: "none", position: id,
   done: false, doneAt: null, archived: false, createdAt: 0, updatedAt: 0, ...over,
 });
 

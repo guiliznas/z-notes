@@ -4,7 +4,7 @@ import { cn } from "@/lib/cn";
 import { PRIORITY_LABEL } from "@/lib/taskPriority";
 import { Menu } from "../ui/Menu";
 import { IconButton } from "../ui/IconButton";
-import { ArchiveIcon, CheckIcon, DotsIcon, MoveIcon, TrashIcon } from "../icons";
+import { ArchiveIcon, CheckIcon, DotsIcon, FolderIcon, MoveIcon, NoteIcon, TrashIcon } from "../icons";
 import { PriorityBars, PriorityChip } from "./PriorityChip";
 
 export interface TaskCardActions {
@@ -14,6 +14,8 @@ export interface TaskCardActions {
   onArchive: () => void;
   onMove: () => void;
   onDelete: () => void;
+  onOpenDetails?: () => void;
+  onConvertToNote?: () => void;
 }
 
 /** Ganchos do arrastar, preenchidos por SortableTask (ver TaskDnd). */
@@ -36,6 +38,8 @@ export function TaskCard({
   onArchive,
   onMove,
   onDelete,
+  onOpenDetails,
+  onConvertToNote,
   innerRef,
   style,
   dragging,
@@ -59,6 +63,8 @@ export function TaskCard({
   };
 
   const menuItems = [
+    ...(onOpenDetails ? [{ label: "Ver detalhes", icon: <NoteIcon />, onClick: onOpenDetails }] : []),
+    ...(onConvertToNote ? [{ label: "Converter em nota", icon: <FolderIcon />, onClick: onConvertToNote }] : []),
     { label: "Mover para…", icon: <MoveIcon />, onClick: onMove },
     { label: "Arquivar tarefa", icon: <ArchiveIcon />, onClick: onArchive },
     { label: "Excluir tarefa", icon: <TrashIcon />, danger: true, onClick: onDelete },
@@ -129,6 +135,22 @@ export function TaskCard({
                 <PriorityChip priority={task.priority} />
               </button>
             </PriorityMenu>
+          </div>
+        )}
+
+        {task.contentMd && task.contentMd.trim().length > 0 && !editing && (
+          <div className="mt-1.5 flex items-center">
+            <button
+              type="button"
+              onClick={onOpenDetails}
+              aria-label="Ver detalhes e conteúdo da tarefa"
+              className="inline-flex items-center gap-1.5 rounded-md px-1.5 py-0.5 text-xs text-[var(--muted)] hover:bg-[var(--surface-hover)] hover:text-[var(--text)] transition cursor-pointer"
+            >
+              <NoteIcon className="h-3.5 w-3.5 text-[var(--accent)]" />
+              <span className="truncate max-w-[200px] text-[11px]">
+                {task.contentMd.split("\n").map((l) => l.trim()).find((l) => l.length > 0)?.slice(0, 40) ?? "Ver detalhes"}
+              </span>
+            </button>
           </div>
         )}
       </div>

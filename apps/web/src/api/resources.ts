@@ -90,6 +90,8 @@ export const deleteTask = (id: number) => api<void>(`/tasks/${id}`, { method: "D
 export const setTasksArchived = (input: BatchArchiveTasksInput) =>
   api<Task[]>("/tasks/archive", { method: "POST", body: JSON.stringify(input) });
 export const fetchTaskArchive = () => api<TaskArchive>("/task-archive");
+export const convertTaskToNote = (id: number, input: { folderId: number }) =>
+  api<Note>(`/tasks/${id}/to-note`, { method: "POST", body: JSON.stringify(input) });
 
 // Busca
 export function searchNotes(q: string, folderId: number | null) {

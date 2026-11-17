@@ -12,9 +12,16 @@ const h = vi.hoisted(() => ({
   mutations: {} as Record<string, ReturnType<typeof vi.fn>>,
 }));
 
-vi.mock("react-router-dom", () => ({ useNavigate: () => h.navigate }));
+const mockSearchParams = new URLSearchParams();
+vi.mock("react-router-dom", () => ({
+  useNavigate: () => h.navigate,
+  useSearchParams: () => [mockSearchParams, vi.fn()],
+}));
 vi.mock("@/hooks/useBreakpoint", () => ({ useBreakpoint: () => h.bp }));
 vi.mock("../ui/Toast", () => ({ useToast: () => ({ notify: h.notify }) }));
+vi.mock("@/hooks/useFolders", () => ({
+  useFolders: () => ({ data: [{ id: 100, name: "Geral", children: [] }] }),
+}));
 
 vi.mock("@/hooks/useTasks", () => {
   const m = (name: string, onSuccessArg?: () => unknown) => {
@@ -37,6 +44,7 @@ vi.mock("@/hooks/useTasks", () => {
     useDeleteTask: m("deleteTask"),
     useArchiveCompleted: m("archiveCompleted", () => ({ ids: h.archiveCompletedIds })),
     useSetTasksArchived: m("setArchived"),
+    useConvertTaskToNote: m("convertTaskToNote", () => ({ id: 99, folderId: 100, title: "Nota convertida" })),
   };
 });
 
@@ -44,7 +52,7 @@ import { TaskBoard } from "./TaskBoard";
 
 let nid = 0;
 const task = (listId: number, title: string, over: Partial<Task> = {}): Task => ({
-  id: ++nid, listId, title, priority: "none", position: nid,
+  id: ++nid, listId, title, contentMd: "", priority: "none", position: nid,
   done: false, doneAt: null, archived: false, createdAt: 0, updatedAt: 0, ...over,
 });
 
@@ -230,6 +238,35 @@ describe("TaskBoard", () => {
       render(<TaskBoard folderId={1} onBack={onBack} />);
       fireEvent.click(screen.getByRole("button", { name: "Voltar para as pastas" }));
       expect(onBack).toHaveBeenCalledOnce();
+    });
+  });
+  describe("detalhes e conversão para nota", () => {
+    it("abrir detalhes pelo menu abre o painel de detalhes com visualização por padrão", () => {
+      render(<TaskBoard folderId={1} />);
+      fireEvent.click(screen.getByRole("button", { name: "Ações da tarefa: Deep link" }));
+      fireEvent.click(screen.getByRole("button", { name: "Ver detalhes" }));
+
+      expect(screen.getByRole("complementary", { name: "Detalhes da tarefa" })).toBeInTheDocument();
+      expect(screen.getByDisplayValue("Deep link")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Visualizar" })).toHaveAttribute("aria-pressed", "true");
+
+      // Fechar detalhes
+      fireEvent.click(screen.getByRole("button", { name: "Fechar detalhes" }));
+      expect(screen.queryByRole("complementary", { name: "Detalhes da tarefa" })).toBeNull();
+    });
+
+    it("converter tarefa em nota abre diálogo e executa a conversão", () => {
+      render(<TaskBoard folderId={1} />);
+      fireEvent.click(screen.getByRole("button", { name: "Ações da tarefa: Deep link" }));
+      fireEvent.click(screen.getByRole("button", { name: "Converter em nota" }));
+
+      expect(screen.getByText("Converter tarefa em nota")).toBeInTheDocument();
+      fireEvent.click(screen.getByRole("button", { name: "Converter em nota" }));
+
+      expect(h.mutations.convertTaskToNote).toHaveBeenCalledWith(
+        { id: 1, folderId: 100 },
+        expect.anything(),
+      );
     });
   });
 });

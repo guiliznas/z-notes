@@ -10,6 +10,7 @@ import type {
 } from "@z-notes/shared";
 import {
   archiveCompletedTasks,
+  convertTaskToNote,
   createTask,
   createTaskFolder,
   createTaskList,
@@ -100,5 +101,16 @@ export function useUpdateTask() {
       for (const [key, board] of context?.snapshots ?? []) qc.setQueryData(key, board);
     },
     onSettled: () => invalidateAll(qc),
+  });
+}
+
+export function useConvertTaskToNote() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, folderId }: { id: number; folderId: number }) => convertTaskToNote(id, { folderId }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["notes"] });
+      qc.invalidateQueries({ queryKey: TASK_BOARD_KEY });
+    },
   });
 }

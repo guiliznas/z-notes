@@ -4,13 +4,14 @@ import type { Task } from "@z-notes/shared";
 import { TaskCard } from "./TaskCard";
 
 const base: Task = {
-  id: 1, listId: 10, title: "Testar deep link", priority: "none", position: 1,
+  id: 1, listId: 10, title: "Testar deep link", contentMd: "", priority: "none", position: 1,
   done: false, doneAt: null, archived: false, createdAt: 0, updatedAt: 0,
 };
 
 const handlers = () => ({
   onToggle: vi.fn(), onRename: vi.fn(), onPriority: vi.fn(),
   onArchive: vi.fn(), onMove: vi.fn(), onDelete: vi.fn(),
+  onOpenDetails: vi.fn(), onConvertToNote: vi.fn(),
 });
 
 function setup(task: Partial<Task> = {}) {
@@ -113,5 +114,32 @@ describe("TaskCard", () => {
     open();
     fireEvent.click(screen.getByRole("button", { name: "Excluir tarefa" }));
     expect(h.onDelete).toHaveBeenCalledOnce();
+  });
+  describe("conteúdo e detalhes da tarefa", () => {
+    it("exibe indicador de conteúdo quando contentMd está preenchido e clica para abrir detalhes", () => {
+      const h = setup({ contentMd: "Detalhes importantes da tarefa\nSegunda linha" });
+      const indicator = screen.getByRole("button", { name: "Ver detalhes e conteúdo da tarefa" });
+      expect(indicator).toBeInTheDocument();
+      expect(screen.getByText("Detalhes importantes da tarefa")).toBeInTheDocument();
+
+      fireEvent.click(indicator);
+      expect(h.onOpenDetails).toHaveBeenCalledOnce();
+    });
+
+    it("não exibe indicador quando contentMd é vazio", () => {
+      setup({ contentMd: "" });
+      expect(screen.queryByRole("button", { name: "Ver detalhes e conteúdo da tarefa" })).toBeNull();
+    });
+
+    it("menu da tarefa oferece Ver detalhes e Converter em nota", () => {
+      const h = setup();
+      fireEvent.click(screen.getByRole("button", { name: /Ações da tarefa/ }));
+      fireEvent.click(screen.getByRole("button", { name: "Ver detalhes" }));
+      expect(h.onOpenDetails).toHaveBeenCalledOnce();
+
+      fireEvent.click(screen.getByRole("button", { name: /Ações da tarefa/ }));
+      fireEvent.click(screen.getByRole("button", { name: "Converter em nota" }));
+      expect(h.onConvertToNote).toHaveBeenCalledOnce();
+    });
   });
 });

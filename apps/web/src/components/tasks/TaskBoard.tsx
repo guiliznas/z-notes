@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import type { Task, TaskListWithTasks } from "@z-notes/shared";
 import { ApiError } from "@/api/http";
 import { useBreakpoint } from "@/hooks/useBreakpoint";
 import { TASKS_ROOT } from "@/hooks/useTaskSelection";
 import {
   useArchiveCompleted,
+  useConvertTaskToNote,
   useCreateTask,
   useCreateTaskList,
   useDeleteTask,
@@ -29,6 +30,8 @@ import { ArchiveIcon, BoardIcon, ChevronLeftIcon, PlusIcon, TrashIcon } from "..
 import type { TaskCardActions } from "./TaskCard";
 import { TaskColumn, type ColumnActions } from "./TaskColumn";
 import { TaskDnd } from "./TaskDnd";
+import { TaskDetailsPanel } from "./TaskDetailsPanel";
+import { TaskConvertToNoteDialog } from "./TaskConvertToNoteDialog";
 
 type Dialog =
   | { type: "new-list" }
@@ -37,7 +40,8 @@ type Dialog =
   | { type: "rename-folder" }
   | { type: "delete-folder" }
   | { type: "move-task"; task: Task }
-  | { type: "delete-task"; task: Task };
+  | { type: "delete-task"; task: Task }
+  | { type: "convert-to-note"; task: Task };
 
 interface Props {
   folderId: number;
@@ -59,10 +63,26 @@ export function TaskBoard({ folderId, onBack }: Props) {
   const deleteTask = useDeleteTask();
   const archiveCompleted = useArchiveCompleted();
   const setArchived = useSetTasksArchived();
+  const convertToNote = useConvertTaskToNote();
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlTaskId = searchParams.get("task") ? Number(searchParams.get("task")) : null;
 
   const [sortedByPriority, setSortedByPriority] = useState(false);
   const [dialog, setDialog] = useState<Dialog | null>(null);
   const [activeTab, setActiveTab] = useState<number | null>(null);
+  const [selectedTaskId, setSelectedTaskIdState] = useState<number | null>(urlTaskId);
+
+  const setSelectedTaskId = (id: number | null) => {
+    setSelectedTaskIdState(id);
+    if (id !== null) {
+      setSearchParams({ task: String(id) }, { replace: true });
+    } else if (searchParams.has("task")) {
+      const next = new URLSearchParams(searchParams);
+      next.delete("task");
+      setSearchParams(next, { replace: true });
+    }
+  };
 
   const board = boardQuery.data;
   if (boardQuery.isError) {
@@ -116,7 +136,27 @@ export function TaskBoard({ folderId, onBack }: Props) {
     onArchive: () => archiveTask(task),
     onMove: () => setDialog({ type: "move-task", task }),
     onDelete: () => setDialog({ type: "delete-task", task }),
+    onOpenDetails: () => setSelectedTaskId(task.id),
+    onConvertToNote: () => setDialog({ type: "convert-to-note", task }),
   });
+
+  const handleConvertToNote = (task: Task, folderId: number) => {
+    convertToNote.mutate(
+      { id: task.id, folderId },
+      {
+        onSuccess: (note) => {
+          setDialog(null);
+          notify("Tarefa convertida em nota com sucesso.", "success", {
+            action: {
+              label: "Abrir nota",
+              onClick: () => navigate(`/folders/${folderId}/notes/${note.id}`),
+            },
+          });
+        },
+        onError: fail,
+      },
+    );
+  };
 
   const columnActions = (list: TaskListWithTasks): ColumnActions => ({
     onAddTask: (title) => addTask(list.id, title),
@@ -205,68 +245,97 @@ export function TaskBoard({ folderId, onBack }: Props) {
 
       {board.lists.length === 0 ? (
         <EmptyBoard onCreate={() => setDialog({ type: "new-list" })} />
-      ) : tabs ? (
-        <>
-          <div role="tablist" aria-label="Listas" className="flex shrink-0 gap-1 overflow-x-auto border-b border-[var(--border)] px-3">
-            {board.lists.map((list) => {
-              const selected = list.id === currentList.id;
-              return (
-                <button
-                  key={list.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={selected}
-                  onClick={() => setActiveTab(list.id)}
-                  className={cn(
-                    "h-11 shrink-0 border-b-[3px] px-3 text-sm",
-                    selected ? "border-[var(--accent)] font-semibold" : "border-transparent text-[var(--muted)]",
-                  )}
-                >
-                  {list.name} <span className="font-normal text-[var(--muted)]">{list.tasks.filter((t) => !t.done).length}</span>
-                </button>
-              );
-            })}
-          </div>
-          <div role="tabpanel" className="min-h-0 flex-1 overflow-y-auto bg-[var(--sidebar)] p-3">
-            <TaskDnd board={board} enabled={!sortedByPriority}>
-              {(wrapper) => (
-                <TaskColumn
-                  list={currentList}
-                  sortedByPriority={sortedByPriority}
-                  fluid
-                  {...columnActions(currentList)}
-                  renderOpenTask={wrapper.renderOpenTask}
-                  wrapOpenList={wrapper.wrapOpenList(currentList)}
-                />
-              )}
-            </TaskDnd>
-          </div>
-        </>
       ) : (
-        <TaskDnd board={board} enabled={!sortedByPriority}>
-          {(wrapper) => (
-            <div className="flex min-h-0 flex-1 items-start gap-4 overflow-auto px-7 pb-6 pt-1">
-              {board.lists.map((list) => (
-                <TaskColumn
-                  key={list.id}
-                  list={list}
-                  sortedByPriority={sortedByPriority}
-                  {...columnActions(list)}
-                  renderOpenTask={wrapper.renderOpenTask}
-                  wrapOpenList={wrapper.wrapOpenList(list)}
-                />
-              ))}
-              <button
-                type="button"
-                onClick={() => setDialog({ type: "new-list" })}
-                className="flex h-14 w-[300px] shrink-0 items-center gap-2 rounded-[14px] border-2 border-dashed border-[var(--muted)] px-4 text-sm text-[var(--muted)] hover:text-[var(--text)]"
-              >
-                <PlusIcon />
-                Nova lista
-              </button>
+        <div className="flex min-h-0 flex-1 overflow-hidden">
+          {tabs ? (
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+              <div role="tablist" aria-label="Listas" className="flex shrink-0 gap-1 overflow-x-auto border-b border-[var(--border)] px-3">
+                {board.lists.map((list) => {
+                  const selected = list.id === currentList.id;
+                  return (
+                    <button
+                      key={list.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={selected}
+                      onClick={() => setActiveTab(list.id)}
+                      className={cn(
+                        "h-11 shrink-0 border-b-[3px] px-3 text-sm",
+                        selected ? "border-[var(--accent)] font-semibold" : "border-transparent text-[var(--muted)]",
+                      )}
+                    >
+                      {list.name} <span className="font-normal text-[var(--muted)]">{list.tasks.filter((t) => !t.done).length}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <div role="tabpanel" className="min-h-0 flex-1 overflow-y-auto bg-[var(--sidebar)] p-3">
+                <TaskDnd board={board} enabled={!sortedByPriority}>
+                  {(wrapper) => (
+                    <TaskColumn
+                      list={currentList}
+                      sortedByPriority={sortedByPriority}
+                      fluid
+                      {...columnActions(currentList)}
+                      renderOpenTask={wrapper.renderOpenTask}
+                      wrapOpenList={wrapper.wrapOpenList(currentList)}
+                    />
+                  )}
+                </TaskDnd>
+              </div>
+            </div>
+          ) : (
+            <div className="flex min-h-0 flex-1 overflow-auto">
+              <TaskDnd board={board} enabled={!sortedByPriority}>
+                {(wrapper) => (
+                  <div className="flex min-h-0 flex-1 items-start gap-4 px-7 pb-6 pt-1">
+                    {board.lists.map((list) => (
+                      <TaskColumn
+                        key={list.id}
+                        list={list}
+                        sortedByPriority={sortedByPriority}
+                        {...columnActions(list)}
+                        renderOpenTask={wrapper.renderOpenTask}
+                        wrapOpenList={wrapper.wrapOpenList(list)}
+                      />
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => setDialog({ type: "new-list" })}
+                      className="flex h-14 w-[300px] shrink-0 items-center gap-2 rounded-[14px] border-2 border-dashed border-[var(--muted)] px-4 text-sm text-[var(--muted)] hover:text-[var(--text)]"
+                    >
+                      <PlusIcon />
+                      Nova lista
+                    </button>
+                  </div>
+                )}
+              </TaskDnd>
             </div>
           )}
-        </TaskDnd>
+
+          {selectedTaskId !== null && (() => {
+            const selectedTask = board.lists.flatMap((l) => l.tasks).find((t) => t.id === selectedTaskId);
+            if (!selectedTask) return null;
+            const parentList = board.lists.find((l) => l.tasks.some((t) => t.id === selectedTaskId));
+            return (
+              <TaskDetailsPanel
+                task={selectedTask}
+                listName={parentList?.name}
+                onClose={() => setSelectedTaskId(null)}
+                onConvertToNote={() => setDialog({ type: "convert-to-note", task: selectedTask })}
+                onArchive={() => {
+                  archiveTask(selectedTask);
+                  setSelectedTaskId(null);
+                }}
+                onDelete={() => {
+                  setDialog({ type: "delete-task", task: selectedTask });
+                  setSelectedTaskId(null);
+                }}
+                isMobile={tabs}
+              />
+            );
+          })()}
+        </div>
       )}
 
       {dialog?.type === "new-list" && (
@@ -381,6 +450,15 @@ export function TaskBoard({ folderId, onBack }: Props) {
             updateTask.mutate({ id: dialog.task.id, listId }, { onError: fail });
             setDialog(null);
           }}
+        />
+      )}
+      {dialog?.type === "convert-to-note" && (
+        <TaskConvertToNoteDialog
+          open={true}
+          task={dialog.task}
+          onClose={() => setDialog(null)}
+          onConfirm={(targetFolderId) => handleConvertToNote(dialog.task, targetFolderId)}
+          isPending={convertToNote.isPending}
         />
       )}
     </div>

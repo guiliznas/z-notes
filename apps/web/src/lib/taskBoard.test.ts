@@ -7,6 +7,7 @@ const task = (id: number, listId: number, over: Partial<Task> = {}): Task => ({
   id,
   listId,
   title: `T${id}`,
+  contentMd: "",
   priority: "none",
   position: nextPos++,
   done: false,
