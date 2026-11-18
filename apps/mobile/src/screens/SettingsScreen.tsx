@@ -1,14 +1,16 @@
 import { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet } from "react-native";
+import type { PublicUser } from "@z-notes/shared";
 import { getBaseUrl, setBaseUrl, clearToken } from "../api/http";
-import { persister } from "../lib/storage";
+import { clearUserCache } from "../lib/storage";
 
 interface SettingsScreenProps {
+  user?: PublicUser | null;
   onBack: () => void;
   onLogout: () => void;
 }
 
-export default function SettingsScreen({ onBack, onLogout }: SettingsScreenProps) {
+export default function SettingsScreen({ user, onBack, onLogout }: SettingsScreenProps) {
   const [url, setUrl] = useState(getBaseUrl());
   const [savedMessage, setSavedMessage] = useState(false);
 
@@ -33,7 +35,7 @@ export default function SettingsScreen({ onBack, onLogout }: SettingsScreenProps
           text: "Limpar",
           style: "destructive",
           onPress: async () => {
-            await persister.removeClient();
+            await clearUserCache(user?.id);
             Alert.alert("Sucesso", "Cache local limpo.");
           },
         },
@@ -48,8 +50,8 @@ export default function SettingsScreen({ onBack, onLogout }: SettingsScreenProps
         text: "Sair",
         style: "destructive",
         onPress: async () => {
+          await clearUserCache(user?.id);
           await clearToken();
-          await persister.removeClient();
           onLogout();
         },
       },
@@ -89,6 +91,14 @@ export default function SettingsScreen({ onBack, onLogout }: SettingsScreenProps
           <Text style={styles.secondaryBtnText}>Limpar cache local</Text>
         </TouchableOpacity>
       </View>
+
+      {user && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Conta</Text>
+          <Text style={styles.infoText}>{user.name || user.email}</Text>
+          <Text style={styles.subInfoText}>{user.email}</Text>
+        </View>
+      )}
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Sobre</Text>

@@ -1,17 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { BackHandler } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
-import type { NoteViewFilter } from "@z-notes/shared";
+import type { NoteViewFilter, PublicUser } from "@z-notes/shared";
 import { createQueryClient } from "./src/lib/queryClient";
-import { persistOptions } from "./src/lib/storage";
-import { loadToken, loadBaseUrl } from "./src/api/http";
+import { persistOptionsFor, clearUserCache } from "./src/lib/storage";
+import { loadToken, loadBaseUrl, loadCurrentUser, saveCurrentUser, clearToken } from "./src/api/http";
+import { authMe } from "./src/api/resources";
 import LoginScreen from "./src/screens/LoginScreen";
 import NoteListScreen from "./src/screens/NoteListScreen";
 import NoteDetailScreen from "./src/screens/NoteDetailScreen";
 import SettingsScreen from "./src/screens/SettingsScreen";
 import FolderDrawer from "./src/components/FolderDrawer";
-
-const queryClient = createQueryClient();
 
 type Screen = "login" | "list" | "detail" | "settings";
 
@@ -23,6 +23,7 @@ interface SelectedFolderState {
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>("login");
+  const [user, setUser] = useState<PublicUser | null>(null);
   const [selectedNote, setSelectedNote] = useState<number | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [folderState, setFolderState] = useState<SelectedFolderState>({
@@ -31,13 +32,64 @@ export default function App() {
     view: "active",
   });
 
+  const { client, clientPersistOptions } = useMemo(() => {
+    const qClient = createQueryClient();
+    const pOpts = persistOptionsFor(user?.id);
+    return { client: qClient, clientPersistOptions: pOpts };
+  }, [user?.id]);
+
   useEffect(() => {
-    Promise.all([loadToken(), loadBaseUrl()]).then(([t]) => {
-      if (t) setScreen("list");
+    Promise.all([loadToken(), loadBaseUrl(), loadCurrentUser()]).then(([t, _base, storedUser]) => {
+      if (storedUser) setUser(storedUser);
+      if (t) {
+        authMe()
+          .then((me) => {
+            if (me.authenticated) {
+              setUser(me.user);
+              saveCurrentUser(me.user).catch(() => {});
+              setScreen("list");
+            } else {
+              setUser(null);
+              setScreen("login");
+            }
+          })
+          .catch(() => {
+            // Em caso de falta de conexão, preserva a sessão offline com os dados locais
+            setScreen("list");
+          });
+      }
     });
   }, []);
 
-  const handleAuthenticated = () => setScreen("list");
+  // Botão voltar do Android: detalhe/configurações → lista; drawer aberto → fecha; lista → sai do app.
+  useEffect(() => {
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (drawerOpen) {
+        setDrawerOpen(false);
+        return true;
+      }
+      if (screen === "detail" || screen === "settings") {
+        setScreen("list");
+        return true;
+      }
+      return false;
+    });
+    return () => sub.remove();
+  }, [screen, drawerOpen]);
+
+  const handleAuthenticated = (authUser?: PublicUser) => {
+    if (authUser) setUser(authUser);
+    setScreen("list");
+  };
+
+  // Cache em memória e local do usuário anterior não podem vazar para a próxima sessão.
+  const handleLogout = async () => {
+    client.clear();
+    if (user?.id) await clearUserCache(user.id);
+    await clearToken();
+    setUser(null);
+    setScreen("login");
+  };
 
   const handleSelectNote = (id: number) => {
     setSelectedNote(id);
@@ -71,9 +123,10 @@ export default function App() {
 
   return (
     <PersistQueryClientProvider
-      client={queryClient}
-      persistOptions={persistOptions}
-      onSuccess={() => queryClient.resumePausedMutations()}
+      key={user?.id ?? "anonymous"}
+      client={client}
+      persistOptions={clientPersistOptions}
+      onSuccess={() => client.resumePausedMutations()}
     >
       <StatusBar style="light" />
       {screen === "login" && <LoginScreen onAuthenticated={handleAuthenticated} />}
@@ -106,8 +159,9 @@ export default function App() {
       )}
       {screen === "settings" && (
         <SettingsScreen
+          user={user}
           onBack={() => setScreen("list")}
-          onLogout={() => setScreen("login")}
+          onLogout={handleLogout}
         />
       )}
     </PersistQueryClientProvider>

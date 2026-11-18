@@ -3,20 +3,23 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, fireEvent, waitFor } from "@testing-library/react";
 import SettingsScreen from "./SettingsScreen";
 import * as httpModule from "../api/http";
-import { persister } from "../lib/storage";
+import * as storageModule from "../lib/storage";
 
 describe("SettingsScreen", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
   });
 
-  it("renderiza campos de configurações", () => {
+  it("renderiza campos de configurações e informações da conta", () => {
     vi.spyOn(httpModule, "getBaseUrl").mockReturnValue("http://teste.local:8787");
+    const mockUser = { id: 10, email: "guilherme@example.com", name: "Guilherme", avatarUrl: null, isAdmin: true };
     const { getByDisplayValue, getByText } = render(
-      React.createElement(SettingsScreen, { onBack: () => {}, onLogout: () => {} }),
+      React.createElement(SettingsScreen, { user: mockUser, onBack: () => {}, onLogout: () => {} }),
     );
 
     expect(getByDisplayValue("http://teste.local:8787")).toBeTruthy();
+    expect(getByText("Guilherme")).toBeTruthy();
+    expect(getByText("guilherme@example.com")).toBeTruthy();
     expect(getByText("z-notes mobile v0.1.0")).toBeTruthy();
     expect(getByText("Sair da conta")).toBeTruthy();
   });
@@ -36,10 +39,11 @@ describe("SettingsScreen", () => {
     expect(setBaseUrlSpy).toHaveBeenCalledWith("http://novo-servidor.com");
   });
 
-  it("chama clearToken e onLogout ao confirmar saída", async () => {
+  it("chama clearToken, clearUserCache e onLogout ao confirmar saída", async () => {
     const clearTokenSpy = vi.spyOn(httpModule, "clearToken").mockResolvedValue();
-    const removeClientSpy = vi.spyOn(persister, "removeClient").mockResolvedValue();
+    const clearUserCacheSpy = vi.spyOn(storageModule, "clearUserCache").mockResolvedValue();
     const onLogout = vi.fn();
+    const mockUser = { id: 10, email: "guilherme@example.com", name: "Guilherme", avatarUrl: null, isAdmin: true };
 
     // Mock Alert.alert para executar o handler de confirmação (botão "Sair")
     const { Alert } = await import("react-native");
@@ -49,14 +53,14 @@ describe("SettingsScreen", () => {
     });
 
     const { getByText } = render(
-      React.createElement(SettingsScreen, { onBack: () => {}, onLogout }),
+      React.createElement(SettingsScreen, { user: mockUser, onBack: () => {}, onLogout }),
     );
 
     fireEvent.click(getByText("Sair da conta"));
 
     await waitFor(() => {
+      expect(clearUserCacheSpy).toHaveBeenCalledWith(10);
       expect(clearTokenSpy).toHaveBeenCalled();
-      expect(removeClientSpy).toHaveBeenCalled();
       expect(onLogout).toHaveBeenCalled();
     });
   });

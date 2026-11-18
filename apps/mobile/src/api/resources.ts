@@ -1,6 +1,7 @@
 import type {
   FolderTreeNode, Folder, Note, NoteMeta, SearchHit,
   CreateFolderInput, UpdateFolderInput, CreateNoteInput, UpdateNoteInput, NoteViewFilter,
+  AuthMeResponse,
 } from "@z-notes/shared";
 import { api } from "./http";
 
@@ -32,7 +33,5 @@ export function searchNotes(q: string, folderId: number | null) {
   return api<SearchHit[]>(`/search?${params.toString()}`);
 }
 
-export const authMe = () => api<{ authenticated: boolean }>("/auth/me");
-export const authLogin = (password: string) =>
-  api<{ ok: true; token?: string }>("/auth/login?token=true", { method: "POST", body: { password } });
+export const authMe = () => api<AuthMeResponse>("/auth/me");
 export const authLogout = () => api<{ ok: true }>("/auth/logout", { method: "POST" });

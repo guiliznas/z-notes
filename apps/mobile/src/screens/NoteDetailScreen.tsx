@@ -98,6 +98,14 @@ export default function NoteDetailScreen({ noteId, onBack }: Props) {
     });
   };
 
+  const handleTogglePin = () => {
+    if (!note) return;
+    update.mutate({
+      id: noteId,
+      pinned: !note.pinned,
+    });
+  };
+
   const handleMoveToFolder = (folderId: number) => {
     update.mutate({
       id: noteId,
@@ -209,10 +217,12 @@ export default function NoteDetailScreen({ noteId, onBack }: Props) {
       <NoteActionModal
         visible={actionModalVisible}
         isArchived={note.archived}
+        isPinned={note.pinned}
         isDeleted={note.deleted}
         currentFolderId={note.folderId}
         onClose={() => setActionModalVisible(false)}
         onToggleArchive={handleToggleArchive}
+        onTogglePin={handleTogglePin}
         onMoveToFolder={handleMoveToFolder}
         onTrash={handleTrash}
         onRestore={handleRestore}
