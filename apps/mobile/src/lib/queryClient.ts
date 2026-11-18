@@ -1,9 +1,10 @@
 import { QueryClient } from "@tanstack/react-query";
+import type { UpdateNoteInput } from "@z-notes/shared";
 import { updateNote } from "../api/resources";
 
 const WEEK_MS = 1000 * 60 * 60 * 24 * 7;
 
-export type UpdateNoteVars = { id: number; contentMd?: string; version?: number; folderId?: number; archived?: boolean };
+export type UpdateNoteVars = { id: number } & UpdateNoteInput;
 export const UPDATE_NOTE_KEY = ["updateNote"] as const;
 
 export function createQueryClient(): QueryClient {

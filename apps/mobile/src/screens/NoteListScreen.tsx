@@ -108,7 +108,7 @@ export default function NoteListScreen({
               >
                 <View style={styles.itemHeader}>
                   <Text style={styles.itemTitle} numberOfLines={1}>
-                    {item.note.title}
+                    {item.note.pinned ? "📌 " : ""}{item.note.title}
                   </Text>
                   {item.note.updatedAt && (
                     <Text style={styles.itemDate}>
@@ -143,7 +143,7 @@ export default function NoteListScreen({
               <TouchableOpacity style={styles.item} onPress={() => onSelectNote(item.id)}>
                 <View style={styles.itemHeader}>
                   <Text style={styles.itemTitle} numberOfLines={1}>
-                    {item.title}
+                    {item.pinned ? "📌 " : ""}{item.title}
                   </Text>
                   {item.updatedAt && (
                     <Text style={styles.itemDate}>{formatNoteDate(item.updatedAt)}</Text>

@@ -6,10 +6,12 @@ import { useFolders } from "../hooks/useFolders";
 interface NoteActionModalProps {
   visible: boolean;
   isArchived: boolean;
+  isPinned?: boolean;
   isDeleted: boolean;
   currentFolderId: number | null;
   onClose: () => void;
   onToggleArchive: () => void;
+  onTogglePin?: () => void;
   onMoveToFolder: (folderId: number) => void;
   onTrash: () => void;
   onRestore?: () => void;
@@ -19,10 +21,12 @@ interface NoteActionModalProps {
 export default function NoteActionModal({
   visible,
   isArchived,
+  isPinned,
   isDeleted,
   currentFolderId,
   onClose,
   onToggleArchive,
+  onTogglePin,
   onMoveToFolder,
   onTrash,
   onRestore,
@@ -102,6 +106,21 @@ export default function NoteActionModal({
                 >
                   <Text style={styles.actionIcon}>📁</Text>
                   <Text style={styles.actionText}>Mover para pasta...</Text>
+                </TouchableOpacity>
+              )}
+
+              {!isDeleted && onTogglePin && (
+                <TouchableOpacity
+                  style={styles.actionBtn}
+                  onPress={() => {
+                    onTogglePin();
+                    handleClose();
+                  }}
+                >
+                  <Text style={styles.actionIcon}>📌</Text>
+                  <Text style={styles.actionText}>
+                    {isPinned ? "Desafixar nota" : "Fixar nota"}
+                  </Text>
                 </TouchableOpacity>
               )}
 
