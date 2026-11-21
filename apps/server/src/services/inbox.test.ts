@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { makeTestCtx, type TestCtx } from "../test-helpers.js";
+import { makeTestCtx, listMirror, type TestCtx } from "../test-helpers.js";
+import { hardDeleteNote, listNotes } from "./notes.js";
 import { createFolder } from "./folders.js";
 import { createTaskFolder, createTaskList, updateTaskList, updateTaskFolder } from "./tasks.js";
 import {
@@ -238,6 +239,34 @@ describe("inbox service", () => {
       expect(() => convertInboxToNote(t.ctx, item.id, 99999)).toThrowError(
         "Pasta de destino não existe",
       );
+    });
+
+    it("reconverte quando a nota convertida foi excluída de vez", () => {
+      const noteFolder = createFolder(t.ctx, { name: "Notas" });
+      const { item } = createInboxItem(t.ctx, { clientId: "gone-1", content: "Volta a existir" });
+
+      const res1 = convertInboxToNote(t.ctx, item.id, noteFolder.id);
+      hardDeleteNote(t.ctx, res1.note.id);
+
+      const res2 = convertInboxToNote(t.ctx, item.id, noteFolder.id);
+      expect(res2.note.id).not.toBe(res1.note.id);
+      expect(res2.note.contentMd).toBe("Volta a existir");
+      expect(res2.item.resolvedId).toBe(res2.note.id);
+    });
+
+    it("rollback da conversão não deixa arquivo .md órfão no espelho", () => {
+      const noteFolder = createFolder(t.ctx, { name: "Notas" });
+      const { item } = createInboxItem(t.ctx, { clientId: "rb-1", content: "Não deve vazar" });
+      const before = listMirror(t.cfg, t.userId);
+
+      t.ctx.sqlite.exec(
+        "CREATE TRIGGER fail_inbox_update BEFORE UPDATE ON inbox_items BEGIN SELECT RAISE(ABORT, 'falha simulada'); END",
+      );
+      expect(() => convertInboxToNote(t.ctx, item.id, noteFolder.id)).toThrow();
+      t.ctx.sqlite.exec("DROP TRIGGER fail_inbox_update");
+
+      expect(listMirror(t.cfg, t.userId)).toEqual(before);
+      expect(listNotes(t.ctx, { view: "active" })).toHaveLength(0);
     });
 
     it("impede converter para tipo diferente quando já resolvido", () => {
