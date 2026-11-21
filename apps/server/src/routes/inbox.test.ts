@@ -147,6 +147,14 @@ describe("rotas de inbox", () => {
       });
       expect(resInvalidSource.statusCode).toBe(400);
     });
+
+    it("clientId aceita até 200 caracteres e recusa 201", async () => {
+      const ok = await post("/api/inbox", { clientId: "a".repeat(200), content: "x" });
+      expect(ok.statusCode).toBe(201);
+
+      const tooLong = await post("/api/inbox", { clientId: "b".repeat(201), content: "x" });
+      expect(tooLong.statusCode).toBe(400);
+    });
   });
 
   describe("isolamento entre usuários (100%)", () => {
