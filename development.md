@@ -101,6 +101,10 @@ Specs originais em `docs/superpowers/specs/`; planos de trabalho (git-ignorados)
 - **CI:** `.github/workflows/ci.yml` (testes + typecheck em push/PR, build do APK e instaladores
   desktop). Na 2026-10-27 o PR #16 foi mergeado com admin merge porque o check "Build mobile APK"
   falhava.
+  **Causa (#118):** o secret `EXPO_TOKEN` nunca foi criado no repositório; o `eas build` aborta em
+  ~1 s com "An Expo user account is required". O job do APK agora checa o token e, sem ele, pula
+  os passos e termina verde com um aviso. Para voltar a gerar o APK: criar o token em
+  expo.dev (Access tokens) e salvá-lo em Settings > Secrets and variables > Actions > `EXPO_TOKEN`.
 
 ## 6. Estado em 2026-11-16 e pendências
 

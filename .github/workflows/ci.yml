@@ -107,34 +107,57 @@ jobs:
     needs: [test]
     runs-on: ubuntu-latest
     steps:
+      # Causa da falha em todos os PRs (#118): o secret EXPO_TOKEN não existe no repositório e o
+      # `eas build` aborta em ~1 s ("An Expo user account is required"). Sem o token o job
+      # termina verde com um aviso; com o token (Settings > Secrets > EXPO_TOKEN) volta a compilar.
+      - name: Checar EXPO_TOKEN
+        id: token
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          if [ -n "$EXPO_TOKEN" ]; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+            echo "::warning title=APK não compilado::Secret EXPO_TOKEN ausente: build do APK ignorado (veja development.md, seção CI)."
+          fi
+
       - uses: actions/checkout@v4
+        if: steps.token.outputs.ok == 'true'
 
       - uses: pnpm/action-setup@v4
+        if: steps.token.outputs.ok == 'true'
 
       - uses: actions/setup-node@v4
+        if: steps.token.outputs.ok == 'true'
         with:
           node-version: "22"
           cache: pnpm
 
       - uses: expo/expo-github-action@v8
+        if: steps.token.outputs.ok == 'true'
         with:
           expo-version: latest
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
       - run: pnpm install --frozen-lockfile
+        if: steps.token.outputs.ok == 'true'
 
       - name: Build shared
+        if: steps.token.outputs.ok == 'true'
         run: pnpm build:shared
 
       # --local compila no runner (SDK Android já vem no ubuntu-latest) e grava o .apk em disco;
       # sem isso o EAS compila na nuvem e o upload abaixo não acharia arquivo nenhum.
       - name: Build APK
+        if: steps.token.outputs.ok == 'true'
         run: pnpm --filter @z-notes/mobile build:apk --local --non-interactive --output "$GITHUB_WORKSPACE/z-notes.apk"
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
       - uses: actions/upload-artifact@v4
+        if: steps.token.outputs.ok == 'true'
         with:
           name: mobile-apk
           path: z-notes.apk
