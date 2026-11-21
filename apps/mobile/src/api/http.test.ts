@@ -17,6 +17,8 @@ import {
 import { resetStore } from "../test/expo-secure-store-mock";
 
 beforeEach(() => {
+  // Estes testes usam http:// local, que só é aceito em build de dev (ver baseUrl.test.ts).
+  (globalThis as { __DEV__?: boolean }).__DEV__ = true;
   vi.restoreAllMocks();
   resetStore();
   clearTokenSync();

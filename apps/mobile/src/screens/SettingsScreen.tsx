@@ -1,26 +1,36 @@
 import { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet } from "react-native";
 import type { PublicUser } from "@z-notes/shared";
-import { getBaseUrl, setBaseUrl, clearToken } from "../api/http";
+import { getBaseUrl, setBaseUrl, getToken, normalizeBaseUrl, isDevBuild, DEFAULT_BASE_URL } from "../api/http";
 import { clearUserCache } from "../lib/storage";
 
 interface SettingsScreenProps {
   user?: PublicUser | null;
   onBack: () => void;
-  onLogout: () => void;
+  onLogout: () => void | Promise<void>;
 }
 
 export default function SettingsScreen({ user, onBack, onLogout }: SettingsScreenProps) {
   const [url, setUrl] = useState(getBaseUrl());
   const [savedMessage, setSavedMessage] = useState(false);
 
-  const handleSaveUrl = () => {
+  const handleSaveUrl = async () => {
     const trimmed = url.trim();
     if (!trimmed) {
       Alert.alert("Erro", "A URL do servidor não pode ser vazia.");
       return;
     }
-    setBaseUrl(trimmed);
+    const normalized = normalizeBaseUrl(trimmed);
+    if (!normalized) {
+      Alert.alert("Erro", "A URL do servidor precisa começar com https://");
+      return;
+    }
+    // Trocar de servidor com a sessão aberta enviaria o JWT ao host novo:
+    // encerra a sessão (token, usuário e cache) antes de gravar a URL e volta ao login.
+    if (normalized !== getBaseUrl() && getToken()) {
+      await onLogout();
+    }
+    setBaseUrl(normalized);
     setSavedMessage(true);
     setTimeout(() => setSavedMessage(false), 2000);
   };
@@ -49,9 +59,8 @@ export default function SettingsScreen({ user, onBack, onLogout }: SettingsScree
       {
         text: "Sair",
         style: "destructive",
-        onPress: async () => {
-          await clearUserCache(user?.id);
-          await clearToken();
+        // A limpeza de token e cache é feita uma vez só, no onLogout do App.
+        onPress: () => {
           onLogout();
         },
       },
@@ -73,7 +82,7 @@ export default function SettingsScreen({ user, onBack, onLogout }: SettingsScree
           style={styles.input}
           value={url}
           onChangeText={setUrl}
-          placeholder="http://10.0.2.2:8787"
+          placeholder={isDevBuild() ? DEFAULT_BASE_URL : "https://seu-servidor.com"}
           placeholderTextColor="#888"
           autoCapitalize="none"
           autoCorrect={false}

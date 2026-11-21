@@ -24,22 +24,65 @@ describe("SettingsScreen", () => {
     expect(getByText("Sair da conta")).toBeTruthy();
   });
 
-  it("atualiza a URL do servidor ao clicar em Salvar URL", () => {
-    vi.spyOn(httpModule, "getBaseUrl").mockReturnValue("http://original:8787");
-    const setBaseUrlSpy = vi.spyOn(httpModule, "setBaseUrl");
+  it("sem sessão, atualiza a URL do servidor (https) sem deslogar", async () => {
+    vi.spyOn(httpModule, "getBaseUrl").mockReturnValue("https://original.test");
+    vi.spyOn(httpModule, "getToken").mockReturnValue(null);
+    const setBaseUrlSpy = vi.spyOn(httpModule, "setBaseUrl").mockImplementation(() => {});
+    const onLogout = vi.fn();
 
     const { getByDisplayValue, getByText } = render(
-      React.createElement(SettingsScreen, { onBack: () => {}, onLogout: () => {} }),
+      React.createElement(SettingsScreen, { onBack: () => {}, onLogout }),
     );
 
-    const input = getByDisplayValue("http://original:8787");
-    fireEvent.change(input, { target: { value: "http://novo-servidor.com" } });
+    fireEvent.change(getByDisplayValue("https://original.test"), { target: { value: "https://novo.test" } });
     fireEvent.click(getByText("Salvar URL"));
 
-    expect(setBaseUrlSpy).toHaveBeenCalledWith("http://novo-servidor.com");
+    await waitFor(() => expect(setBaseUrlSpy).toHaveBeenCalledWith("https://novo.test"));
+    expect(onLogout).not.toHaveBeenCalled();
   });
 
-  it("chama clearToken, clearUserCache e onLogout ao confirmar saída", async () => {
+  it("com sessão aberta, trocar a URL encerra a sessão antes de gravar o host novo", async () => {
+    vi.spyOn(httpModule, "getBaseUrl").mockReturnValue("https://original.test");
+    vi.spyOn(httpModule, "getToken").mockReturnValue("jwt");
+    const order: string[] = [];
+    vi.spyOn(httpModule, "setBaseUrl").mockImplementation(() => {
+      order.push("setBaseUrl");
+    });
+    const onLogout = vi.fn(async () => {
+      order.push("logout");
+    });
+
+    const { getByDisplayValue, getByText } = render(
+      React.createElement(SettingsScreen, { onBack: () => {}, onLogout }),
+    );
+
+    fireEvent.change(getByDisplayValue("https://original.test"), { target: { value: "https://outro.test" } });
+    fireEvent.click(getByText("Salvar URL"));
+
+    await waitFor(() => expect(order).toEqual(["logout", "setBaseUrl"]));
+  });
+
+  it("recusa URL http:// fora do dev e não grava nem desloga", async () => {
+    vi.spyOn(httpModule, "getBaseUrl").mockReturnValue("https://original.test");
+    vi.spyOn(httpModule, "getToken").mockReturnValue("jwt");
+    const setBaseUrlSpy = vi.spyOn(httpModule, "setBaseUrl");
+    const onLogout = vi.fn();
+    const { Alert } = await import("react-native");
+    const alertSpy = vi.spyOn(Alert, "alert").mockImplementation(() => {});
+
+    const { getByDisplayValue, getByText } = render(
+      React.createElement(SettingsScreen, { onBack: () => {}, onLogout }),
+    );
+
+    fireEvent.change(getByDisplayValue("https://original.test"), { target: { value: "http://inseguro.test" } });
+    fireEvent.click(getByText("Salvar URL"));
+
+    await waitFor(() => expect(alertSpy).toHaveBeenCalled());
+    expect(setBaseUrlSpy).not.toHaveBeenCalled();
+    expect(onLogout).not.toHaveBeenCalled();
+  });
+
+  it("chama onLogout ao confirmar saída (a limpeza é feita no App, uma vez só)", async () => {
     const clearTokenSpy = vi.spyOn(httpModule, "clearToken").mockResolvedValue();
     const clearUserCacheSpy = vi.spyOn(storageModule, "clearUserCache").mockResolvedValue();
     const onLogout = vi.fn();
@@ -59,8 +102,11 @@ describe("SettingsScreen", () => {
     fireEvent.click(getByText("Sair da conta"));
 
     await waitFor(() => {
-      expect(clearUserCacheSpy).toHaveBeenCalledWith(10);
-      expect(clearTokenSpy).toHaveBeenCalled();
+      expect(onLogout).toHaveBeenCalledTimes(1);
+    });
+    expect(clearUserCacheSpy).not.toHaveBeenCalled();
+    expect(clearTokenSpy).not.toHaveBeenCalled();
+    await waitFor(() => {
       expect(onLogout).toHaveBeenCalled();
     });
   });

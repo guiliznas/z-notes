@@ -5,8 +5,8 @@ import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client
 import type { NoteViewFilter, PublicUser } from "@z-notes/shared";
 import { createQueryClient } from "./src/lib/queryClient";
 import { persistOptionsFor, clearUserCache } from "./src/lib/storage";
-import { loadToken, loadBaseUrl, loadCurrentUser, saveCurrentUser, clearToken } from "./src/api/http";
-import { authMe } from "./src/api/resources";
+import { clearToken } from "./src/api/http";
+import { bootSession } from "./src/lib/bootSession";
 import LoginScreen from "./src/screens/LoginScreen";
 import NoteListScreen from "./src/screens/NoteListScreen";
 import NoteDetailScreen from "./src/screens/NoteDetailScreen";
@@ -24,6 +24,8 @@ interface SelectedFolderState {
 export default function App() {
   const [screen, setScreen] = useState<Screen>("login");
   const [user, setUser] = useState<PublicUser | null>(null);
+  const [sessionUserId, setSessionUserId] = useState<number | null>(null);
+  const cacheUserId = user?.id ?? sessionUserId;
   const [selectedNote, setSelectedNote] = useState<number | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [folderState, setFolderState] = useState<SelectedFolderState>({
@@ -34,30 +36,15 @@ export default function App() {
 
   const { client, clientPersistOptions } = useMemo(() => {
     const qClient = createQueryClient();
-    const pOpts = persistOptionsFor(user?.id);
+    const pOpts = persistOptionsFor(cacheUserId);
     return { client: qClient, clientPersistOptions: pOpts };
-  }, [user?.id]);
+  }, [cacheUserId]);
 
   useEffect(() => {
-    Promise.all([loadToken(), loadBaseUrl(), loadCurrentUser()]).then(([t, _base, storedUser]) => {
-      if (storedUser) setUser(storedUser);
-      if (t) {
-        authMe()
-          .then((me) => {
-            if (me.authenticated) {
-              setUser(me.user);
-              saveCurrentUser(me.user).catch(() => {});
-              setScreen("list");
-            } else {
-              setUser(null);
-              setScreen("login");
-            }
-          })
-          .catch(() => {
-            // Em caso de falta de conexão, preserva a sessão offline com os dados locais
-            setScreen("list");
-          });
-      }
+    bootSession().then((res) => {
+      setUser(res.user);
+      setSessionUserId(res.userId);
+      setScreen(res.screen);
     });
   }, []);
 
@@ -85,9 +72,10 @@ export default function App() {
   // Cache em memória e local do usuário anterior não podem vazar para a próxima sessão.
   const handleLogout = async () => {
     client.clear();
-    if (user?.id) await clearUserCache(user.id);
+    if (cacheUserId !== null) await clearUserCache(cacheUserId);
     await clearToken();
     setUser(null);
+    setSessionUserId(null);
     setScreen("login");
   };
 
@@ -123,7 +111,7 @@ export default function App() {
 
   return (
     <PersistQueryClientProvider
-      key={user?.id ?? "anonymous"}
+      key={cacheUserId ?? "anonymous"}
       client={client}
       persistOptions={clientPersistOptions}
       onSuccess={() => client.resumePausedMutations()}

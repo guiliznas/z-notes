@@ -11,6 +11,7 @@ import {
 import type { FolderTreeNode, FolderWithCount, NoteViewFilter } from "@z-notes/shared";
 import { useFolders, useCreateFolder, useUpdateFolder, useDeleteFolder } from "../hooks/useFolders";
 import FolderModal from "./FolderModal";
+import Icon from "./Icon";
 
 interface FolderDrawerProps {
   visible: boolean;
@@ -139,7 +140,7 @@ export default function FolderDrawer({
                 onClose();
               }}
             >
-              <Text style={styles.navIcon}>📦</Text>
+              <Icon name="archive" />
               <Text style={styles.navText}>Arquivadas</Text>
             </TouchableOpacity>
 

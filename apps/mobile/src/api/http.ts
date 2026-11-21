@@ -4,6 +4,7 @@ import type { PublicUser } from "@z-notes/shared";
 const TOKEN_KEY = "z_notes_token";
 const BASE_URL_KEY = "z_notes_base_url";
 const USER_KEY = "z_notes_current_user";
+const USER_ID_KEY = "z_notes_user_id";
 
 export class ApiError extends Error {
   status: number;
@@ -16,21 +17,40 @@ export class ApiError extends Error {
   }
 }
 
-let baseUrl = "http://10.0.2.2:8787"; // Android emulator localhost
+declare const __DEV__: boolean | undefined;
+
+export function isDevBuild(): boolean {
+  return typeof __DEV__ !== "undefined" && __DEV__ === true;
+}
+
+// O padrão http://10.0.2.2 (localhost do emulador Android) só existe no dev;
+// em produção o servidor é informado pelo usuário e precisa ser https.
+export const DEFAULT_BASE_URL = "http://10.0.2.2:8787";
+
+let baseUrl = isDevBuild() ? DEFAULT_BASE_URL : "";
 let token: string | null = null;
 let currentUser: PublicUser | null = null;
 
+/** URL normalizada se aceitável (https; http só no dev), senão null. */
+export function normalizeBaseUrl(url: string): string | null {
+  const clean = url.trim().replace(/\/+$/, "");
+  if (/^https:\/\/[^/\s]+/i.test(clean)) return clean;
+  if (isDevBuild() && /^http:\/\/[^/\s]+/i.test(clean)) return clean;
+  return null;
+}
+
 export function setBaseUrl(url: string): void {
-  baseUrl = url.replace(/\/+$/, "");
+  const normalized = normalizeBaseUrl(url);
+  if (!normalized) throw new Error("A URL do servidor precisa começar com https://");
+  baseUrl = normalized;
   SecureStore.setItemAsync(BASE_URL_KEY, baseUrl).catch(() => {});
 }
 
 export async function loadBaseUrl(): Promise<string> {
   try {
     const stored = await SecureStore.getItemAsync(BASE_URL_KEY);
-    if (stored) {
-      baseUrl = stored.replace(/\/+$/, "");
-    }
+    const normalized = stored ? normalizeBaseUrl(stored) : null;
+    if (normalized) baseUrl = normalized;
   } catch {
     // fallback
   }
@@ -53,7 +73,22 @@ export async function saveToken(newToken: string): Promise<void> {
 
 export async function saveCurrentUser(user: PublicUser): Promise<void> {
   currentUser = user;
-  await SecureStore.setItemAsync(USER_KEY, JSON.stringify(user));
+  await Promise.all([
+    SecureStore.setItemAsync(USER_KEY, JSON.stringify(user)),
+    SecureStore.setItemAsync(USER_ID_KEY, String(user.id)),
+  ]);
+}
+
+// O id fica à parte do usuário completo: mesmo sem o usuário salvo (ou corrompido),
+// o cache offline abre na chave certa em vez de cair na chave sem id.
+export async function loadUserId(): Promise<number | null> {
+  try {
+    const raw = await SecureStore.getItemAsync(USER_ID_KEY);
+    const id = raw ? Number(raw) : NaN;
+    return Number.isInteger(id) ? id : null;
+  } catch {
+    return null;
+  }
 }
 
 export async function loadCurrentUser(): Promise<PublicUser | null> {
@@ -81,6 +116,7 @@ export async function clearToken(): Promise<void> {
   await Promise.all([
     SecureStore.deleteItemAsync(TOKEN_KEY),
     SecureStore.deleteItemAsync(USER_KEY),
+    SecureStore.deleteItemAsync(USER_ID_KEY),
   ]);
 }
 

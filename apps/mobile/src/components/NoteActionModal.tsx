@@ -2,6 +2,7 @@ import { useState } from "react";
 import { View, Text, TouchableOpacity, Modal, ScrollView, StyleSheet } from "react-native";
 import type { FolderTreeNode, FolderWithCount } from "@z-notes/shared";
 import { useFolders } from "../hooks/useFolders";
+import Icon from "./Icon";
 
 interface NoteActionModalProps {
   visible: boolean;
@@ -117,7 +118,7 @@ export default function NoteActionModal({
                     handleClose();
                   }}
                 >
-                  <Text style={styles.actionIcon}>📌</Text>
+                  <Icon name="pin" />
                   <Text style={styles.actionText}>
                     {isPinned ? "Desafixar nota" : "Fixar nota"}
                   </Text>
@@ -132,7 +133,7 @@ export default function NoteActionModal({
                     handleClose();
                   }}
                 >
-                  <Text style={styles.actionIcon}>📦</Text>
+                  <Icon name="archive" />
                   <Text style={styles.actionText}>
                     {isArchived ? "Desarquivar nota" : "Arquivar nota"}
                   </Text>

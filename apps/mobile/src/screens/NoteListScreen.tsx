@@ -11,6 +11,7 @@ import type { NoteMeta, SearchHit, NoteViewFilter } from "@z-notes/shared";
 import { useNotes } from "../hooks/useNotes";
 import { useSearch } from "../hooks/useSearch";
 import SearchBar from "../components/SearchBar";
+import Icon from "../components/Icon";
 
 interface Props {
   folderId: number | null;
@@ -107,8 +108,9 @@ export default function NoteListScreen({
                 onPress={() => onSelectNote(item.note.id)}
               >
                 <View style={styles.itemHeader}>
+                  {item.note.pinned && <View style={styles.pinSlot}><Icon name="pin" size={12} /></View>}
                   <Text style={styles.itemTitle} numberOfLines={1}>
-                    {item.note.pinned ? "📌 " : ""}{item.note.title}
+                    {item.note.title}
                   </Text>
                   {item.note.updatedAt && (
                     <Text style={styles.itemDate}>
@@ -142,8 +144,9 @@ export default function NoteListScreen({
             renderItem={({ item }) => (
               <TouchableOpacity style={styles.item} onPress={() => onSelectNote(item.id)}>
                 <View style={styles.itemHeader}>
+                  {item.pinned && <View style={styles.pinSlot}><Icon name="pin" size={12} /></View>}
                   <Text style={styles.itemTitle} numberOfLines={1}>
-                    {item.pinned ? "📌 " : ""}{item.title}
+                    {item.title}
                   </Text>
                   {item.updatedAt && (
                     <Text style={styles.itemDate}>{formatNoteDate(item.updatedAt)}</Text>
@@ -153,7 +156,7 @@ export default function NoteListScreen({
                   {item.excerpt}
                 </Text>
                 {item.archived && view !== "archived" && (
-                  <Text style={styles.archivedBadge}>📦 Arquivada</Text>
+                  <View style={styles.archivedRow}><Icon name="archive" size={12} color="#ff9f0a" /><Text style={styles.archivedBadge}>Arquivada</Text></View>
                 )}
               </TouchableOpacity>
             )}
@@ -211,9 +214,11 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   itemTitle: { color: "#fff", fontSize: 16, fontWeight: "600", flex: 1, marginRight: 8 },
+  pinSlot: { marginRight: 6 },
   itemDate: { color: "#8e8e93", fontSize: 12 },
   itemExcerpt: { color: "#888", fontSize: 13, lineHeight: 18 },
-  archivedBadge: { color: "#ff9f0a", fontSize: 11, marginTop: 4 },
+  archivedRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 },
+  archivedBadge: { color: "#ff9f0a", fontSize: 11 },
   empty: { color: "#888", textAlign: "center", marginTop: 40, paddingHorizontal: 24 },
   fab: {
     position: "absolute",
