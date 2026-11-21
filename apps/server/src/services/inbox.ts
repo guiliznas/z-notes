@@ -14,7 +14,8 @@ import type { RequestContext } from "../context.js";
 import { inboxItems, taskFolders, taskLists, tasks, type InboxItemRow, type TaskRow } from "../db/schema.js";
 import { badRequest, notFound } from "../errors.js";
 import { getFolderRow } from "./folders.js";
-import { createNote, getNote } from "./notes.js";
+import { getNote, getNoteRow, insertNoteRow } from "./notes.js";
+import { syncNoteMirror } from "./mirror-sync.js";
 import { createTask } from "./tasks.js";
 
 /* ───────────── mapeamento ───────────── */
@@ -283,8 +284,10 @@ export function convertInboxToNote(
   if (!existing) throw notFound("Item do inbox não encontrado");
 
   if (existing.resolvedKind === "note" && existing.resolvedId !== null) {
-    const existingNote = getNote(ctx, existing.resolvedId);
-    return { item: toApi(existing), note: existingNote };
+    // Nota convertida e depois excluída de vez: o vínculo está morto, converte de novo.
+    if (getNoteRow(ctx, existing.resolvedId)) {
+      return { item: toApi(existing), note: getNote(ctx, existing.resolvedId) };
+    }
   }
 
   if (existing.resolvedKind === "task") {
@@ -295,17 +298,17 @@ export function convertInboxToNote(
   if (!folder) throw badRequest("Pasta de destino não existe");
 
   const now = Date.now();
-  let createdNote: ReturnType<typeof createNote>;
+  let createdNoteId: number;
   let updatedItem: InboxItemRow;
 
   ctx.sqlite.transaction(() => {
-    createdNote = createNote(ctx, { folderId, contentMd: existing.content });
+    createdNoteId = insertNoteRow(ctx, { folderId, contentMd: existing.content }).id;
 
     updatedItem = ctx.db
       .update(inboxItems)
       .set({
         resolvedKind: "note",
-        resolvedId: createdNote.id,
+        resolvedId: createdNoteId,
         updatedAt: now,
       })
       .where(owned(ctx, id))
@@ -313,5 +316,7 @@ export function convertInboxToNote(
       .get();
   })();
 
-  return { item: toApi(updatedItem!), note: createdNote! };
+  // Espelho .md só depois do commit: um rollback não pode deixar arquivo órfão.
+  syncNoteMirror(ctx, createdNoteId!);
+  return { item: toApi(updatedItem!), note: getNote(ctx, createdNoteId!) };
 }
