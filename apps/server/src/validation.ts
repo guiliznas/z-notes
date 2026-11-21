@@ -107,7 +107,7 @@ export const InboxSourceSchema = z.enum(["app", "share", "desktop", "api"]);
 export const InboxStatusSchema = z.enum(["pending", "archived", "resolved"]);
 
 export const CreateInboxItemSchema = z.object({
-  clientId: z.string().trim().min(1, "clientId é obrigatório"),
+  clientId: z.string().trim().min(1, "clientId é obrigatório").max(200, "clientId muito longo"),
   content: z.string().trim().min(1, "conteúdo é obrigatório").max(20000, "conteúdo muito longo"),
   source: InboxSourceSchema.optional().default("api"),
   capturedAt: z.number().int().positive().optional(),
