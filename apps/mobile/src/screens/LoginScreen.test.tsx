@@ -1,87 +1,77 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, fireEvent, waitFor } from "@testing-library/react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import LoginScreen from "./LoginScreen";
 
 vi.mock("../api/resources", () => ({
-  authLogin: vi.fn(),
   authMe: vi.fn(),
 }));
+vi.mock("../api/http", () => ({
+  saveToken: vi.fn(),
+  setBaseUrl: vi.fn(),
+  getBaseUrl: () => "https://notes.exemplo.com",
+  loadBaseUrl: () => Promise.resolve("https://notes.exemplo.com"),
+}));
 
-import { authLogin, authMe } from "../api/resources";
+import { authMe } from "../api/resources";
+import { saveToken } from "../api/http";
+import { openAuthSessionAsync } from "expo-web-browser";
 
-function renderWithProviders(ui: React.ReactElement) {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    React.createElement(QueryClientProvider, { client: qc }, ui),
-  );
-}
+const openAuth = vi.mocked(openAuthSessionAsync);
 
-function getPasswordInput(container: HTMLElement): HTMLInputElement {
-  return Array.from(container.querySelectorAll("input")).find((el) => el.type === "password")!;
-}
-
-function getSubmitButton(container: HTMLElement): HTMLButtonElement {
-  return container.querySelector("button")!;
+function renderLogin(onAuthenticated = vi.fn()) {
+  const utils = render(React.createElement(LoginScreen, { onAuthenticated }));
+  return { ...utils, onAuthenticated, button: utils.container.querySelector("button")! };
 }
 
 describe("LoginScreen", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("renderiza título e inputs", () => {
-    const { getByText, container } = renderWithProviders(
-      React.createElement(LoginScreen, { onAuthenticated: () => {} }),
-    );
+  it("renderiza título, URL do servidor e botão Google", () => {
+    const { getByText, container } = renderLogin();
     expect(getByText("z-notes")).toBeTruthy();
-    expect(container.querySelectorAll("input").length).toBe(2);
-    expect(container.querySelector("button")).toBeTruthy();
+    expect(getByText("Entrar com Google")).toBeTruthy();
+    expect(container.querySelectorAll("input").length).toBe(1);
   });
 
-  it("chama onAuthenticated após login com sucesso", async () => {
-    vi.mocked(authLogin).mockResolvedValue({ ok: true, token: "t1" });
+  it("abre o fluxo de app no navegador e autentica com o token do deep link", async () => {
+    openAuth.mockResolvedValue({ type: "success", url: "znotes://auth?token=jwt123" } as never);
     vi.mocked(authMe).mockResolvedValue({ authenticated: true });
-    const onAuth = vi.fn();
-    const { container } = renderWithProviders(
-      React.createElement(LoginScreen, { onAuthenticated: onAuth }),
-    );
+    const { button, onAuthenticated } = renderLogin();
+    fireEvent.click(button);
 
-    const pwd = getPasswordInput(container);
-    fireEvent.change(pwd, { target: { value: "senha123" } });
-    fireEvent.click(getSubmitButton(container));
-
-    await waitFor(() => expect(onAuth).toHaveBeenCalledOnce());
-    expect(authLogin).toHaveBeenCalledWith("senha123");
+    await waitFor(() => expect(onAuthenticated).toHaveBeenCalledOnce());
+    expect(openAuth).toHaveBeenCalledWith("https://notes.exemplo.com/api/auth/google?client=app", "znotes://auth");
+    expect(saveToken).toHaveBeenCalledWith("jwt123");
   });
 
-  it("não chama onAuthenticated quando auth Me falha", async () => {
-    vi.mocked(authLogin).mockResolvedValue({ ok: true, token: "t1" });
-    vi.mocked(authMe).mockResolvedValue({ authenticated: false });
-    const onAuth = vi.fn();
-    const { container } = renderWithProviders(
-      React.createElement(LoginScreen, { onAuthenticated: onAuth }),
-    );
+  it("não autentica quando o usuário cancela o navegador", async () => {
+    openAuth.mockResolvedValue({ type: "cancel" } as never);
+    const { button, onAuthenticated } = renderLogin();
+    fireEvent.click(button);
 
-    const pwd = getPasswordInput(container);
-    fireEvent.change(pwd, { target: { value: "x" } });
-    fireEvent.click(getSubmitButton(container));
+    await waitFor(() => expect(openAuth).toHaveBeenCalled());
+    expect(saveToken).not.toHaveBeenCalled();
+    expect(onAuthenticated).not.toHaveBeenCalled();
+  });
+
+  it("não salva token quando o servidor devolve erro", async () => {
+    openAuth.mockResolvedValue({ type: "success", url: "znotes://auth?error=denied" } as never);
+    const { button, onAuthenticated } = renderLogin();
+    fireEvent.click(button);
+
+    await waitFor(() => expect(openAuth).toHaveBeenCalled());
+    expect(saveToken).not.toHaveBeenCalled();
+    expect(onAuthenticated).not.toHaveBeenCalled();
+  });
+
+  it("não autentica quando /auth/me recusa o token", async () => {
+    openAuth.mockResolvedValue({ type: "success", url: "znotes://auth?token=jwt123" } as never);
+    vi.mocked(authMe).mockResolvedValue({ authenticated: false });
+    const { button, onAuthenticated } = renderLogin();
+    fireEvent.click(button);
 
     await waitFor(() => expect(authMe).toHaveBeenCalled());
-    expect(onAuth).not.toHaveBeenCalled();
-  });
-
-  it("não chama onAuthenticated quando authLogin rejeita", async () => {
-    vi.mocked(authLogin).mockRejectedValue(new Error("conexão recusada"));
-    const onAuth = vi.fn();
-    const { container } = renderWithProviders(
-      React.createElement(LoginScreen, { onAuthenticated: onAuth }),
-    );
-
-    const pwd = getPasswordInput(container);
-    fireEvent.change(pwd, { target: { value: "x" } });
-    fireEvent.click(getSubmitButton(container));
-
-    await waitFor(() => expect(authLogin).toHaveBeenCalled());
-    expect(onAuth).not.toHaveBeenCalled();
+    expect(onAuthenticated).not.toHaveBeenCalled();
   });
 });

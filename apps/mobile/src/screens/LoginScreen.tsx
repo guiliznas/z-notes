@@ -1,14 +1,15 @@
 import { useState, useEffect } from "react";
 import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet } from "react-native";
-import { authLogin, authMe } from "../api/resources";
-import { saveToken, loadToken, setBaseUrl, getBaseUrl, loadBaseUrl } from "../api/http";
+import * as WebBrowser from "expo-web-browser";
+import { authMe } from "../api/resources";
+import { saveToken, setBaseUrl, getBaseUrl, loadBaseUrl } from "../api/http";
+import { AUTH_REDIRECT, googleLoginUrl, parseAuthRedirect } from "../api/auth";
 
 interface Props {
   onAuthenticated: () => void;
 }
 
 export default function LoginScreen({ onAuthenticated }: Props) {
-  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [serverUrl, setServerUrl] = useState(getBaseUrl());
 
@@ -16,13 +17,18 @@ export default function LoginScreen({ onAuthenticated }: Props) {
     loadBaseUrl().then((u) => setServerUrl(u));
   }, []);
 
-
   const handleLogin = async () => {
     setLoading(true);
     try {
       setBaseUrl(serverUrl);
-      const result = await authLogin(password);
-      if (result.token) await saveToken(result.token);
+      const session = await WebBrowser.openAuthSessionAsync(googleLoginUrl(serverUrl), AUTH_REDIRECT);
+      if (session.type !== "success") return;
+      const result = parseAuthRedirect(session.url);
+      if (!result) throw new Error("Resposta de login inválida");
+      if ("error" in result) {
+        throw new Error(result.error === "denied" ? "Login cancelado no Google" : "Falha no login com Google");
+      }
+      await saveToken(result.token);
       const me = await authMe();
       if (me.authenticated) onAuthenticated();
     } catch (e: unknown) {
@@ -45,16 +51,8 @@ export default function LoginScreen({ onAuthenticated }: Props) {
         autoCapitalize="none"
         autoCorrect={false}
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Senha"
-        placeholderTextColor="#888"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
       <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
-        <Text style={styles.buttonText}>{loading ? "Entrando..." : "Entrar"}</Text>
+        <Text style={styles.buttonText}>{loading ? "Entrando..." : "Entrar com Google"}</Text>
       </TouchableOpacity>
     </View>
   );

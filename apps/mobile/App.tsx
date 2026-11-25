@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { BackHandler } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import type { NoteViewFilter } from "@z-notes/shared";
@@ -37,7 +38,29 @@ export default function App() {
     });
   }, []);
 
+  // Botão voltar do Android: detalhe/configurações → lista; drawer aberto → fecha; lista → sai do app.
+  useEffect(() => {
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (drawerOpen) {
+        setDrawerOpen(false);
+        return true;
+      }
+      if (screen === "detail" || screen === "settings") {
+        setScreen("list");
+        return true;
+      }
+      return false;
+    });
+    return () => sub.remove();
+  }, [screen, drawerOpen]);
+
   const handleAuthenticated = () => setScreen("list");
+
+  // Cache em memória do usuário anterior não pode vazar para a próxima sessão.
+  const handleLogout = () => {
+    queryClient.clear();
+    setScreen("login");
+  };
 
   const handleSelectNote = (id: number) => {
     setSelectedNote(id);
@@ -107,7 +130,7 @@ export default function App() {
       {screen === "settings" && (
         <SettingsScreen
           onBack={() => setScreen("list")}
-          onLogout={() => setScreen("login")}
+          onLogout={handleLogout}
         />
       )}
     </PersistQueryClientProvider>
