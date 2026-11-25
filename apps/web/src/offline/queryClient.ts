@@ -1,8 +1,8 @@
 import { QueryClient } from "@tanstack/react-query";
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
 import { get, set, del } from "idb-keyval";
-import type { UpdateNoteInput } from "@z-notes/shared";
-import { updateNote } from "@/api/resources";
+import type { CreateInboxItemInput, UpdateNoteInput } from "@z-notes/shared";
+import { createInboxItem, updateNote } from "@/api/resources";
 
 const WEEK_MS = 1000 * 60 * 60 * 24 * 7;
 
@@ -10,6 +10,11 @@ const WEEK_MS = 1000 * 60 * 60 * 24 * 7;
 export type UpdateNoteVars = { id: number } & UpdateNoteInput;
 
 export const UPDATE_NOTE_KEY = ["updateNote"] as const;
+
+/** Variáveis de captura no Inbox — serializáveis para resumir após reload. */
+export type CreateInboxItemVars = CreateInboxItemInput;
+
+export const CREATE_INBOX_ITEM_KEY = ["createInboxItem"] as const;
 
 export function createQueryClient(): QueryClient {
   const client = new QueryClient({
@@ -31,6 +36,12 @@ export function createQueryClient(): QueryClient {
   // o React Query a executa novamente usando esta função padrão.
   client.setMutationDefaults(UPDATE_NOTE_KEY, {
     mutationFn: (vars: UpdateNoteVars) => updateNote(vars.id, vars),
+  });
+
+  // Captura no Inbox offline-resumível: se offline a mutação pausa e persiste; ao reconectar/recarregar
+  // o React Query a executa usando esta função padrão com o clientId idempotente.
+  client.setMutationDefaults(CREATE_INBOX_ITEM_KEY, {
+    mutationFn: (vars: CreateInboxItemVars) => createInboxItem(vars),
   });
 
   return client;
