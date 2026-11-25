@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, fireEvent, waitFor } from "@testing-library/react";
 import SettingsScreen from "./SettingsScreen";
 import * as httpModule from "../api/http";
+import * as resourcesModule from "../api/resources";
 import { persister } from "../lib/storage";
 
 describe("SettingsScreen", () => {
@@ -55,6 +56,32 @@ describe("SettingsScreen", () => {
     fireEvent.click(getByText("Sair da conta"));
 
     await waitFor(() => {
+      expect(clearTokenSpy).toHaveBeenCalled();
+      expect(removeClientSpy).toHaveBeenCalled();
+      expect(onLogout).toHaveBeenCalled();
+    });
+  });
+
+  it("exclui a conta no servidor e limpa sessão ao confirmar exclusão", async () => {
+    const deleteSpy = vi.spyOn(resourcesModule, "authDeleteAccount").mockResolvedValue({ deleted: true });
+    const clearTokenSpy = vi.spyOn(httpModule, "clearToken").mockResolvedValue();
+    const removeClientSpy = vi.spyOn(persister, "removeClient").mockResolvedValue();
+    const onLogout = vi.fn();
+
+    const { Alert } = await import("react-native");
+    vi.spyOn(Alert, "alert").mockImplementation((_title, _msg, buttons) => {
+      const excluirBtn = buttons?.find((b: any) => b.text === "Excluir");
+      excluirBtn?.onPress?.();
+    });
+
+    const { getByText } = render(
+      React.createElement(SettingsScreen, { onBack: () => {}, onLogout }),
+    );
+
+    fireEvent.click(getByText("Excluir minha conta"));
+
+    await waitFor(() => {
+      expect(deleteSpy).toHaveBeenCalled();
       expect(clearTokenSpy).toHaveBeenCalled();
       expect(removeClientSpy).toHaveBeenCalled();
       expect(onLogout).toHaveBeenCalled();

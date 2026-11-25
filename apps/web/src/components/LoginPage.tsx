@@ -86,6 +86,14 @@ export function LoginPage() {
         {waitingBrowser && (
           <p className="mt-3 text-sm text-[var(--muted)]">Conclua o login no navegador. Você volta para o app automaticamente.</p>
         )}
+        <div className="mt-5 flex items-center justify-center gap-4 border-t border-[var(--border)] pt-4 text-xs text-[var(--muted)]">
+          <a href="/privacidade" className="hover:text-[var(--text)] hover:underline">
+            Política de Privacidade
+          </a>
+          <a href="/excluir-conta" className="hover:text-[var(--text)] hover:underline">
+            Excluir conta
+          </a>
+        </div>
       </div>
     </div>
   );

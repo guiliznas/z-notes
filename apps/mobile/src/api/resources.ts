@@ -36,3 +36,4 @@ export const authMe = () => api<{ authenticated: boolean }>("/auth/me");
 export const authLogin = (password: string) =>
   api<{ ok: true; token?: string }>("/auth/login?token=true", { method: "POST", body: { password } });
 export const authLogout = () => api<{ ok: true }>("/auth/logout", { method: "POST" });
+export const authDeleteAccount = () => api<{ deleted: true }>("/auth/account", { method: "DELETE" });

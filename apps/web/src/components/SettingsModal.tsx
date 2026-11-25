@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { Modal } from "./ui/Modal";
 import { Button } from "./ui/Button";
+import { ConfirmDialog } from "./ui/ConfirmDialog";
 import { getBaseUrl, setBaseUrl, resetBaseUrl, isTauriEnvironment } from "@/api/http";
+import { useAuth } from "@/auth/AuthContext";
 import { useToast } from "./ui/Toast";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -12,6 +14,9 @@ interface Props {
 
 export function SettingsModal({ open, onClose }: Props) {
   const [url, setUrl] = useState(getBaseUrl());
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const { user, deleteAccount } = useAuth();
   const { notify } = useToast();
   const qc = useQueryClient();
   const isDesktop = isTauriEnvironment();
@@ -48,61 +53,124 @@ export function SettingsModal({ open, onClose }: Props) {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      await deleteAccount();
+      await qc.cancelQueries();
+      qc.clear();
+      setConfirmDeleteOpen(false);
+      onClose();
+      notify("Sua conta e todos os seus dados foram excluídos.", "info");
+    } catch {
+      notify("Não foi possível excluir sua conta agora. Tente novamente.", "error");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
-    <Modal title="Configurações" onClose={onClose}>
-      <div className="flex flex-col gap-5 text-sm">
-        {/* Servidor */}
-        <div className="flex flex-col gap-2">
-          <label className="font-medium text-[var(--text)]">URL do Servidor (API)</label>
-          <p className="text-xs text-[var(--muted)]">
-            {isDesktop
-              ? "Endereço do backend Fastify. No desktop, você pode apontar para localhost ou servidor remoto."
-              : "URL base para chamadas de API. Em branco usará a rota relativa padrão (/api)."}
-          </p>
-          <input
-            type="text"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder={isDesktop ? "http://localhost:8787" : "https://meu-servidor.com ou deixe vazio"}
-            className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]"
-          />
-          <div className="flex gap-2 pt-1">
-            <Button variant="primary" onClick={handleSave} className="text-xs">
-              Salvar
-            </Button>
-            <Button variant="ghost" onClick={handleReset} className="text-xs">
-              Restaurar Padrão
-            </Button>
+    <>
+      <Modal title="Configurações" onClose={onClose}>
+        <div className="flex flex-col gap-5 text-sm">
+          {/* Servidor */}
+          <div className="flex flex-col gap-2">
+            <label className="font-medium text-[var(--text)]">URL do Servidor (API)</label>
+            <p className="text-xs text-[var(--muted)]">
+              {isDesktop
+                ? "Endereço do backend Fastify. No desktop, você pode apontar para localhost ou servidor remoto."
+                : "URL base para chamadas de API. Em branco usará a rota relativa padrão (/api)."}
+            </p>
+            <input
+              type="text"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder={isDesktop ? "http://localhost:8787" : "https://meu-servidor.com ou deixe vazio"}
+              className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]"
+            />
+            <div className="flex gap-2 pt-1">
+              <Button variant="primary" onClick={handleSave} className="text-xs">
+                Salvar
+              </Button>
+              <Button variant="ghost" onClick={handleReset} className="text-xs">
+                Restaurar Padrão
+              </Button>
+            </div>
           </div>
-        </div>
 
-        {/* Cache Offline */}
-        <div className="flex flex-col gap-2 border-t border-[var(--border)] pt-4">
-          <label className="font-medium text-[var(--text)]">Armazenamento Offline</label>
-          <p className="text-xs text-[var(--muted)]">
-            Limpar os dados salvos em cache no dispositivo caso haja conflito ou queira forçar sincronização total.
-          </p>
-          <div>
-            <Button variant="subtle" onClick={handleClearCache} className="text-xs">
-              Limpar cache offline
-            </Button>
+          {/* Cache Offline */}
+          <div className="flex flex-col gap-2 border-t border-[var(--border)] pt-4">
+            <label className="font-medium text-[var(--text)]">Armazenamento Offline</label>
+            <p className="text-xs text-[var(--muted)]">
+              Limpar os dados salvos em cache no dispositivo caso haja conflito ou queira forçar sincronização total.
+            </p>
+            <div>
+              <Button variant="subtle" onClick={handleClearCache} className="text-xs">
+                Limpar cache offline
+              </Button>
+            </div>
           </div>
-        </div>
 
-        {/* Informações do Sistema */}
-        <div className="flex flex-col gap-1 border-t border-[var(--border)] pt-4 text-xs text-[var(--muted)]">
-          <div className="flex justify-between">
-            <span>Aplicativo:</span>
-            <span className="font-medium text-[var(--text)]">z-notes v0.1.0</span>
+          {/* Conta e Privacidade */}
+          <div className="flex flex-col gap-2 border-t border-[var(--border)] pt-4">
+            <label className="font-medium text-[var(--text)]">Conta e Privacidade</label>
+            <div className="flex gap-4 text-xs">
+              <a
+                href="/privacidade"
+                target="_blank"
+                rel="noreferrer"
+                className="text-[var(--accent)] underline-offset-2 hover:underline"
+              >
+                Política de Privacidade
+              </a>
+              <a
+                href="/excluir-conta"
+                target="_blank"
+                rel="noreferrer"
+                className="text-[var(--accent)] underline-offset-2 hover:underline"
+              >
+                Exclusão de conta
+              </a>
+            </div>
+            {user && (
+              <div className="pt-1">
+                <Button
+                  variant="danger"
+                  disabled={deleting}
+                  onClick={() => setConfirmDeleteOpen(true)}
+                  className="text-xs"
+                >
+                  {deleting ? "Excluindo..." : "Excluir minha conta"}
+                </Button>
+              </div>
+            )}
           </div>
-          <div className="flex justify-between">
-            <span>Ambiente:</span>
-            <span className="font-medium text-[var(--text)]">
-              {isDesktop ? "Desktop (Tauri)" : "Navegador Web"}
-            </span>
+
+          {/* Informações do Sistema */}
+          <div className="flex flex-col gap-1 border-t border-[var(--border)] pt-4 text-xs text-[var(--muted)]">
+            <div className="flex justify-between">
+              <span>Aplicativo:</span>
+              <span className="font-medium text-[var(--text)]">z-notes v0.1.0</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Ambiente:</span>
+              <span className="font-medium text-[var(--text)]">
+                {isDesktop ? "Desktop (Tauri)" : "Navegador Web"}
+              </span>
+            </div>
           </div>
         </div>
-      </div>
-    </Modal>
+      </Modal>
+      {confirmDeleteOpen && (
+        <ConfirmDialog
+          title="Excluir conta permanentemente"
+          message="Esta ação apaga permanentemente sua conta, todas as suas notas, pastas e dados salvos neste dispositivo. Não é possível desfazer."
+          confirmLabel={deleting ? "Excluindo..." : "Excluir minha conta"}
+          danger
+          onConfirm={handleDeleteAccount}
+          onClose={() => setConfirmDeleteOpen(false)}
+        />
+      )}
+    </>
   );
 }

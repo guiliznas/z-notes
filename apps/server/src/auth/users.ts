@@ -1,5 +1,7 @@
+import fs from "node:fs";
 import { eq, isNull, sql } from "drizzle-orm";
 import type { AppContext } from "../context.js";
+import { userMirrorDir } from "../config.js";
 import { users, notes, folders, type UserRow } from "../db/schema.js";
 
 export type { UserRow };
@@ -92,4 +94,20 @@ export function adoptOrphanData(ctx: AppContext, userId: number): AdoptionResult
     .returning({ id: folders.id })
     .all();
   return { notes: adoptedNotes.length, folders: adoptedFolders.length };
+}
+
+/**
+ * Exclui definitivamente a conta e todos os dados vinculados (notas, pastas e espelho .md).
+ * Exigência da Google Play e LGPD.
+ */
+export function deleteUserAccount(ctx: AppContext, userId: number): boolean {
+  const existing = getUserById(ctx, userId);
+  if (!existing) return false;
+  ctx.sqlite.transaction(() => {
+    ctx.db.delete(notes).where(eq(notes.userId, userId)).run();
+    ctx.db.delete(folders).where(eq(folders.userId, userId)).run();
+    ctx.db.delete(users).where(eq(users.id, userId)).run();
+  })();
+  fs.rmSync(userMirrorDir(ctx.cfg, userId), { recursive: true, force: true });
+  return true;
 }

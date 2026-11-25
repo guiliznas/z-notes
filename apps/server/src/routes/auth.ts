@@ -5,6 +5,7 @@ import { serviceUnavailable, unauthorized } from "../errors.js";
 import {
   APP_STATE_PREFIX,
   getSessionUserId,
+  requireAuth,
   signToken,
   setSessionCookie,
   clearSessionCookie,
@@ -18,7 +19,7 @@ import {
   fetchGoogleProfile,
   isGoogleConfigured,
 } from "../auth/google.js";
-import { adoptOrphanData, getUserById, upsertUserByGoogle, type UserRow } from "../auth/users.js";
+import { adoptOrphanData, deleteUserAccount, getUserById, upsertUserByGoogle, type UserRow } from "../auth/users.js";
 import { rebuildMirror } from "../services/mirror-sync.js";
 
 /** Início e fim do OAuth: bem abaixo do teto global, para frear força bruta/abuso do fluxo de login. */
@@ -83,6 +84,13 @@ export function registerAuthRoutes(app: FastifyInstance, ctx: AppContext): void 
     const user = getUserById(ctx, userId);
     if (!user) return { authenticated: false as const };
     return { authenticated: true as const, user: toPublicUser(user) };
+  });
+
+  app.delete("/api/auth/account", async (req, reply) => {
+    const userId = requireAuth(req, ctx);
+    deleteUserAccount(ctx, userId);
+    clearSessionCookie(reply);
+    return { deleted: true as const };
   });
 }
 

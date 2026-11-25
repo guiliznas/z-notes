@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet } from "react-native";
 import { getBaseUrl, setBaseUrl, clearToken } from "../api/http";
+import { authDeleteAccount } from "../api/resources";
 import { persister } from "../lib/storage";
 
 interface SettingsScreenProps {
@@ -56,6 +57,30 @@ export default function SettingsScreen({ onBack, onLogout }: SettingsScreenProps
     ]);
   };
 
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      "Excluir minha conta",
+      "Isso apaga permanentemente sua conta, todas as suas notas, pastas e o cache local. Não é possível desfazer.",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Excluir",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await authDeleteAccount();
+              await clearToken();
+              await persister.removeClient();
+              onLogout();
+            } catch {
+              Alert.alert("Erro", "Não foi possível excluir sua conta agora. Tente novamente.");
+            }
+          },
+        },
+      ],
+    );
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -99,6 +124,9 @@ export default function SettingsScreen({ onBack, onLogout }: SettingsScreenProps
       <View style={[styles.section, styles.logoutSection]}>
         <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
           <Text style={styles.logoutText}>Sair da conta</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.deleteBtn} onPress={handleDeleteAccount}>
+          <Text style={styles.deleteText}>Excluir minha conta</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -159,4 +187,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   logoutText: { color: "#ff453a", fontSize: 16, fontWeight: "600" },
+  deleteBtn: {
+    marginTop: 10,
+    backgroundColor: "#ff453a",
+    padding: 14,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  deleteText: { color: "#fff", fontSize: 16, fontWeight: "600" },
 });

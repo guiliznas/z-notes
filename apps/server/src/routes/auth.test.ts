@@ -236,4 +236,80 @@ describe("auth", () => {
     const me = await t.app.inject({ method: "GET", url: "/api/auth/me", headers: { cookie: forged } });
     expect(me.json()).toEqual({ authenticated: false });
   });
+
+  it("DELETE /api/auth/account recusa sem sessão", async () => {
+    const res = await t.app.inject({ method: "DELETE", url: "/api/auth/account" });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it("DELETE /api/auth/account apaga usuário, notas, pastas e espelho sem afetar outra conta", async () => {
+    // Usuário 1 cria pasta e nota (gera espelho .md)
+    const f1 = await t.app.inject({
+      method: "POST",
+      url: "/api/folders",
+      headers: { cookie: t.cookie },
+      payload: { name: "Pessoal" },
+    });
+    expect(f1.statusCode).toBe(201);
+    const folder1Id = f1.json().id as number;
+    const n1 = await t.app.inject({
+      method: "POST",
+      url: "/api/notes",
+      headers: { cookie: t.cookie },
+      payload: { folderId: folder1Id, contentMd: "# Nota do usuário 1" },
+    });
+    expect(n1.statusCode).toBe(201);
+    const mirror1Dir = path.join(t.cfg.mirrorDir, String(t.userId));
+    expect(fs.existsSync(mirror1Dir)).toBe(true);
+
+    // Usuário 2 cria pasta e nota própria
+    const user2 = await loginWithGoogle(t.app, { sub: "google-sub-2", email: "user2@example.com", name: "User 2" });
+    const f2 = await t.app.inject({
+      method: "POST",
+      url: "/api/folders",
+      headers: { cookie: user2.cookie },
+      payload: { name: "Trabalho" },
+    });
+    expect(f2.statusCode).toBe(201);
+    const n2 = await t.app.inject({
+      method: "POST",
+      url: "/api/notes",
+      headers: { cookie: user2.cookie },
+      payload: { folderId: f2.json().id, contentMd: "# Nota do usuário 2" },
+    });
+    expect(n2.statusCode).toBe(201);
+
+    // Exclui conta do usuário 1
+    const del = await t.app.inject({ method: "DELETE", url: "/api/auth/account", headers: { cookie: t.cookie } });
+    expect(del.statusCode).toBe(200);
+    expect(del.json()).toEqual({ deleted: true });
+    expect(del.cookies.find((c) => c.name === "z_session")?.value).toBe("");
+    expect(fs.existsSync(mirror1Dir)).toBe(false);
+
+    // Sessão antiga do usuário 1 não é mais válida
+    const me1 = await t.app.inject({ method: "GET", url: "/api/auth/me", headers: { cookie: t.cookie } });
+    expect(me1.json()).toEqual({ authenticated: false });
+
+    // Dados do usuário 2 continuam intactos
+    const folders2 = await t.app.inject({ method: "GET", url: "/api/folders", headers: { cookie: user2.cookie } });
+    expect(folders2.statusCode).toBe(200);
+    expect(folders2.json()).toHaveLength(1);
+    const notes2 = await t.app.inject({ method: "GET", url: "/api/notes?view=active", headers: { cookie: user2.cookie } });
+    expect(notes2.statusCode).toBe(200);
+    expect(notes2.json()).toHaveLength(1);
+  });
+
+  it("GET /privacidade e GET /excluir-conta retornam HTML estático completo (HTTP 200)", async () => {
+    const priv = await t.app.inject({ method: "GET", url: "/privacidade" });
+    expect(priv.statusCode).toBe(200);
+    expect(priv.headers["content-type"]).toContain("text/html");
+    expect(priv.body).toContain("Política de Privacidade");
+    expect(priv.body).toContain("/excluir-conta");
+
+    const del = await t.app.inject({ method: "GET", url: "/excluir-conta" });
+    expect(del.statusCode).toBe(200);
+    expect(del.headers["content-type"]).toContain("text/html");
+    expect(del.body).toContain("Excluir minha conta");
+    expect(del.body).toContain("/privacidade");
+  });
 });
