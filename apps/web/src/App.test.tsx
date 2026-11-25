@@ -21,13 +21,25 @@ function renderAt(path: string) {
 
 describe("App /admin", () => {
   it("renderiza o dashboard para admin", async () => {
-    vi.mocked(useAuth).mockReturnValue({ status: "authenticated", user: ADMIN, refresh: vi.fn(), logout: vi.fn() });
+    vi.mocked(useAuth).mockReturnValue({
+      status: "authenticated",
+      user: ADMIN,
+      refresh: vi.fn(),
+      logout: vi.fn(),
+      deleteAccount: vi.fn(),
+    });
     renderAt("/admin");
     await waitFor(() => expect(screen.getByText("Administração")).toBeInTheDocument());
   });
 
   it("não-admin cai de volta nas notas (backend barraria de todo modo)", async () => {
-    vi.mocked(useAuth).mockReturnValue({ status: "authenticated", user: COMMON, refresh: vi.fn(), logout: vi.fn() });
+    vi.mocked(useAuth).mockReturnValue({
+      status: "authenticated",
+      user: COMMON,
+      refresh: vi.fn(),
+      logout: vi.fn(),
+      deleteAccount: vi.fn(),
+    });
     renderAt("/admin");
     await waitFor(() => expect(screen.getByText("página de notas")).toBeInTheDocument());
     expect(screen.queryByText("Administração")).not.toBeInTheDocument();
