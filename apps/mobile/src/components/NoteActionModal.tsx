@@ -63,7 +63,7 @@ export default function NoteActionModal({
                       ]}
                       onPress={() => handleSelectFolder(root.id)}
                     >
-                      <Text style={styles.folderIcon}>📁</Text>
+                      <View style={styles.folderIconSlot}><Icon name="folder" size={16} color="#8e8e93" /></View>
                       <Text style={styles.folderName}>{root.name}</Text>
                       {currentFolderId === root.id && (
                         <Text style={styles.checkMark}>✓</Text>
@@ -79,7 +79,10 @@ export default function NoteActionModal({
                         ]}
                         onPress={() => handleSelectFolder(sub.id)}
                       >
-                        <Text style={styles.folderIcon}>↳ 📁</Text>
+                        <View style={styles.subFolderIconSlot}>
+                          <Text style={styles.subPrefix}>↳</Text>
+                          <Icon name="folder" size={14} color="#8e8e93" />
+                        </View>
                         <Text style={styles.folderName}>{sub.name}</Text>
                         {currentFolderId === sub.id && (
                           <Text style={styles.checkMark}>✓</Text>
@@ -105,7 +108,7 @@ export default function NoteActionModal({
                   style={styles.actionBtn}
                   onPress={() => setPickingFolder(true)}
                 >
-                  <Text style={styles.actionIcon}>📁</Text>
+                  <View style={styles.actionIconSlot}><Icon name="folder" size={16} color="#ebebf5" /></View>
                   <Text style={styles.actionText}>Mover para pasta...</Text>
                 </TouchableOpacity>
               )}
@@ -118,7 +121,7 @@ export default function NoteActionModal({
                     handleClose();
                   }}
                 >
-                  <Icon name="pin" />
+                  <View style={styles.actionIconSlot}><Icon name="pin" size={16} color="#ebebf5" /></View>
                   <Text style={styles.actionText}>
                     {isPinned ? "Desafixar nota" : "Fixar nota"}
                   </Text>
@@ -133,7 +136,7 @@ export default function NoteActionModal({
                     handleClose();
                   }}
                 >
-                  <Icon name="archive" />
+                  <View style={styles.actionIconSlot}><Icon name="archive" size={16} color="#ebebf5" /></View>
                   <Text style={styles.actionText}>
                     {isArchived ? "Desarquivar nota" : "Arquivar nota"}
                   </Text>
@@ -150,7 +153,7 @@ export default function NoteActionModal({
                         handleClose();
                       }}
                     >
-                      <Text style={styles.actionIcon}>♻️</Text>
+                      <View style={styles.actionIconSlot}><Icon name="restore" size={16} color="#ebebf5" /></View>
                       <Text style={styles.actionText}>Restaurar nota</Text>
                     </TouchableOpacity>
                   )}
@@ -162,7 +165,7 @@ export default function NoteActionModal({
                         handleClose();
                       }}
                     >
-                      <Text style={styles.actionIcon}>⚠️</Text>
+                      <View style={styles.actionIconSlot}><Icon name="warning" size={16} color="#ff453a" /></View>
                       <Text style={[styles.actionText, styles.destructiveText]}>
                         Excluir definitivamente
                       </Text>
@@ -177,7 +180,7 @@ export default function NoteActionModal({
                     handleClose();
                   }}
                 >
-                  <Text style={styles.actionIcon}>🗑️</Text>
+                  <View style={styles.actionIconSlot}><Icon name="trash" size={16} color="#ff453a" /></View>
                   <Text style={[styles.actionText, styles.destructiveText]}>
                     Mover para lixeira
                   </Text>
@@ -227,9 +230,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#3a3a3c",
     marginBottom: 8,
   },
-  actionIcon: {
-    fontSize: 18,
+  actionIconSlot: {
     marginRight: 12,
+    width: 20,
+    alignItems: "center",
   },
   actionText: {
     fontSize: 16,
@@ -269,9 +273,20 @@ const styles = StyleSheet.create({
   folderItemActive: {
     backgroundColor: "#3a3a3c",
   },
-  folderIcon: {
-    fontSize: 16,
+  folderIconSlot: {
     marginRight: 10,
+    width: 18,
+    alignItems: "center",
+  },
+  subFolderIconSlot: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginRight: 10,
+  },
+  subPrefix: {
+    color: "#8e8e93",
+    fontSize: 14,
   },
   folderName: {
     fontSize: 15,

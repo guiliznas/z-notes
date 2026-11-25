@@ -1,4 +1,5 @@
 import { View, TextInput, TouchableOpacity, Text, StyleSheet } from "react-native";
+import Icon from "./Icon";
 
 interface SearchBarProps {
   value: string;
@@ -20,7 +21,9 @@ export default function SearchBar({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.icon}>🔍</Text>
+      <View style={styles.iconSlot}>
+        <Icon name="search" size={15} color="#8e8e93" />
+      </View>
       <TextInput
         style={styles.input}
         placeholder={placeholder}
@@ -54,9 +57,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     height: 40,
   },
-  icon: {
-    fontSize: 14,
+  iconSlot: {
     marginRight: 8,
+    alignItems: "center",
+    justifyContent: "center",
   },
   input: {
     flex: 1,

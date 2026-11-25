@@ -100,7 +100,7 @@ export default function FolderDrawer({
                   }}
                   accessibilityLabel="Configurações"
                 >
-                  <Text style={styles.iconText}>⚙️</Text>
+                  <Icon name="settings" size={18} color="#ebebf5" />
                 </TouchableOpacity>
               )}
               <TouchableOpacity
@@ -126,7 +126,7 @@ export default function FolderDrawer({
                 onClose();
               }}
             >
-              <Text style={styles.navIcon}>📝</Text>
+              <View style={styles.navIconSlot}><Icon name="note" size={16} color="#ebebf5" /></View>
               <Text style={styles.navText}>Todas as notas</Text>
             </TouchableOpacity>
 
@@ -140,7 +140,7 @@ export default function FolderDrawer({
                 onClose();
               }}
             >
-              <Icon name="archive" />
+              <View style={styles.navIconSlot}><Icon name="archive" size={16} color="#ebebf5" /></View>
               <Text style={styles.navText}>Arquivadas</Text>
             </TouchableOpacity>
 
@@ -154,7 +154,7 @@ export default function FolderDrawer({
                 onClose();
               }}
             >
-              <Text style={styles.navIcon}>🗑️</Text>
+              <View style={styles.navIconSlot}><Icon name="trash" size={16} color="#ebebf5" /></View>
               <Text style={styles.navText}>Lixeira</Text>
             </TouchableOpacity>
 
@@ -183,7 +183,7 @@ export default function FolderDrawer({
                         onClose();
                       }}
                     >
-                      <Text style={styles.navIcon}>📁</Text>
+                      <View style={styles.navIconSlot}><Icon name="folder" size={16} color="#8e8e93" /></View>
                       <Text style={styles.folderName} numberOfLines={1}>
                         {node.name}
                       </Text>
@@ -203,14 +203,14 @@ export default function FolderDrawer({
                         onPress={() => handleOpenRename(node)}
                         accessibilityLabel={`Renomear ${node.name}`}
                       >
-                        <Text style={styles.actionText}>✏️</Text>
+                        <Icon name="edit" size={14} color="#8e8e93" />
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={styles.actionBtn}
                         onPress={() => handleDelete(node)}
                         accessibilityLabel={`Excluir ${node.name}`}
                       >
-                        <Text style={styles.actionText}>🗑️</Text>
+                        <Icon name="trash" size={14} color="#8e8e93" />
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -233,7 +233,10 @@ export default function FolderDrawer({
                             onClose();
                           }}
                         >
-                          <Text style={styles.subIcon}>↳ 📁</Text>
+                          <View style={styles.subIconSlot}>
+                            <Text style={styles.subIcon}>↳</Text>
+                            <Icon name="folder" size={14} color="#8e8e93" />
+                          </View>
                           <Text style={styles.folderName} numberOfLines={1}>
                             {child.name}
                           </Text>
@@ -246,14 +249,14 @@ export default function FolderDrawer({
                             onPress={() => handleOpenRename(child)}
                             accessibilityLabel={`Renomear ${child.name}`}
                           >
-                            <Text style={styles.actionText}>✏️</Text>
+                            <Icon name="edit" size={14} color="#8e8e93" />
                           </TouchableOpacity>
                           <TouchableOpacity
                             style={styles.actionBtn}
                             onPress={() => handleDelete(child)}
                             accessibilityLabel={`Excluir ${child.name}`}
                           >
-                            <Text style={styles.actionText}>🗑️</Text>
+                            <Icon name="trash" size={14} color="#8e8e93" />
                           </TouchableOpacity>
                         </View>
                       </View>
@@ -362,13 +365,19 @@ const styles = StyleSheet.create({
   navItemActive: {
     backgroundColor: "#2c2c2e",
   },
-  navIcon: {
-    fontSize: 16,
+  navIconSlot: {
     marginRight: 10,
+    width: 18,
+    alignItems: "center",
+  },
+  subIconSlot: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginRight: 8,
   },
   subIcon: {
     fontSize: 14,
-    marginRight: 6,
     color: "#888",
   },
   navText: {

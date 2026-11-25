@@ -6,6 +6,7 @@ import { useUpdateNote } from "../hooks/useUpdateNote";
 import { deriveTitle } from "@z-notes/shared";
 import NoteActionModal from "../components/NoteActionModal";
 import MarkdownToolbar from "../components/MarkdownToolbar";
+import Icon from "../components/Icon";
 
 interface Props {
   noteId: number;
@@ -190,8 +191,13 @@ export default function NoteDetailScreen({ noteId, onBack }: Props) {
         <TouchableOpacity
           onPress={() => (editing ? handleManualSave() : setEditing(true))}
           accessibilityLabel={editing ? "Salvar nota" : "Editar nota"}
+          style={styles.editButton}
         >
-          <Text style={styles.editButton}>{editing ? "✔" : "✏️"}</Text>
+          {editing ? (
+            <Text style={styles.saveIconText}>✔</Text>
+          ) : (
+            <Icon name="edit" size={18} color="#ebebf5" />
+          )}
         </TouchableOpacity>
       </View>
 
@@ -210,7 +216,7 @@ export default function NoteDetailScreen({ noteId, onBack }: Props) {
         </>
       ) : (
         <View style={styles.content}>
-          <Markdown>{content || "Toque em ✏️ para editar"}</Markdown>
+          <Markdown>{content || "Toque em Editar para começar"}</Markdown>
         </View>
       )}
 
@@ -249,7 +255,8 @@ const styles = StyleSheet.create({
   statusError: { color: "#ff453a" },
   actionMenuBtn: { paddingHorizontal: 10, paddingVertical: 4 },
   actionMenuText: { color: "#8e8e93", fontSize: 20, fontWeight: "bold" },
-  editButton: { fontSize: 20, paddingLeft: 6 },
+  editButton: { paddingLeft: 6, paddingVertical: 4 },
+  saveIconText: { color: "#30d158", fontSize: 18, fontWeight: "700" },
   editor: { flex: 1, color: "#fff", fontSize: 15, padding: 16, textAlignVertical: "top" },
   content: { flex: 1, color: "#fff", fontSize: 15, padding: 16, lineHeight: 22 },
   text: { color: "#888", padding: 24, fontSize: 15 },
