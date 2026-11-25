@@ -1,8 +1,18 @@
 import { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet } from "react-native";
 import type { PublicUser } from "@z-notes/shared";
-import { getBaseUrl, setBaseUrl, getToken, normalizeBaseUrl, isDevBuild, DEFAULT_BASE_URL, PROD_BASE_URL } from "../api/http";
-import { clearUserCache } from "../lib/storage";
+import {
+  getBaseUrl,
+  setBaseUrl,
+  getToken,
+  clearToken,
+  normalizeBaseUrl,
+  isDevBuild,
+  DEFAULT_BASE_URL,
+  PROD_BASE_URL,
+} from "../api/http";
+import { authDeleteAccount } from "../api/resources";
+import { clearUserCache, persister } from "../lib/storage";
 
 interface SettingsScreenProps {
   user?: PublicUser | null;
@@ -76,6 +86,32 @@ export default function SettingsScreen({
     ]);
   };
 
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      "Excluir minha conta",
+      "Isso apaga permanentemente sua conta, todas as suas notas, pastas e o cache local. Não é possível desfazer.",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Excluir",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await authDeleteAccount();
+              onClearMemoryCache?.();
+              await clearToken();
+              await clearUserCache(user?.id ?? userId ?? undefined);
+              await persister.removeClient();
+              await onLogout();
+            } catch {
+              Alert.alert("Erro", "Não foi possível excluir sua conta agora. Tente novamente.");
+            }
+          },
+        },
+      ],
+    );
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -127,6 +163,9 @@ export default function SettingsScreen({
       <View style={[styles.section, styles.logoutSection]}>
         <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
           <Text style={styles.logoutText}>Sair da conta</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.deleteBtn} onPress={handleDeleteAccount}>
+          <Text style={styles.deleteText}>Excluir minha conta</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -187,4 +226,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   logoutText: { color: "#ff453a", fontSize: 16, fontWeight: "600" },
+  deleteBtn: {
+    marginTop: 10,
+    backgroundColor: "#c62828",
+    padding: 14,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  deleteText: { color: "#fff", fontSize: 16, fontWeight: "600" },
 });

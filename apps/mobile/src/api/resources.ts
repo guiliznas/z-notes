@@ -35,3 +35,4 @@ export function searchNotes(q: string, folderId: number | null) {
 
 export const authMe = () => api<AuthMeResponse>("/auth/me");
 export const authLogout = () => api<{ ok: true }>("/auth/logout", { method: "POST" });
+export const authDeleteAccount = () => api<{ deleted: true }>("/auth/account", { method: "DELETE" });

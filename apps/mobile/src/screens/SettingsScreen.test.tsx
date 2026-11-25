@@ -3,7 +3,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, fireEvent, waitFor } from "@testing-library/react";
 import SettingsScreen from "./SettingsScreen";
 import * as httpModule from "../api/http";
+import * as resourcesModule from "../api/resources";
 import * as storageModule from "../lib/storage";
+import { persister } from "../lib/storage";
 
 describe("SettingsScreen", () => {
   beforeEach(() => {
@@ -135,6 +137,42 @@ describe("SettingsScreen", () => {
     await waitFor(() => {
       expect(onClearMemoryCache).toHaveBeenCalledTimes(1);
       expect(clearUserCacheSpy).toHaveBeenCalledWith(77);
+    });
+  });
+
+  it("exclui a conta no servidor e limpa sessão ao confirmar exclusão", async () => {
+    const deleteSpy = vi.spyOn(resourcesModule, "authDeleteAccount").mockResolvedValue({ deleted: true });
+    const clearTokenSpy = vi.spyOn(httpModule, "clearToken").mockResolvedValue();
+    const clearUserCacheSpy = vi.spyOn(storageModule, "clearUserCache").mockResolvedValue();
+    const removeClientSpy = vi.spyOn(persister, "removeClient").mockResolvedValue();
+    const onClearMemoryCache = vi.fn();
+    const onLogout = vi.fn();
+
+    const { Alert } = await import("react-native");
+    vi.spyOn(Alert, "alert").mockImplementation((_title, _msg, buttons) => {
+      const excluirBtn = buttons?.find((b: any) => b.text === "Excluir");
+      excluirBtn?.onPress?.();
+    });
+
+    const { getByText } = render(
+      React.createElement(SettingsScreen, {
+        user: null,
+        userId: 42,
+        onClearMemoryCache,
+        onBack: () => {},
+        onLogout,
+      }),
+    );
+
+    fireEvent.click(getByText("Excluir minha conta"));
+
+    await waitFor(() => {
+      expect(deleteSpy).toHaveBeenCalled();
+      expect(onClearMemoryCache).toHaveBeenCalledTimes(1);
+      expect(clearTokenSpy).toHaveBeenCalled();
+      expect(clearUserCacheSpy).toHaveBeenCalledWith(42);
+      expect(removeClientSpy).toHaveBeenCalled();
+      expect(onLogout).toHaveBeenCalled();
     });
   });
 });

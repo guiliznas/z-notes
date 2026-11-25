@@ -7,6 +7,8 @@ Estado em 2026-10-27. Specs de design em `docs/superpowers/specs/`.
 - **P0** Login Google + isolamento por usuário (issue #3).
 - Métricas periódicas + `/admin` (issue #6).
 - Login Google nos apps (mobile e desktop) por deep link `znotes://auth` + Bearer.
+- Notas fixadas (pasta virtual Fixadas), editor abre em visualização e visual novo.
+- **Tarefas (issue #15):** seção separada com pastas → listas em colunas → tarefas (título + prioridade), concluídas visíveis com "Arquivar concluídas" + Desfazer, arquivar/restaurar por item, arrastar para reordenar/mover.
 - **P1** App mobile em React Native / Expo (issue #4 / #82): login Google via Custom Tab, isolamento de cache multiusuário por `userId` (`z-notes-cache:<userId>`), CRUD de notas, busca em tempo real, suporte a notas fixadas e sincronização offline com fila de mutações.
 
 ## Em andamento — apps (issue #4)
@@ -20,4 +22,5 @@ Falta validar em dispositivo real (não dá para automatizar aqui):
 
 ## Aberto
 - Issue #8 (PWA): falta validar login no app instalado, modo avião e iOS; depois fechar.
+- Tarefas no app mobile nativo (hoje só web/PWA/desktop, que reaproveitam o mesmo código web) e espelho `.md` das tarefas (decidido não espelhar na v1).
 - Futuro: push, Background Sync, Web Share Target, badging; fixar notas, tags e histórico de versões por nota.

@@ -1,13 +1,51 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { useEffect } from "react";
+import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth/AuthContext";
 import { PerUserProvider } from "@/offline/PerUserProvider";
 import { LoginPage } from "@/components/LoginPage";
 import { NotesPage } from "@/components/NotesPage";
+import { TasksPage } from "@/components/tasks/TasksPage";
+import { InboxPage } from "@/components/inbox/InboxPage";
 import { AdminPage } from "@/components/AdminPage";
 import { UpdatePrompt } from "@/components/UpdatePrompt";
+import {
+  extractSharePayload,
+  normalizeSharePayload,
+  hasShareParams,
+  savePendingShare,
+  getPendingShare,
+} from "@/lib/shareTarget";
 
 export function App() {
   const { status, user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Se o usuário estiver deslogado e receber compartilhamento via Web Share Target
+  // (seja na rota /inbox/share ou com parâmetros de compartilhamento), preserva o conteúdo
+  // no localStorage dentro de um efeito para não disparar efeitos colaterais durante o render.
+  const incomingShare =
+    status === "unauthenticated" &&
+    (location.pathname === "/inbox/share" || hasShareParams(location.search))
+      ? normalizeSharePayload(extractSharePayload(location.search))
+      : null;
+
+  useEffect(() => {
+    if (incomingShare) {
+      savePendingShare(incomingShare);
+    }
+  }, [incomingShare]);
+
+  // Quando o usuário estiver autenticado (ex.: após voltar do Google OAuth em "/"),
+  // se houver compartilhamento pendente no localStorage, redireciona para o Inbox.
+  useEffect(() => {
+    if (status === "authenticated" && user) {
+      const pending = getPendingShare();
+      if (pending && location.pathname === "/") {
+        navigate("/inbox", { replace: true });
+      }
+    }
+  }, [status, user, location.pathname, navigate]);
 
   if (status === "loading") {
     return <div className="flex h-full items-center justify-center text-sm text-[var(--muted)]">Carregando…</div>;
@@ -15,7 +53,7 @@ export function App() {
   if (status === "unauthenticated" || !user) {
     return (
       <>
-        <LoginPage />
+        <LoginPage incomingShare={incomingShare} />
         <UpdatePrompt />
       </>
     );
@@ -39,6 +77,11 @@ export function App() {
         <Route path="/trash/note/:noteId" element={<NotesPage />} />
         <Route path="/folder/:folderId" element={<NotesPage />} />
         <Route path="/folder/:folderId/note/:noteId" element={<NotesPage />} />
+        <Route path="/tasks" element={<TasksPage />} />
+        <Route path="/tasks/folder/:folderId" element={<TasksPage />} />
+        <Route path="/tasks/archived" element={<TasksPage />} />
+        <Route path="/inbox" element={<InboxPage />} />
+        <Route path="/inbox/share" element={<InboxPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <UpdatePrompt />

@@ -27,6 +27,15 @@ export default defineConfig({
           { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
           { src: "/icons/maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
         ],
+        share_target: {
+          action: "/inbox/share",
+          method: "GET",
+          params: {
+            title: "title",
+            text: "text",
+            url: "url",
+          },
+        },
       },
       workbox: {
         // SPA: shell offline via index.html cacheado; API nunca cai nesse fallback.
