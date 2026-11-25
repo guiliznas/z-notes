@@ -24,10 +24,11 @@ export function isDevBuild(): boolean {
 }
 
 // O padrão http://10.0.2.2 (localhost do emulador Android) só existe no dev;
-// em produção o servidor é informado pelo usuário e precisa ser https.
+// em produção pré-preenche o servidor oficial (o usuário ainda pode alterar para outro https).
 export const DEFAULT_BASE_URL = "http://10.0.2.2:8787";
+export const PROD_BASE_URL = "https://notes.o.ziltro.dev";
 
-let baseUrl = isDevBuild() ? DEFAULT_BASE_URL : "";
+let baseUrl = isDevBuild() ? DEFAULT_BASE_URL : PROD_BASE_URL;
 let token: string | null = null;
 let currentUser: PublicUser | null = null;
 

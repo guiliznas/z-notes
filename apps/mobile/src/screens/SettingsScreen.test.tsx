@@ -110,4 +110,31 @@ describe("SettingsScreen", () => {
       expect(onLogout).toHaveBeenCalled();
     });
   });
+
+  it("limpa cache em memória e usa userId da sessão offline quando user é null", async () => {
+    const clearUserCacheSpy = vi.spyOn(storageModule, "clearUserCache").mockResolvedValue();
+    const onClearMemoryCache = vi.fn();
+    const { Alert } = await import("react-native");
+    vi.spyOn(Alert, "alert").mockImplementation((_title, _msg, buttons) => {
+      const limparBtn = buttons?.find((b: any) => b.text === "Limpar");
+      limparBtn?.onPress?.();
+    });
+
+    const { getByText } = render(
+      React.createElement(SettingsScreen, {
+        user: null,
+        userId: 77,
+        onClearMemoryCache,
+        onBack: () => {},
+        onLogout: () => {},
+      }),
+    );
+
+    fireEvent.click(getByText("Limpar cache local"));
+
+    await waitFor(() => {
+      expect(onClearMemoryCache).toHaveBeenCalledTimes(1);
+      expect(clearUserCacheSpy).toHaveBeenCalledWith(77);
+    });
+  });
 });

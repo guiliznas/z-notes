@@ -160,6 +160,7 @@ export default function NoteDetailScreen({ noteId, onBack }: Props) {
     );
 
   const title = deriveTitle(content);
+  const isEditing = editing && !note.deleted;
 
   return (
     <View style={styles.container}>
@@ -188,20 +189,22 @@ export default function NoteDetailScreen({ noteId, onBack }: Props) {
         >
           <Text style={styles.actionMenuText}>⋯</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => (editing ? handleManualSave() : setEditing(true))}
-          accessibilityLabel={editing ? "Salvar nota" : "Editar nota"}
-          style={styles.editButton}
-        >
-          {editing ? (
-            <Text style={styles.saveIconText}>✔</Text>
-          ) : (
-            <Icon name="edit" size={18} color="#ebebf5" />
-          )}
-        </TouchableOpacity>
+        {!note.deleted && (
+          <TouchableOpacity
+            onPress={() => (isEditing ? handleManualSave() : setEditing(true))}
+            accessibilityLabel={isEditing ? "Salvar nota" : "Editar nota"}
+            style={styles.editButton}
+          >
+            {isEditing ? (
+              <Text style={styles.saveIconText}>✔</Text>
+            ) : (
+              <Icon name="edit" size={18} color="#ebebf5" />
+            )}
+          </TouchableOpacity>
+        )}
       </View>
 
-      {editing ? (
+      {isEditing ? (
         <>
           <TextInput
             style={styles.editor}
@@ -216,7 +219,9 @@ export default function NoteDetailScreen({ noteId, onBack }: Props) {
         </>
       ) : (
         <View style={styles.content}>
-          <Markdown>{content || "Toque em Editar para começar"}</Markdown>
+          <Markdown>
+            {content || (note.deleted ? "Nota na lixeira (somente leitura)" : "Toque em Editar para começar")}
+          </Markdown>
         </View>
       )}
 

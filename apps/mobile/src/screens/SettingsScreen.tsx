@@ -1,16 +1,24 @@
 import { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet } from "react-native";
 import type { PublicUser } from "@z-notes/shared";
-import { getBaseUrl, setBaseUrl, getToken, normalizeBaseUrl, isDevBuild, DEFAULT_BASE_URL } from "../api/http";
+import { getBaseUrl, setBaseUrl, getToken, normalizeBaseUrl, isDevBuild, DEFAULT_BASE_URL, PROD_BASE_URL } from "../api/http";
 import { clearUserCache } from "../lib/storage";
 
 interface SettingsScreenProps {
   user?: PublicUser | null;
+  userId?: number | null;
+  onClearMemoryCache?: () => void;
   onBack: () => void;
   onLogout: () => void | Promise<void>;
 }
 
-export default function SettingsScreen({ user, onBack, onLogout }: SettingsScreenProps) {
+export default function SettingsScreen({
+  user,
+  userId,
+  onClearMemoryCache,
+  onBack,
+  onLogout,
+}: SettingsScreenProps) {
   const [url, setUrl] = useState(getBaseUrl());
   const [savedMessage, setSavedMessage] = useState(false);
 
@@ -45,7 +53,8 @@ export default function SettingsScreen({ user, onBack, onLogout }: SettingsScree
           text: "Limpar",
           style: "destructive",
           onPress: async () => {
-            await clearUserCache(user?.id);
+            onClearMemoryCache?.();
+            await clearUserCache(user?.id ?? userId ?? undefined);
             Alert.alert("Sucesso", "Cache local limpo.");
           },
         },
@@ -82,7 +91,7 @@ export default function SettingsScreen({ user, onBack, onLogout }: SettingsScree
           style={styles.input}
           value={url}
           onChangeText={setUrl}
-          placeholder={isDevBuild() ? DEFAULT_BASE_URL : "https://seu-servidor.com"}
+          placeholder={isDevBuild() ? DEFAULT_BASE_URL : PROD_BASE_URL}
           placeholderTextColor="#888"
           autoCapitalize="none"
           autoCorrect={false}

@@ -119,6 +119,20 @@ export default function FolderDrawer({
             <TouchableOpacity
               style={[
                 styles.navItem,
+                selectedFolderId === null && selectedView === "pinned" && styles.navItemActive,
+              ]}
+              onPress={() => {
+                onSelectView("pinned");
+                onClose();
+              }}
+            >
+              <View style={styles.navIconSlot}><Icon name="pin" size={16} color="#ebebf5" /></View>
+              <Text style={styles.navText}>Fixadas</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.navItem,
                 selectedFolderId === null && selectedView === "active" && styles.navItemActive,
               ]}
               onPress={() => {

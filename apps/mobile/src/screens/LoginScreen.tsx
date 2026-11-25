@@ -21,8 +21,8 @@ export default function LoginScreen({ onAuthenticated }: Props) {
   const handleLogin = async () => {
     setLoading(true);
     try {
-      setBaseUrl(serverUrl);
-      const session = await WebBrowser.openAuthSessionAsync(googleLoginUrl(serverUrl), AUTH_REDIRECT);
+      setBaseUrl(serverUrl.trim());
+      const session = await WebBrowser.openAuthSessionAsync(googleLoginUrl(getBaseUrl()), AUTH_REDIRECT);
       if (session.type !== "success") return;
       const result = parseAuthRedirect(session.url);
       if (!result) throw new Error("Resposta de login inválida");

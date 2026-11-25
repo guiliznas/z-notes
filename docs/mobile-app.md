@@ -54,25 +54,25 @@ Para garantir que dois usuários no mesmo dispositivo nunca tenham acesso às an
 
 ### Visualização e Organização
 - **Filtros de Visão (`NoteViewFilter`)**:
+  - **Fixadas**: notas fixadas em destaque e agrupadas na visão `view="pinned"` (acessível na gaveta de pastas).
   - **Todas as notas**: listagem de notas ativas.
-  - **Fixadas**: notas marcadas com alfinete (📌), destacadas na listagem e agrupadas na visão `view="pinned"`.
-  - **Arquivadas**: notas arquivadas (📦), com indicação visual.
-  - **Lixeira**: notas excluídas (modo somente-leitura com opções de restauração ou exclusão permanente).
+  - **Arquivadas**: notas arquivadas, com indicação visual.
+  - **Lixeira**: notas excluídas (modo somente-leitura, sem botão de edição, com opções de restauração ou exclusão permanente).
 - **Gaveta de Pastas (`FolderDrawer`)**:
-  - Navegação entre pastas raiz e subpastas hierárquicas.
+  - Navegação entre vistas de sistema, pastas raiz e subpastas hierárquicas.
   - Acesso direto às configurações do app.
 
 ### Edição e Markdown
-- **Modo Visualização por Padrão**: a nota abre renderizada em Markdown limpo; toque no lápis (✏️) para editar.
+- **Modo Visualização por Padrão**: a nota abre renderizada em Markdown limpo; toque no ícone de edição (`Icon name="edit"`) para editar.
 - **Barra de Ferramentas Markdown (`MarkdownToolbar`)**: atalhos rápidos para cabeçalhos (`#`), negrito (`**`), itálico (`*`), caixas de seleção (`- [ ]`) e blocos de código.
 - **Autosave Debounced**: alterações são enviadas após 750ms de inatividade, com indicador de status em tempo real ("Salvo", "Salvando...", "Erro").
 - **Ações da Nota (`NoteActionModal`)**:
-  - Fixar / Desafixar (📌)
-  - Mover para pasta (📁)
-  - Arquivar / Desarquivar (📦)
-  - Mover para a lixeira (🗑️)
-  - Restaurar nota (♻️)
-  - Excluir definitivamente (⚠️)
+  - Fixar / Desafixar
+  - Mover para pasta
+  - Arquivar / Desarquivar
+  - Mover para a lixeira
+  - Restaurar nota
+  - Excluir definitivamente
 
 ### Suporte Offline-First e Fila de Mutações
 - **Modo de Rede (`offlineFirst`)**:
@@ -88,13 +88,13 @@ Para garantir que dois usuários no mesmo dispositivo nunca tenham acesso às an
 
 ### Execução dos Testes Automatizados
 ```bash
-# Testes unitários e de integração do app mobile (116 testes)
+# Testes unitários e de integração do app mobile (132 testes)
 pnpm --filter @z-notes/mobile test
 
 # Checagem de tipos estáticos TypeScript
 pnpm --filter @z-notes/mobile typecheck
 
-# Suite completa do monorepo (385 testes)
+# Suite completa do monorepo (401 testes)
 pnpm test
 pnpm typecheck
 ```

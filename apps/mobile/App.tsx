@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { BackHandler } from "react-native";
+import { Alert, BackHandler } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import type { NoteViewFilter, PublicUser } from "@z-notes/shared";
@@ -7,6 +7,7 @@ import { createQueryClient } from "./src/lib/queryClient";
 import { persistOptionsFor, clearUserCache } from "./src/lib/storage";
 import { clearToken } from "./src/api/http";
 import { bootSession } from "./src/lib/bootSession";
+import { createNoteForFolder } from "./src/lib/createNoteFlow";
 import LoginScreen from "./src/screens/LoginScreen";
 import NoteListScreen from "./src/screens/NoteListScreen";
 import NoteDetailScreen from "./src/screens/NoteDetailScreen";
@@ -85,12 +86,14 @@ export default function App() {
   };
 
   const handleCreateNote = async () => {
-    const { createNote } = await import("./src/api/resources");
-    // Se estiver em uma pasta específica, cria nela. Senão, pasta raiz padrão 1.
-    const targetFolderId = folderState.folderId ?? 1;
-    const note = await createNote({ folderId: targetFolderId });
-    setSelectedNote(note.id);
-    setScreen("detail");
+    try {
+      const note = await createNoteForFolder(client, folderState.folderId);
+      setSelectedNote(note.id);
+      setScreen("detail");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Não foi possível criar a nota.";
+      Alert.alert("Erro", msg);
+    }
   };
 
   const handleSelectView = (view: NoteViewFilter) => {
@@ -148,6 +151,8 @@ export default function App() {
       {screen === "settings" && (
         <SettingsScreen
           user={user}
+          userId={cacheUserId}
+          onClearMemoryCache={() => client.clear()}
           onBack={() => setScreen("list")}
           onLogout={handleLogout}
         />
