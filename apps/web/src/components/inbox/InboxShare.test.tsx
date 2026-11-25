@@ -88,6 +88,7 @@ describe("Web Share Target - Integração /inbox/share e fluxo de compartilhamen
       user: AUTHENTICATED_USER,
       refresh: vi.fn(),
       logout: vi.fn(),
+      deleteAccount: vi.fn(),
     });
   });
 
@@ -179,6 +180,7 @@ describe("Web Share Target - Integração /inbox/share e fluxo de compartilhamen
       user: null,
       refresh: vi.fn(),
       logout: vi.fn(),
+      deleteAccount: vi.fn(),
     });
 
     render(

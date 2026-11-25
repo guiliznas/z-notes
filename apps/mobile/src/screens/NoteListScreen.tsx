@@ -11,6 +11,7 @@ import type { NoteMeta, SearchHit, NoteViewFilter } from "@z-notes/shared";
 import { useNotes } from "../hooks/useNotes";
 import { useSearch } from "../hooks/useSearch";
 import SearchBar from "../components/SearchBar";
+import Icon from "../components/Icon";
 
 interface Props {
   folderId: number | null;
@@ -107,6 +108,7 @@ export default function NoteListScreen({
                 onPress={() => onSelectNote(item.note.id)}
               >
                 <View style={styles.itemHeader}>
+                  {item.note.pinned && <View style={styles.pinSlot}><Icon name="pin" size={12} /></View>}
                   <Text style={styles.itemTitle} numberOfLines={1}>
                     {item.note.title}
                   </Text>
@@ -142,6 +144,7 @@ export default function NoteListScreen({
             renderItem={({ item }) => (
               <TouchableOpacity style={styles.item} onPress={() => onSelectNote(item.id)}>
                 <View style={styles.itemHeader}>
+                  {item.pinned && <View style={styles.pinSlot}><Icon name="pin" size={12} /></View>}
                   <Text style={styles.itemTitle} numberOfLines={1}>
                     {item.title}
                   </Text>
@@ -153,7 +156,7 @@ export default function NoteListScreen({
                   {item.excerpt}
                 </Text>
                 {item.archived && view !== "archived" && (
-                  <Text style={styles.archivedBadge}>📦 Arquivada</Text>
+                  <View style={styles.archivedRow}><Icon name="archive" size={12} color="#ff9f0a" /><Text style={styles.archivedBadge}>Arquivada</Text></View>
                 )}
               </TouchableOpacity>
             )}
@@ -189,20 +192,20 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   menuIcon: {
-    color: "#007AFF",
+    color: "#ffc107",
     fontSize: 22,
   },
   titleContainer: {
     flex: 1,
   },
-  title: { fontSize: 22, fontWeight: "700", color: "#fff" },
+  title: { fontSize: 22, fontWeight: "700", color: "#eceff1" },
   trashNotice: { color: "#ff453a", fontSize: 12, marginTop: 2 },
-  loading: { color: "#888", padding: 16 },
+  loading: { color: "#b0bec5", padding: 16 },
   item: {
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 0.5,
-    borderBottomColor: "#333",
+    borderBottomColor: "#414144",
   },
   itemHeader: {
     flexDirection: "row",
@@ -210,16 +213,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 2,
   },
-  itemTitle: { color: "#fff", fontSize: 16, fontWeight: "600", flex: 1, marginRight: 8 },
-  itemDate: { color: "#8e8e93", fontSize: 12 },
-  itemExcerpt: { color: "#888", fontSize: 13, lineHeight: 18 },
-  archivedBadge: { color: "#ff9f0a", fontSize: 11, marginTop: 4 },
-  empty: { color: "#888", textAlign: "center", marginTop: 40, paddingHorizontal: 24 },
+  itemTitle: { color: "#eceff1", fontSize: 16, fontWeight: "600", flex: 1, marginRight: 8 },
+  pinSlot: { marginRight: 6 },
+  itemDate: { color: "#b0bec5", fontSize: 12 },
+  itemExcerpt: { color: "#b0bec5", fontSize: 13, lineHeight: 18 },
+  archivedRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 },
+  archivedBadge: { color: "#ffc107", fontSize: 11 },
+  empty: { color: "#b0bec5", textAlign: "center", marginTop: 40, paddingHorizontal: 24 },
   fab: {
     position: "absolute",
     bottom: 24,
     right: 24,
-    backgroundColor: "#007AFF",
+    backgroundColor: "#ffc107",
     width: 56,
     height: 56,
     borderRadius: 28,
@@ -227,5 +232,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     elevation: 4,
   },
-  fabText: { color: "#fff", fontSize: 28, lineHeight: 30 },
+  fabText: { color: "#263238", fontSize: 28, lineHeight: 30, fontWeight: "700" },
 });

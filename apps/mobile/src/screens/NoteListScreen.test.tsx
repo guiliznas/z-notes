@@ -74,7 +74,7 @@ describe("NoteListScreen", () => {
     expect(getByText("Nota 1")).toBeTruthy();
     expect(getByText("Nota 2")).toBeTruthy();
     expect(getByText("Conteúdo 1")).toBeTruthy();
-    expect(getByText("📦 Arquivada")).toBeTruthy();
+    expect(getByText("Arquivada")).toBeTruthy();
   });
 
   it("mostra nome da pasta quando folderId não é null", () => {

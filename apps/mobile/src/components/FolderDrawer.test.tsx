@@ -68,9 +68,13 @@ describe("FolderDrawer", () => {
       }),
     );
 
+    expect(getByText("Fixadas")).toBeTruthy();
     expect(getByText("Todas as notas")).toBeTruthy();
     expect(getByText("Arquivadas")).toBeTruthy();
     expect(getByText("Lixeira")).toBeTruthy();
+
+    fireEvent.click(getByText("Fixadas"));
+    expect(onSelectView).toHaveBeenCalledWith("pinned");
 
     fireEvent.click(getByText("Arquivadas"));
     expect(onSelectView).toHaveBeenCalledWith("archived");
