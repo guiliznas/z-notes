@@ -22,12 +22,12 @@ export default function SearchBar({
   return (
     <View style={styles.container}>
       <View style={styles.iconSlot}>
-        <Icon name="search" size={15} color="#8e8e93" />
+        <Icon name="search" size={15} color="#b0bec5" />
       </View>
       <TextInput
         style={styles.input}
         placeholder={placeholder}
-        placeholderTextColor="#8e8e93"
+        placeholderTextColor="#b0bec5"
         value={value}
         onChangeText={onChangeText}
         autoCapitalize="none"
@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#2c2c2e",
+    backgroundColor: "#28282a",
     borderRadius: 10,
     marginHorizontal: 16,
     marginVertical: 8,
@@ -64,7 +64,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    color: "#fff",
+    color: "#eceff1",
     fontSize: 15,
     paddingVertical: 0,
   },
@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   clearText: {
-    color: "#8e8e93",
+    color: "#b0bec5",
     fontSize: 16,
     fontWeight: "bold",
   },

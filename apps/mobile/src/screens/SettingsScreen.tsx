@@ -92,7 +92,7 @@ export default function SettingsScreen({
           value={url}
           onChangeText={setUrl}
           placeholder={isDevBuild() ? DEFAULT_BASE_URL : PROD_BASE_URL}
-          placeholderTextColor="#888"
+          placeholderTextColor="#b0bec5"
           autoCapitalize="none"
           autoCorrect={false}
         />
@@ -140,19 +140,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 12,
     borderBottomWidth: 0.5,
-    borderBottomColor: "#333",
+    borderBottomColor: "#414144",
     marginBottom: 20,
   },
-  backBtn: { color: "#007AFF", fontSize: 16, marginRight: 16 },
-  headerTitle: { color: "#fff", fontSize: 20, fontWeight: "700" },
+  backBtn: { color: "#ffc107", fontSize: 16, marginRight: 16, fontWeight: "600" },
+  headerTitle: { color: "#eceff1", fontSize: 20, fontWeight: "700" },
   section: {
     marginBottom: 24,
-    backgroundColor: "#2c2c2e",
+    backgroundColor: "#28282a",
     padding: 16,
     borderRadius: 12,
   },
   sectionTitle: {
-    color: "#8e8e93",
+    color: "#b0bec5",
     fontSize: 12,
     textTransform: "uppercase",
     fontWeight: "600",
@@ -160,26 +160,26 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: "#1c1c1e",
-    color: "#fff",
+    color: "#eceff1",
     padding: 12,
     borderRadius: 8,
     fontSize: 15,
     marginBottom: 12,
   },
   btn: {
-    backgroundColor: "#007AFF",
+    backgroundColor: "#ffc107",
     padding: 12,
     borderRadius: 8,
     alignItems: "center",
   },
-  btnText: { color: "#fff", fontSize: 15, fontWeight: "600" },
-  secondaryBtn: { backgroundColor: "#3a3a3c" },
-  secondaryBtnText: { color: "#ebebf5", fontSize: 15, fontWeight: "500" },
-  infoText: { color: "#fff", fontSize: 15, fontWeight: "600", marginBottom: 2 },
-  subInfoText: { color: "#8e8e93", fontSize: 13 },
+  btnText: { color: "#263238", fontSize: 15, fontWeight: "600" },
+  secondaryBtn: { backgroundColor: "#303032" },
+  secondaryBtnText: { color: "#eceff1", fontSize: 15, fontWeight: "500" },
+  infoText: { color: "#eceff1", fontSize: 15, fontWeight: "600", marginBottom: 2 },
+  subInfoText: { color: "#b0bec5", fontSize: 13 },
   logoutSection: { marginTop: "auto", backgroundColor: "transparent", padding: 0 },
   logoutBtn: {
-    backgroundColor: "#2c2c2e",
+    backgroundColor: "#1c1c1e",
     borderWidth: 1,
     borderColor: "#ff453a",
     padding: 14,

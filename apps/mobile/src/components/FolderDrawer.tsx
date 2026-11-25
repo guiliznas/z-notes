@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
     height: "100%",
     paddingTop: 48,
     borderRightWidth: 0.5,
-    borderRightColor: "#333",
+    borderRightColor: "#414144",
   },
   header: {
     flexDirection: "row",
@@ -316,12 +316,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 16,
     borderBottomWidth: 0.5,
-    borderBottomColor: "#2c2c2e",
+    borderBottomColor: "#414144",
   },
   headerTitle: {
     fontSize: 22,
     fontWeight: "700",
-    color: "#fff",
+    color: "#eceff1",
   },
   headerActions: {
     flexDirection: "row",
@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   closeText: {
-    color: "#888",
+    color: "#b0bec5",
     fontSize: 20,
     fontWeight: "bold",
   },
@@ -345,7 +345,7 @@ const styles = StyleSheet.create({
     paddingTop: 12,
   },
   sectionHeader: {
-    color: "#8e8e93",
+    color: "#b0bec5",
     fontSize: 12,
     textTransform: "uppercase",
     fontWeight: "600",
@@ -364,7 +364,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   addFolderText: {
-    color: "#007AFF",
+    color: "#ffc107",
     fontSize: 13,
     fontWeight: "600",
   },
@@ -377,7 +377,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   navItemActive: {
-    backgroundColor: "#2c2c2e",
+    backgroundColor: "#28282a",
   },
   navIconSlot: {
     marginRight: 10,
@@ -392,10 +392,10 @@ const styles = StyleSheet.create({
   },
   subIcon: {
     fontSize: 14,
-    color: "#888",
+    color: "#b0bec5",
   },
   navText: {
-    color: "#fff",
+    color: "#eceff1",
     fontSize: 15,
     fontWeight: "500",
   },
@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
     paddingLeft: 24,
   },
   folderRowActive: {
-    backgroundColor: "#2c2c2e",
+    backgroundColor: "#28282a",
   },
   folderMain: {
     flexDirection: "row",
@@ -422,12 +422,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   folderName: {
-    color: "#fff",
+    color: "#eceff1",
     fontSize: 15,
     flex: 1,
   },
   badge: {
-    color: "#8e8e93",
+    color: "#b0bec5",
     fontSize: 12,
     marginLeft: 6,
     marginRight: 6,
@@ -442,15 +442,15 @@ const styles = StyleSheet.create({
   },
   actionText: {
     fontSize: 14,
-    color: "#8e8e93",
+    color: "#b0bec5",
   },
   loadingText: {
-    color: "#8e8e93",
+    color: "#b0bec5",
     padding: 12,
     fontSize: 14,
   },
   emptyText: {
-    color: "#636366",
+    color: "#b0bec5",
     padding: 12,
     fontSize: 13,
   },

@@ -213,13 +213,13 @@ export default function NoteDetailScreen({ noteId, onBack }: Props) {
             multiline
             autoFocus
             placeholder="Comece a escrever…"
-            placeholderTextColor="#555"
+            placeholderTextColor="#b0bec5"
           />
           <MarkdownToolbar onInsert={handleInsertMarkdown} onSave={handleManualSave} />
         </>
       ) : (
         <View style={styles.content}>
-          <Markdown>
+          <Markdown style={markdownStyles}>
             {content || (note.deleted ? "Nota na lixeira (somente leitura)" : "Toque em Editar para começar")}
           </Markdown>
         </View>
@@ -243,6 +243,48 @@ export default function NoteDetailScreen({ noteId, onBack }: Props) {
   );
 }
 
+const markdownStyles = StyleSheet.create({
+  body: { color: "#eceff1", fontSize: 15, lineHeight: 22 },
+  heading1: { color: "#eceff1", fontSize: 24, fontWeight: "700", lineHeight: 30, marginTop: 4, marginBottom: 8 },
+  heading2: { color: "#eceff1", fontSize: 20, fontWeight: "600", lineHeight: 26, marginTop: 14, marginBottom: 6 },
+  heading3: { color: "#eceff1", fontSize: 17, fontWeight: "600", lineHeight: 23, marginTop: 12, marginBottom: 4 },
+  blockquote: {
+    backgroundColor: "#28282a",
+    borderLeftColor: "#414144",
+    borderLeftWidth: 3,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginVertical: 8,
+  },
+  code_inline: {
+    backgroundColor: "#28282a",
+    color: "#eceff1",
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  fence: {
+    backgroundColor: "#28282a",
+    color: "#eceff1",
+    borderColor: "#414144",
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    marginVertical: 8,
+  },
+  code_block: {
+    backgroundColor: "#28282a",
+    color: "#eceff1",
+    borderColor: "#414144",
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    marginVertical: 8,
+  },
+  hr: { backgroundColor: "#414144", height: 1, marginVertical: 14 },
+  link: { color: "#ffc107", textDecorationLine: "underline" },
+});
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#1c1c1e" },
   header: {
@@ -250,19 +292,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 12,
     borderBottomWidth: 0.5,
-    borderBottomColor: "#333",
+    borderBottomColor: "#414144",
   },
-  backButton: { color: "#007AFF", fontSize: 16, marginRight: 12 },
+  backButton: { color: "#ffc107", fontSize: 16, marginRight: 12, fontWeight: "600" },
   headerCenter: { flex: 1, marginRight: 8 },
-  headerTitle: { color: "#fff", fontSize: 16, fontWeight: "600" },
+  headerTitle: { color: "#eceff1", fontSize: 16, fontWeight: "600" },
   saveStatus: { color: "#30d158", fontSize: 11, marginTop: 1 },
-  statusSaving: { color: "#ffd60a" },
+  statusSaving: { color: "#ffc107" },
   statusError: { color: "#ff453a" },
   actionMenuBtn: { paddingHorizontal: 10, paddingVertical: 4 },
-  actionMenuText: { color: "#8e8e93", fontSize: 20, fontWeight: "bold" },
+  actionMenuText: { color: "#b0bec5", fontSize: 20, fontWeight: "bold" },
   editButton: { paddingLeft: 6, paddingVertical: 4 },
   saveIconText: { color: "#30d158", fontSize: 18, fontWeight: "700" },
-  editor: { flex: 1, color: "#fff", fontSize: 15, padding: 16, textAlignVertical: "top" },
-  content: { flex: 1, color: "#fff", fontSize: 15, padding: 16, lineHeight: 22 },
-  text: { color: "#888", padding: 24, fontSize: 15 },
+  editor: { flex: 1, color: "#eceff1", fontSize: 15, padding: 16, textAlignVertical: "top" },
+  content: { flex: 1, padding: 16 },
+  text: { color: "#b0bec5", padding: 24, fontSize: 15 },
 });

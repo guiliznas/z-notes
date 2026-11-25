@@ -49,7 +49,7 @@ export default function LoginScreen({ onAuthenticated }: Props) {
       <TextInput
         style={styles.input}
         placeholder="URL do servidor"
-        placeholderTextColor="#888"
+        placeholderTextColor="#b0bec5"
         value={serverUrl}
         onChangeText={setServerUrl}
         autoCapitalize="none"
@@ -64,11 +64,11 @@ export default function LoginScreen({ onAuthenticated }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: "center", padding: 24, backgroundColor: "#1c1c1e" },
-  title: { fontSize: 28, fontWeight: "700", color: "#fff", textAlign: "center", marginBottom: 32 },
+  title: { fontSize: 28, fontWeight: "700", color: "#eceff1", textAlign: "center", marginBottom: 32 },
   input: {
-    backgroundColor: "#2c2c2e", color: "#fff", padding: 14, borderRadius: 10,
-    fontSize: 16, marginBottom: 12,
+    backgroundColor: "#28282a", color: "#eceff1", padding: 14, borderRadius: 10,
+    borderWidth: 1, borderColor: "#414144", fontSize: 16, marginBottom: 12,
   },
-  button: { backgroundColor: "#007AFF", padding: 14, borderRadius: 10, alignItems: "center", marginTop: 8 },
-  buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
+  button: { backgroundColor: "#ffc107", padding: 14, borderRadius: 10, alignItems: "center", marginTop: 8 },
+  buttonText: { color: "#263238", fontSize: 16, fontWeight: "600" },
 });

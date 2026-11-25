@@ -159,7 +159,7 @@ export default function NoteActionModal({
                   )}
                   {onHardDelete && (
                     <TouchableOpacity
-                      style={styles.actionBtn}
+                      style={[styles.actionBtn, styles.destructiveBtn]}
                       onPress={() => {
                         onHardDelete();
                         handleClose();
@@ -174,7 +174,7 @@ export default function NoteActionModal({
                 </>
               ) : (
                 <TouchableOpacity
-                  style={styles.actionBtn}
+                  style={[styles.actionBtn, styles.destructiveBtn]}
                   onPress={() => {
                     onTrash();
                     handleClose();
@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   dialog: {
-    backgroundColor: "#2c2c2e",
+    backgroundColor: "#28282a",
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     padding: 20,
@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#fff",
+    color: "#eceff1",
     marginBottom: 16,
     textAlign: "center",
   },
@@ -227,8 +227,13 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 12,
     borderRadius: 10,
-    backgroundColor: "#3a3a3c",
+    backgroundColor: "#303032",
     marginBottom: 8,
+  },
+  destructiveBtn: {
+    backgroundColor: "#1c1c1e",
+    borderWidth: 1,
+    borderColor: "#ff453a",
   },
   actionIconSlot: {
     marginRight: 12,
@@ -237,7 +242,7 @@ const styles = StyleSheet.create({
   },
   actionText: {
     fontSize: 16,
-    color: "#fff",
+    color: "#eceff1",
     fontWeight: "500",
   },
   destructiveText: {
@@ -250,7 +255,7 @@ const styles = StyleSheet.create({
   },
   cancelText: {
     fontSize: 16,
-    color: "#007AFF",
+    color: "#ffc107",
     fontWeight: "600",
     textAlign: "center",
     width: "100%",
@@ -271,7 +276,7 @@ const styles = StyleSheet.create({
     paddingLeft: 24,
   },
   folderItemActive: {
-    backgroundColor: "#3a3a3c",
+    backgroundColor: "#303032",
   },
   folderIconSlot: {
     marginRight: 10,
@@ -285,16 +290,16 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   subPrefix: {
-    color: "#8e8e93",
+    color: "#b0bec5",
     fontSize: 14,
   },
   folderName: {
     fontSize: 15,
-    color: "#fff",
+    color: "#eceff1",
     flex: 1,
   },
   checkMark: {
-    color: "#007AFF",
+    color: "#ffc107",
     fontSize: 16,
     fontWeight: "bold",
   },
