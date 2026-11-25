@@ -12,7 +12,7 @@ interface AuthValue {
   user: PublicUser | null;
   refresh: () => Promise<void>;
   logout: () => Promise<void>;
-  deleteAccount: () => Promise<void>;
+  deleteAccount: (onBeforeSignOut?: () => Promise<void> | void) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthValue | null>(null);
@@ -84,11 +84,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const deleteAccount = async () => {
+  const deleteAccount = async (onBeforeSignOut?: () => Promise<void> | void) => {
     const id = user?.id;
     await authDeleteAccount();
     clearToken();
     if (id !== undefined && id !== null) await clearUserCache(id).catch(() => {});
+    await onBeforeSignOut?.();
     setUser(null);
     setStatus("unauthenticated");
   };

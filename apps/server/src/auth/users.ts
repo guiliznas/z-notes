@@ -105,6 +105,7 @@ export function deleteUserAccount(ctx: AppContext, userId: number): boolean {
   if (!existing) return false;
   ctx.sqlite.transaction(() => {
     ctx.db.delete(notes).where(eq(notes.userId, userId)).run();
+    ctx.db.update(folders).set({ parentId: null }).where(eq(folders.userId, userId)).run();
     ctx.db.delete(folders).where(eq(folders.userId, userId)).run();
     ctx.db.delete(users).where(eq(users.id, userId)).run();
   })();

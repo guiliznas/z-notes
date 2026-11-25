@@ -243,7 +243,7 @@ describe("auth", () => {
   });
 
   it("DELETE /api/auth/account apaga usuário, notas, pastas e espelho sem afetar outra conta", async () => {
-    // Usuário 1 cria pasta e nota (gera espelho .md)
+    // Usuário 1 cria pasta, subpasta e notas (gera espelho .md)
     const f1 = await t.app.inject({
       method: "POST",
       url: "/api/folders",
@@ -252,6 +252,14 @@ describe("auth", () => {
     });
     expect(f1.statusCode).toBe(201);
     const folder1Id = f1.json().id as number;
+    const sub1 = await t.app.inject({
+      method: "POST",
+      url: "/api/folders",
+      headers: { cookie: t.cookie },
+      payload: { name: "Subpasta", parentId: folder1Id },
+    });
+    expect(sub1.statusCode).toBe(201);
+    const subFolder1Id = sub1.json().id as number;
     const n1 = await t.app.inject({
       method: "POST",
       url: "/api/notes",
@@ -259,6 +267,13 @@ describe("auth", () => {
       payload: { folderId: folder1Id, contentMd: "# Nota do usuário 1" },
     });
     expect(n1.statusCode).toBe(201);
+    const n1Sub = await t.app.inject({
+      method: "POST",
+      url: "/api/notes",
+      headers: { cookie: t.cookie },
+      payload: { folderId: subFolder1Id, contentMd: "# Nota na subpasta" },
+    });
+    expect(n1Sub.statusCode).toBe(201);
     const mirror1Dir = path.join(t.cfg.mirrorDir, String(t.userId));
     expect(fs.existsSync(mirror1Dir)).toBe(true);
 

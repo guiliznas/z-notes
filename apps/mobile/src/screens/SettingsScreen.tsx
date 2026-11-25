@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
   logoutText: { color: "#ff453a", fontSize: 16, fontWeight: "600" },
   deleteBtn: {
     marginTop: 10,
-    backgroundColor: "#ff453a",
+    backgroundColor: "#c62828",
     padding: 14,
     borderRadius: 10,
     alignItems: "center",

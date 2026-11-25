@@ -8,24 +8,40 @@ function renderLegalPage(title: string, bodyHtml: string): string {
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>${title} — z-notes</title>
   <style>
-    :root { color-scheme: light dark; }
+    :root {
+      color-scheme: light dark;
+      --bg: #f5f5f0;
+      --card: #ffffff;
+      --border: #e3e9ec;
+      --text: #263238;
+      --muted: #546e7a;
+      --accent: #ffc107;
+      --link: inherit;
+      --code-bg: #eef1f2;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1c1c1e;
+        --card: #303032;
+        --border: #414144;
+        --text: #eceff1;
+        --muted: #b0bec5;
+        --accent: #ffc107;
+        --link: #ffc107;
+        --code-bg: #28282a;
+      }
+    }
     body {
       margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       line-height: 1.6;
-      background: #0f1115;
-      color: #e6e8ec;
-    }
-    @media (prefers-color-scheme: light) {
-      body { background: #f8f9fb; color: #1b1f24; }
-      .card { background: #ffffff; border-color: #e2e6ec; }
-      .muted { color: #57606a; }
-      a { color: #0969da; }
+      background: var(--bg);
+      color: var(--text);
     }
     main { max-width: 760px; margin: 0 auto; padding: 32px 20px 56px; }
     .card {
-      background: #171a21;
-      border: 1px solid #262b36;
+      background: var(--card);
+      border: 1px solid var(--border);
       border-radius: 16px;
       padding: 28px;
     }
@@ -33,8 +49,14 @@ function renderLegalPage(title: string, bodyHtml: string): string {
     h2 { margin: 24px 0 8px; font-size: 1.15rem; }
     p, li { font-size: 0.96rem; }
     ul, ol { padding-left: 20px; }
-    .muted { color: #9aa3b2; font-size: 0.88rem; }
-    a { color: #6cb6ff; }
+    code { padding: 0.1em 0.35em; border-radius: 4px; background: var(--code-bg); font-size: 0.9em; }
+    .muted { color: var(--muted); font-size: 0.88rem; }
+    a {
+      color: var(--link);
+      text-decoration: underline;
+      text-decoration-color: var(--accent);
+      text-underline-offset: 3px;
+    }
     nav { margin-bottom: 20px; font-size: 0.9rem; display: flex; gap: 16px; flex-wrap: wrap; }
   </style>
 </head>

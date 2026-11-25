@@ -56,9 +56,10 @@ export function SettingsModal({ open, onClose }: Props) {
   const handleDeleteAccount = async () => {
     setDeleting(true);
     try {
-      await deleteAccount();
-      await qc.cancelQueries();
-      qc.clear();
+      await deleteAccount(async () => {
+        await qc.cancelQueries();
+        qc.clear();
+      });
       setConfirmDeleteOpen(false);
       onClose();
       notify("Sua conta e todos os seus dados foram excluídos.", "info");
@@ -119,7 +120,7 @@ export function SettingsModal({ open, onClose }: Props) {
                 href="/privacidade"
                 target="_blank"
                 rel="noreferrer"
-                className="text-[var(--accent)] underline-offset-2 hover:underline"
+                className="text-[var(--text)] underline decoration-[var(--accent)] underline-offset-2"
               >
                 Política de Privacidade
               </a>
@@ -127,7 +128,7 @@ export function SettingsModal({ open, onClose }: Props) {
                 href="/excluir-conta"
                 target="_blank"
                 rel="noreferrer"
-                className="text-[var(--accent)] underline-offset-2 hover:underline"
+                className="text-[var(--text)] underline decoration-[var(--accent)] underline-offset-2"
               >
                 Exclusão de conta
               </a>
