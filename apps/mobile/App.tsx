@@ -1,17 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { Alert, BackHandler } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
-import type { NoteViewFilter } from "@z-notes/shared";
+import type { NoteViewFilter, PublicUser } from "@z-notes/shared";
 import { createQueryClient } from "./src/lib/queryClient";
-import { persistOptions } from "./src/lib/storage";
-import { loadToken, loadBaseUrl } from "./src/api/http";
+import { persistOptionsFor, clearUserCache } from "./src/lib/storage";
+import { clearToken } from "./src/api/http";
+import { bootSession } from "./src/lib/bootSession";
+import { createNoteForFolder } from "./src/lib/createNoteFlow";
 import LoginScreen from "./src/screens/LoginScreen";
 import NoteListScreen from "./src/screens/NoteListScreen";
 import NoteDetailScreen from "./src/screens/NoteDetailScreen";
 import SettingsScreen from "./src/screens/SettingsScreen";
 import FolderDrawer from "./src/components/FolderDrawer";
-
-const queryClient = createQueryClient();
 
 type Screen = "login" | "list" | "detail" | "settings";
 
@@ -23,6 +24,9 @@ interface SelectedFolderState {
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>("login");
+  const [user, setUser] = useState<PublicUser | null>(null);
+  const [sessionUserId, setSessionUserId] = useState<number | null>(null);
+  const cacheUserId = user?.id ?? sessionUserId;
   const [selectedNote, setSelectedNote] = useState<number | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [folderState, setFolderState] = useState<SelectedFolderState>({
@@ -31,13 +35,50 @@ export default function App() {
     view: "active",
   });
 
+  const { client, clientPersistOptions } = useMemo(() => {
+    const qClient = createQueryClient();
+    const pOpts = persistOptionsFor(cacheUserId);
+    return { client: qClient, clientPersistOptions: pOpts };
+  }, [cacheUserId]);
+
   useEffect(() => {
-    Promise.all([loadToken(), loadBaseUrl()]).then(([t]) => {
-      if (t) setScreen("list");
+    bootSession().then((res) => {
+      setUser(res.user);
+      setSessionUserId(res.userId);
+      setScreen(res.screen);
     });
   }, []);
 
-  const handleAuthenticated = () => setScreen("list");
+  // Botão voltar do Android: detalhe/configurações → lista; drawer aberto → fecha; lista → sai do app.
+  useEffect(() => {
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (drawerOpen) {
+        setDrawerOpen(false);
+        return true;
+      }
+      if (screen === "detail" || screen === "settings") {
+        setScreen("list");
+        return true;
+      }
+      return false;
+    });
+    return () => sub.remove();
+  }, [screen, drawerOpen]);
+
+  const handleAuthenticated = (authUser?: PublicUser) => {
+    if (authUser) setUser(authUser);
+    setScreen("list");
+  };
+
+  // Cache em memória e local do usuário anterior não podem vazar para a próxima sessão.
+  const handleLogout = async () => {
+    client.clear();
+    if (cacheUserId !== null) await clearUserCache(cacheUserId);
+    await clearToken();
+    setUser(null);
+    setSessionUserId(null);
+    setScreen("login");
+  };
 
   const handleSelectNote = (id: number) => {
     setSelectedNote(id);
@@ -45,12 +86,14 @@ export default function App() {
   };
 
   const handleCreateNote = async () => {
-    const { createNote } = await import("./src/api/resources");
-    // Se estiver em uma pasta específica, cria nela. Senão, pasta raiz padrão 1.
-    const targetFolderId = folderState.folderId ?? 1;
-    const note = await createNote({ folderId: targetFolderId });
-    setSelectedNote(note.id);
-    setScreen("detail");
+    try {
+      const note = await createNoteForFolder(client, folderState.folderId);
+      setSelectedNote(note.id);
+      setScreen("detail");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Não foi possível criar a nota.";
+      Alert.alert("Erro", msg);
+    }
   };
 
   const handleSelectView = (view: NoteViewFilter) => {
@@ -71,9 +114,10 @@ export default function App() {
 
   return (
     <PersistQueryClientProvider
-      client={queryClient}
-      persistOptions={persistOptions}
-      onSuccess={() => queryClient.resumePausedMutations()}
+      key={cacheUserId ?? "anonymous"}
+      client={client}
+      persistOptions={clientPersistOptions}
+      onSuccess={() => client.resumePausedMutations()}
     >
       <StatusBar style="light" />
       {screen === "login" && <LoginScreen onAuthenticated={handleAuthenticated} />}
@@ -106,8 +150,11 @@ export default function App() {
       )}
       {screen === "settings" && (
         <SettingsScreen
+          user={user}
+          userId={cacheUserId}
+          onClearMemoryCache={() => client.clear()}
           onBack={() => setScreen("list")}
-          onLogout={() => setScreen("login")}
+          onLogout={handleLogout}
         />
       )}
     </PersistQueryClientProvider>

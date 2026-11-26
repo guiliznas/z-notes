@@ -162,4 +162,3 @@ export const ConvertInboxToNoteSchema = z.object({
 export const CreateApiTokenSchema = z.object({
   name: z.string().trim().min(1, "nome é obrigatório").max(100, "nome muito longo"),
 });
-
