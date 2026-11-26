@@ -2,6 +2,7 @@ import type {
   FolderTreeNode, Folder, Note, NoteMeta, SearchHit,
   CreateFolderInput, UpdateFolderInput, CreateNoteInput, UpdateNoteInput, NoteViewFilter,
   AuthMeResponse,
+  PublicUser,
 } from "@z-notes/shared";
 import { api } from "./http";
 
@@ -34,5 +35,8 @@ export function searchNotes(q: string, folderId: number | null) {
 }
 
 export const authMe = () => api<AuthMeResponse>("/auth/me");
+/** Conta de teste definida no servidor (não há cadastro). */
+export const authPassword = (username: string, password: string) =>
+  api<{ token: string; user: PublicUser }>("/auth/password", { method: "POST", body: { username, password } });
 export const authLogout = () => api<{ ok: true }>("/auth/logout", { method: "POST" });
 export const authDeleteAccount = () => api<{ deleted: true }>("/auth/account", { method: "DELETE" });

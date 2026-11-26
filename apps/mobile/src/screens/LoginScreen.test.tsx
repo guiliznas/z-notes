@@ -5,8 +5,14 @@ import LoginScreen from "./LoginScreen";
 
 vi.mock("../api/resources", () => ({
   authMe: vi.fn(),
+  authPassword: vi.fn(),
 }));
 vi.mock("../api/http", () => ({
+  ApiError: class ApiError extends Error {
+    constructor(public status: number, public code: string, message: string) {
+      super(message);
+    }
+  },
   saveToken: vi.fn(),
   saveCurrentUser: vi.fn(),
   setBaseUrl: vi.fn(),
@@ -14,8 +20,9 @@ vi.mock("../api/http", () => ({
   loadBaseUrl: () => Promise.resolve("https://notes.exemplo.com"),
 }));
 
-import { authMe } from "../api/resources";
-import { saveToken, saveCurrentUser } from "../api/http";
+import { Alert } from "react-native";
+import { authMe, authPassword } from "../api/resources";
+import { ApiError, saveToken, saveCurrentUser } from "../api/http";
 import { openAuthSessionAsync } from "expo-web-browser";
 
 const openAuth = vi.mocked(openAuthSessionAsync);
@@ -28,11 +35,15 @@ function renderLogin(onAuthenticated = vi.fn()) {
 describe("LoginScreen", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("renderiza título, URL do servidor e botão Google", () => {
-    const { getByText, container } = renderLogin();
+  it("renderiza título, URL do servidor, botão Google e o formulário de usuário e senha", () => {
+    const { getByText, getByPlaceholderText, queryByText } = renderLogin();
     expect(getByText("z-notes")).toBeTruthy();
     expect(getByText("Entrar com Google")).toBeTruthy();
-    expect(container.querySelectorAll("input").length).toBe(1);
+    expect(getByPlaceholderText("URL do servidor")).toBeTruthy();
+    expect(getByPlaceholderText("Usuário")).toBeTruthy();
+    expect(getByPlaceholderText("Senha").getAttribute("type")).toBe("password");
+    expect(getByText("Entrar")).toBeTruthy();
+    expect(queryByText(/cadastr|criar conta/i)).toBeNull();
   });
 
   it("abre o fluxo de app no navegador e autentica com o token do deep link", async () => {
@@ -76,5 +87,52 @@ describe("LoginScreen", () => {
 
     await waitFor(() => expect(authMe).toHaveBeenCalled());
     expect(onAuthenticated).not.toHaveBeenCalled();
+  });
+
+  describe("usuário e senha", () => {
+    const testUser = { id: 7, email: "t@z-notes.invalid", name: "revisor", avatarUrl: null, isAdmin: false };
+
+    function fill(utils: ReturnType<typeof renderLogin>, user: string, pass: string) {
+      fireEvent.change(utils.getByPlaceholderText("Usuário"), { target: { value: user } });
+      fireEvent.change(utils.getByPlaceholderText("Senha"), { target: { value: pass } });
+      fireEvent.click(utils.getByText("Entrar"));
+    }
+
+    it("autentica, salva o token e o usuário", async () => {
+      vi.mocked(authPassword).mockResolvedValue({ token: "jwt-teste", user: testUser });
+      const utils = renderLogin();
+      fill(utils, " revisor ", "senha-ficticia");
+
+      await waitFor(() => expect(utils.onAuthenticated).toHaveBeenCalledWith(testUser));
+      expect(authPassword).toHaveBeenCalledWith("revisor", "senha-ficticia");
+      expect(saveToken).toHaveBeenCalledWith("jwt-teste");
+      expect(saveCurrentUser).toHaveBeenCalledWith(testUser);
+      expect(openAuth).not.toHaveBeenCalled();
+    });
+
+    it("não chama o servidor com campos vazios", () => {
+      const alert = vi.spyOn(Alert, "alert");
+      const utils = renderLogin();
+      fireEvent.click(utils.getByText("Entrar"));
+
+      expect(authPassword).not.toHaveBeenCalled();
+      expect(alert).toHaveBeenCalledWith("Erro", "Informe usuário e senha");
+    });
+
+    it.each([
+      [401, "Usuário ou senha inválidos"],
+      [404, "Este servidor não aceita login com usuário e senha"],
+      [429, "Muitas tentativas. Aguarde um minuto e tente de novo"],
+      [500, "Erro interno"],
+    ])("explica o erro %i e não autentica", async (status, message) => {
+      const alert = vi.spyOn(Alert, "alert");
+      vi.mocked(authPassword).mockRejectedValue(new ApiError(status, "x", "Erro interno"));
+      const utils = renderLogin();
+      fill(utils, "revisor", "errada");
+
+      await waitFor(() => expect(alert).toHaveBeenCalledWith("Erro", message));
+      expect(saveToken).not.toHaveBeenCalled();
+      expect(utils.onAuthenticated).not.toHaveBeenCalled();
+    });
   });
 });
