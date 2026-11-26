@@ -1,24 +1,54 @@
 import { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet } from "react-native";
-import { getBaseUrl, setBaseUrl, clearToken } from "../api/http";
-import { persister } from "../lib/storage";
+import type { PublicUser } from "@z-notes/shared";
+import {
+  getBaseUrl,
+  setBaseUrl,
+  getToken,
+  clearToken,
+  normalizeBaseUrl,
+  isDevBuild,
+  DEFAULT_BASE_URL,
+  PROD_BASE_URL,
+} from "../api/http";
+import { authDeleteAccount } from "../api/resources";
+import { clearUserCache, persister } from "../lib/storage";
 
 interface SettingsScreenProps {
+  user?: PublicUser | null;
+  userId?: number | null;
+  onClearMemoryCache?: () => void;
   onBack: () => void;
-  onLogout: () => void;
+  onLogout: () => void | Promise<void>;
 }
 
-export default function SettingsScreen({ onBack, onLogout }: SettingsScreenProps) {
+export default function SettingsScreen({
+  user,
+  userId,
+  onClearMemoryCache,
+  onBack,
+  onLogout,
+}: SettingsScreenProps) {
   const [url, setUrl] = useState(getBaseUrl());
   const [savedMessage, setSavedMessage] = useState(false);
 
-  const handleSaveUrl = () => {
+  const handleSaveUrl = async () => {
     const trimmed = url.trim();
     if (!trimmed) {
       Alert.alert("Erro", "A URL do servidor não pode ser vazia.");
       return;
     }
-    setBaseUrl(trimmed);
+    const normalized = normalizeBaseUrl(trimmed);
+    if (!normalized) {
+      Alert.alert("Erro", "A URL do servidor precisa começar com https://");
+      return;
+    }
+    // Trocar de servidor com a sessão aberta enviaria o JWT ao host novo:
+    // encerra a sessão (token, usuário e cache) antes de gravar a URL e volta ao login.
+    if (normalized !== getBaseUrl() && getToken()) {
+      await onLogout();
+    }
+    setBaseUrl(normalized);
     setSavedMessage(true);
     setTimeout(() => setSavedMessage(false), 2000);
   };
@@ -33,7 +63,8 @@ export default function SettingsScreen({ onBack, onLogout }: SettingsScreenProps
           text: "Limpar",
           style: "destructive",
           onPress: async () => {
-            await persister.removeClient();
+            onClearMemoryCache?.();
+            await clearUserCache(user?.id ?? userId ?? undefined);
             Alert.alert("Sucesso", "Cache local limpo.");
           },
         },
@@ -47,13 +78,38 @@ export default function SettingsScreen({ onBack, onLogout }: SettingsScreenProps
       {
         text: "Sair",
         style: "destructive",
-        onPress: async () => {
-          await clearToken();
-          await persister.removeClient();
+        // A limpeza de token e cache é feita uma vez só, no onLogout do App.
+        onPress: () => {
           onLogout();
         },
       },
     ]);
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      "Excluir minha conta",
+      "Isso apaga permanentemente sua conta, todas as suas notas, pastas e o cache local. Não é possível desfazer.",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Excluir",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await authDeleteAccount();
+              onClearMemoryCache?.();
+              await clearToken();
+              await clearUserCache(user?.id ?? userId ?? undefined);
+              await persister.removeClient();
+              await onLogout();
+            } catch {
+              Alert.alert("Erro", "Não foi possível excluir sua conta agora. Tente novamente.");
+            }
+          },
+        },
+      ],
+    );
   };
 
   return (
@@ -71,8 +127,8 @@ export default function SettingsScreen({ onBack, onLogout }: SettingsScreenProps
           style={styles.input}
           value={url}
           onChangeText={setUrl}
-          placeholder="http://10.0.2.2:8787"
-          placeholderTextColor="#888"
+          placeholder={isDevBuild() ? DEFAULT_BASE_URL : PROD_BASE_URL}
+          placeholderTextColor="#b0bec5"
           autoCapitalize="none"
           autoCorrect={false}
         />
@@ -90,6 +146,14 @@ export default function SettingsScreen({ onBack, onLogout }: SettingsScreenProps
         </TouchableOpacity>
       </View>
 
+      {user && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Conta</Text>
+          <Text style={styles.infoText}>{user.name || user.email}</Text>
+          <Text style={styles.subInfoText}>{user.email}</Text>
+        </View>
+      )}
+
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Sobre</Text>
         <Text style={styles.infoText}>z-notes mobile v0.1.0</Text>
@@ -99,6 +163,9 @@ export default function SettingsScreen({ onBack, onLogout }: SettingsScreenProps
       <View style={[styles.section, styles.logoutSection]}>
         <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
           <Text style={styles.logoutText}>Sair da conta</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.deleteBtn} onPress={handleDeleteAccount}>
+          <Text style={styles.deleteText}>Excluir minha conta</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -112,19 +179,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 12,
     borderBottomWidth: 0.5,
-    borderBottomColor: "#333",
+    borderBottomColor: "#414144",
     marginBottom: 20,
   },
-  backBtn: { color: "#007AFF", fontSize: 16, marginRight: 16 },
-  headerTitle: { color: "#fff", fontSize: 20, fontWeight: "700" },
+  backBtn: { color: "#ffc107", fontSize: 16, marginRight: 16, fontWeight: "600" },
+  headerTitle: { color: "#eceff1", fontSize: 20, fontWeight: "700" },
   section: {
     marginBottom: 24,
-    backgroundColor: "#2c2c2e",
+    backgroundColor: "#28282a",
     padding: 16,
     borderRadius: 12,
   },
   sectionTitle: {
-    color: "#8e8e93",
+    color: "#b0bec5",
     fontSize: 12,
     textTransform: "uppercase",
     fontWeight: "600",
@@ -132,26 +199,26 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: "#1c1c1e",
-    color: "#fff",
+    color: "#eceff1",
     padding: 12,
     borderRadius: 8,
     fontSize: 15,
     marginBottom: 12,
   },
   btn: {
-    backgroundColor: "#007AFF",
+    backgroundColor: "#ffc107",
     padding: 12,
     borderRadius: 8,
     alignItems: "center",
   },
-  btnText: { color: "#fff", fontSize: 15, fontWeight: "600" },
-  secondaryBtn: { backgroundColor: "#3a3a3c" },
-  secondaryBtnText: { color: "#ebebf5", fontSize: 15, fontWeight: "500" },
-  infoText: { color: "#fff", fontSize: 15, fontWeight: "600", marginBottom: 2 },
-  subInfoText: { color: "#8e8e93", fontSize: 13 },
+  btnText: { color: "#263238", fontSize: 15, fontWeight: "600" },
+  secondaryBtn: { backgroundColor: "#303032" },
+  secondaryBtnText: { color: "#eceff1", fontSize: 15, fontWeight: "500" },
+  infoText: { color: "#eceff1", fontSize: 15, fontWeight: "600", marginBottom: 2 },
+  subInfoText: { color: "#b0bec5", fontSize: 13 },
   logoutSection: { marginTop: "auto", backgroundColor: "transparent", padding: 0 },
   logoutBtn: {
-    backgroundColor: "#2c2c2e",
+    backgroundColor: "#1c1c1e",
     borderWidth: 1,
     borderColor: "#ff453a",
     padding: 14,
@@ -159,4 +226,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   logoutText: { color: "#ff453a", fontSize: 16, fontWeight: "600" },
+  deleteBtn: {
+    marginTop: 10,
+    backgroundColor: "#c62828",
+    padding: 14,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  deleteText: { color: "#fff", fontSize: 16, fontWeight: "600" },
 });

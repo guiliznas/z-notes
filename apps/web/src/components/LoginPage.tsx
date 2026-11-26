@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { googleLoginUrl } from "@/api/resources";
 import { appLoginUrl } from "@/api/appAuth";
 import { getBaseUrl, setBaseUrl, isTauriEnvironment } from "@/api/http";
+import { getPendingShare } from "@/lib/shareTarget";
 import { Button } from "./ui/Button";
 import { NoteIcon, SettingsIcon } from "./icons";
 
@@ -11,13 +12,14 @@ const AUTH_ERRORS: Record<string, string> = {
   error: "Falha no login com Google. Tente novamente.",
 };
 
-export function LoginPage() {
+export function LoginPage({ incomingShare }: { incomingShare?: string | null } = {}) {
   const [params] = useSearchParams();
   const error = AUTH_ERRORS[params.get("auth") ?? ""] ?? "";
   const [showServerConfig, setShowServerConfig] = useState(isTauriEnvironment() && !getBaseUrl());
   const [serverUrl, setServerUrl] = useState(getBaseUrl());
   const [savedMessage, setSavedMessage] = useState(false);
   const [waitingBrowser, setWaitingBrowser] = useState(false);
+  const pendingShareContent = incomingShare ?? getPendingShare()?.content ?? null;
 
   const handleSaveServerUrl = () => {
     setBaseUrl(serverUrl.trim());
@@ -74,6 +76,17 @@ export function LoginPage() {
           </div>
         )}
 
+        {pendingShareContent && (
+          <div
+            data-testid="pending-share-alert"
+            className="mb-4 rounded-xl border border-[var(--accent)]/40 bg-[var(--md-bg)] p-3 text-xs text-[var(--text)]"
+          >
+            <p className="font-medium text-[var(--md-fg)]">Conteúdo compartilhado recebido</p>
+            <p className="mt-1 line-clamp-2 text-[var(--text)]">“{pendingShareContent}”</p>
+            <p className="mt-1 text-[11px] text-[var(--md-fg)]">Entre na sua conta para enviar ao Inbox.</p>
+          </div>
+        )}
+
         <p className="mb-5 text-sm text-[var(--muted)]">Suas notas, só suas. Entre com sua conta Google.</p>
         {error && <p className="mb-3 text-sm text-[var(--danger)]">{error}</p>}
         <Button
@@ -86,6 +99,14 @@ export function LoginPage() {
         {waitingBrowser && (
           <p className="mt-3 text-sm text-[var(--muted)]">Conclua o login no navegador. Você volta para o app automaticamente.</p>
         )}
+        <div className="mt-5 flex items-center justify-center gap-4 border-t border-[var(--border)] pt-4 text-xs text-[var(--muted)]">
+          <a href="/privacidade" className="hover:text-[var(--text)] hover:underline">
+            Política de Privacidade
+          </a>
+          <a href="/excluir-conta" className="hover:text-[var(--text)] hover:underline">
+            Excluir conta
+          </a>
+        </div>
       </div>
     </div>
   );

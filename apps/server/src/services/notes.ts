@@ -79,11 +79,12 @@ function buildListFilters(ctx: RequestContext, params: ListNotesParams) {
   return filters;
 }
 
-export function createNote(ctx: RequestContext, input: CreateNoteInput): Note {
+/** Insere a nota sem tocar o espelho: o chamador sincroniza o `.md` só depois do commit. */
+export function insertNoteRow(ctx: RequestContext, input: CreateNoteInput): NoteRow {
   const folder = getFolderRow(ctx, input.folderId);
   if (!folder) throw badRequest("Pasta de destino não existe");
   const now = Date.now();
-  const row = ctx.db
+  return ctx.db
     .insert(notes)
     .values({
       userId: ctx.userId,
@@ -95,6 +96,10 @@ export function createNote(ctx: RequestContext, input: CreateNoteInput): Note {
     })
     .returning()
     .get();
+}
+
+export function createNote(ctx: RequestContext, input: CreateNoteInput): Note {
+  const row = insertNoteRow(ctx, input);
   syncNoteMirror(ctx, row.id);
   return toNote(getNoteRow(ctx, row.id)!);
 }

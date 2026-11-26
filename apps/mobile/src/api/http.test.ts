@@ -1,9 +1,24 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ApiError, api, setBaseUrl, getBaseUrl, loadToken, saveToken, clearToken, getToken } from "./http";
+import {
+  ApiError,
+  api,
+  setBaseUrl,
+  getBaseUrl,
+  loadToken,
+  saveToken,
+  clearToken,
+  getToken,
+  saveCurrentUser,
+  loadCurrentUser,
+  clearCurrentUser,
+  getCurrentUser,
+} from "./http";
 
 import { resetStore } from "../test/expo-secure-store-mock";
 
 beforeEach(() => {
+  // Estes testes usam http:// local, que só é aceito em build de dev (ver baseUrl.test.ts).
+  (globalThis as { __DEV__?: boolean }).__DEV__ = true;
   vi.restoreAllMocks();
   resetStore();
   clearTokenSync();
@@ -110,6 +125,33 @@ describe("tokens", () => {
   it("loadToken retorna null quando vazio", async () => {
     const loaded = await loadToken();
     expect(loaded).toBeNull();
+  });
+});
+
+describe("currentUser", () => {
+  it("saveCurrentUser + loadCurrentUser roundtrip", async () => {
+    const user = { id: 1, email: "user@example.com", name: "User One", avatarUrl: null, isAdmin: false };
+    await saveCurrentUser(user);
+    expect(getCurrentUser()).toEqual(user);
+    const loaded = await loadCurrentUser();
+    expect(loaded).toEqual(user);
+  });
+
+  it("clearCurrentUser remove usuário", async () => {
+    const user = { id: 2, email: "two@example.com", name: null, avatarUrl: null, isAdmin: false };
+    await saveCurrentUser(user);
+    await clearCurrentUser();
+    expect(getCurrentUser()).toBeNull();
+    expect(await loadCurrentUser()).toBeNull();
+  });
+
+  it("clearToken também limpa currentUser", async () => {
+    const user = { id: 3, email: "three@example.com", name: null, avatarUrl: null, isAdmin: false };
+    await saveToken("token-3");
+    await saveCurrentUser(user);
+    await clearToken();
+    expect(getToken()).toBeNull();
+    expect(getCurrentUser()).toBeNull();
   });
 });
 
