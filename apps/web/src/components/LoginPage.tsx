@@ -13,14 +13,14 @@ const AUTH_ERRORS: Record<string, string> = {
   error: "Falha no login com Google. Tente novamente.",
 };
 
-export function LoginPage() {
+export function LoginPage({ incomingShare }: { incomingShare?: string | null } = {}) {
   const [params] = useSearchParams();
   const error = AUTH_ERRORS[params.get("auth") ?? ""] ?? "";
   const [showServerConfig, setShowServerConfig] = useState(isTauriEnvironment() && !getBaseUrl());
   const [serverUrl, setServerUrl] = useState(getBaseUrl());
   const [savedMessage, setSavedMessage] = useState(false);
   const [waitingBrowser, setWaitingBrowser] = useState(false);
-  const pendingShare = getPendingShare();
+  const pendingShareContent = incomingShare ?? getPendingShare()?.content ?? null;
   const pendingCapture = getPendingCapture();
 
   const handleSaveServerUrl = () => {
@@ -78,25 +78,25 @@ export function LoginPage() {
           </div>
         )}
 
-        {pendingShare && (
+        {pendingShareContent && (
           <div
             data-testid="pending-share-alert"
-            className="mb-4 rounded-xl border border-[var(--accent)]/30 bg-[var(--accent)]/10 p-3 text-xs text-[var(--text)]"
+            className="mb-4 rounded-xl border border-[var(--accent)]/40 bg-[var(--md-bg)] p-3 text-xs text-[var(--text)]"
           >
-            <p className="font-medium text-[var(--accent)]">Conteúdo compartilhado recebido</p>
-            <p className="mt-1 line-clamp-2 text-[var(--muted)]">“{pendingShare.content}”</p>
-            <p className="mt-1 text-[11px] text-[var(--muted)]">Entre na sua conta para enviar ao Inbox.</p>
+            <p className="font-medium text-[var(--md-fg)]">Conteúdo compartilhado recebido</p>
+            <p className="mt-1 line-clamp-2 text-[var(--text)]">“{pendingShareContent}”</p>
+            <p className="mt-1 text-[11px] text-[var(--md-fg)]">Entre na sua conta para enviar ao Inbox.</p>
           </div>
         )}
 
-        {pendingCapture?.text && !pendingShare && (
+        {pendingCapture?.text && !pendingShareContent && (
           <div
             data-testid="pending-capture-alert"
-            className="mb-4 rounded-xl border border-[var(--accent)]/30 bg-[var(--accent)]/10 p-3 text-xs text-[var(--text)]"
+            className="mb-4 rounded-xl border border-[var(--accent)]/40 bg-[var(--md-bg)] p-3 text-xs text-[var(--text)]"
           >
-            <p className="font-medium text-[var(--accent)]">Captura rápida pendente</p>
-            <p className="mt-1 line-clamp-2 text-[var(--muted)]">“{pendingCapture.text}”</p>
-            <p className="mt-1 text-[11px] text-[var(--muted)]">Entre na sua conta para enviar ao Inbox.</p>
+            <p className="font-medium text-[var(--md-fg)]">Captura rápida pendente</p>
+            <p className="mt-1 line-clamp-2 text-[var(--text)]">“{pendingCapture.text}”</p>
+            <p className="mt-1 text-[11px] text-[var(--md-fg)]">Entre na sua conta para enviar ao Inbox.</p>
           </div>
         )}
 
@@ -112,6 +112,14 @@ export function LoginPage() {
         {waitingBrowser && (
           <p className="mt-3 text-sm text-[var(--muted)]">Conclua o login no navegador. Você volta para o app automaticamente.</p>
         )}
+        <div className="mt-5 flex items-center justify-center gap-4 border-t border-[var(--border)] pt-4 text-xs text-[var(--muted)]">
+          <a href="/privacidade" className="hover:text-[var(--text)] hover:underline">
+            Política de Privacidade
+          </a>
+          <a href="/excluir-conta" className="hover:text-[var(--text)] hover:underline">
+            Excluir conta
+          </a>
+        </div>
       </div>
     </div>
   );

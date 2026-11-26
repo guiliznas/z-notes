@@ -11,6 +11,7 @@ import {
 import type { FolderTreeNode, FolderWithCount, NoteViewFilter } from "@z-notes/shared";
 import { useFolders, useCreateFolder, useUpdateFolder, useDeleteFolder } from "../hooks/useFolders";
 import FolderModal from "./FolderModal";
+import Icon from "./Icon";
 
 interface FolderDrawerProps {
   visible: boolean;
@@ -99,7 +100,7 @@ export default function FolderDrawer({
                   }}
                   accessibilityLabel="Configurações"
                 >
-                  <Text style={styles.iconText}>⚙️</Text>
+                  <Icon name="settings" size={18} color="#ebebf5" />
                 </TouchableOpacity>
               )}
               <TouchableOpacity
@@ -118,6 +119,20 @@ export default function FolderDrawer({
             <TouchableOpacity
               style={[
                 styles.navItem,
+                selectedFolderId === null && selectedView === "pinned" && styles.navItemActive,
+              ]}
+              onPress={() => {
+                onSelectView("pinned");
+                onClose();
+              }}
+            >
+              <View style={styles.navIconSlot}><Icon name="pin" size={16} color="#ebebf5" /></View>
+              <Text style={styles.navText}>Fixadas</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.navItem,
                 selectedFolderId === null && selectedView === "active" && styles.navItemActive,
               ]}
               onPress={() => {
@@ -125,7 +140,7 @@ export default function FolderDrawer({
                 onClose();
               }}
             >
-              <Text style={styles.navIcon}>📝</Text>
+              <View style={styles.navIconSlot}><Icon name="note" size={16} color="#ebebf5" /></View>
               <Text style={styles.navText}>Todas as notas</Text>
             </TouchableOpacity>
 
@@ -139,7 +154,7 @@ export default function FolderDrawer({
                 onClose();
               }}
             >
-              <Text style={styles.navIcon}>📦</Text>
+              <View style={styles.navIconSlot}><Icon name="archive" size={16} color="#ebebf5" /></View>
               <Text style={styles.navText}>Arquivadas</Text>
             </TouchableOpacity>
 
@@ -153,7 +168,7 @@ export default function FolderDrawer({
                 onClose();
               }}
             >
-              <Text style={styles.navIcon}>🗑️</Text>
+              <View style={styles.navIconSlot}><Icon name="trash" size={16} color="#ebebf5" /></View>
               <Text style={styles.navText}>Lixeira</Text>
             </TouchableOpacity>
 
@@ -182,7 +197,7 @@ export default function FolderDrawer({
                         onClose();
                       }}
                     >
-                      <Text style={styles.navIcon}>📁</Text>
+                      <View style={styles.navIconSlot}><Icon name="folder" size={16} color="#8e8e93" /></View>
                       <Text style={styles.folderName} numberOfLines={1}>
                         {node.name}
                       </Text>
@@ -202,14 +217,14 @@ export default function FolderDrawer({
                         onPress={() => handleOpenRename(node)}
                         accessibilityLabel={`Renomear ${node.name}`}
                       >
-                        <Text style={styles.actionText}>✏️</Text>
+                        <Icon name="edit" size={14} color="#8e8e93" />
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={styles.actionBtn}
                         onPress={() => handleDelete(node)}
                         accessibilityLabel={`Excluir ${node.name}`}
                       >
-                        <Text style={styles.actionText}>🗑️</Text>
+                        <Icon name="trash" size={14} color="#8e8e93" />
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -232,7 +247,10 @@ export default function FolderDrawer({
                             onClose();
                           }}
                         >
-                          <Text style={styles.subIcon}>↳ 📁</Text>
+                          <View style={styles.subIconSlot}>
+                            <Text style={styles.subIcon}>↳</Text>
+                            <Icon name="folder" size={14} color="#8e8e93" />
+                          </View>
                           <Text style={styles.folderName} numberOfLines={1}>
                             {child.name}
                           </Text>
@@ -245,14 +263,14 @@ export default function FolderDrawer({
                             onPress={() => handleOpenRename(child)}
                             accessibilityLabel={`Renomear ${child.name}`}
                           >
-                            <Text style={styles.actionText}>✏️</Text>
+                            <Icon name="edit" size={14} color="#8e8e93" />
                           </TouchableOpacity>
                           <TouchableOpacity
                             style={styles.actionBtn}
                             onPress={() => handleDelete(child)}
                             accessibilityLabel={`Excluir ${child.name}`}
                           >
-                            <Text style={styles.actionText}>🗑️</Text>
+                            <Icon name="trash" size={14} color="#8e8e93" />
                           </TouchableOpacity>
                         </View>
                       </View>
@@ -289,7 +307,7 @@ const styles = StyleSheet.create({
     height: "100%",
     paddingTop: 48,
     borderRightWidth: 0.5,
-    borderRightColor: "#333",
+    borderRightColor: "#414144",
   },
   header: {
     flexDirection: "row",
@@ -298,12 +316,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 16,
     borderBottomWidth: 0.5,
-    borderBottomColor: "#2c2c2e",
+    borderBottomColor: "#414144",
   },
   headerTitle: {
     fontSize: 22,
     fontWeight: "700",
-    color: "#fff",
+    color: "#eceff1",
   },
   headerActions: {
     flexDirection: "row",
@@ -317,7 +335,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   closeText: {
-    color: "#888",
+    color: "#b0bec5",
     fontSize: 20,
     fontWeight: "bold",
   },
@@ -327,7 +345,7 @@ const styles = StyleSheet.create({
     paddingTop: 12,
   },
   sectionHeader: {
-    color: "#8e8e93",
+    color: "#b0bec5",
     fontSize: 12,
     textTransform: "uppercase",
     fontWeight: "600",
@@ -346,7 +364,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   addFolderText: {
-    color: "#007AFF",
+    color: "#ffc107",
     fontSize: 13,
     fontWeight: "600",
   },
@@ -359,19 +377,25 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   navItemActive: {
-    backgroundColor: "#2c2c2e",
+    backgroundColor: "#28282a",
   },
-  navIcon: {
-    fontSize: 16,
+  navIconSlot: {
     marginRight: 10,
+    width: 18,
+    alignItems: "center",
+  },
+  subIconSlot: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginRight: 8,
   },
   subIcon: {
     fontSize: 14,
-    marginRight: 6,
-    color: "#888",
+    color: "#b0bec5",
   },
   navText: {
-    color: "#fff",
+    color: "#eceff1",
     fontSize: 15,
     fontWeight: "500",
   },
@@ -390,7 +414,7 @@ const styles = StyleSheet.create({
     paddingLeft: 24,
   },
   folderRowActive: {
-    backgroundColor: "#2c2c2e",
+    backgroundColor: "#28282a",
   },
   folderMain: {
     flexDirection: "row",
@@ -398,12 +422,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   folderName: {
-    color: "#fff",
+    color: "#eceff1",
     fontSize: 15,
     flex: 1,
   },
   badge: {
-    color: "#8e8e93",
+    color: "#b0bec5",
     fontSize: 12,
     marginLeft: 6,
     marginRight: 6,
@@ -418,15 +442,15 @@ const styles = StyleSheet.create({
   },
   actionText: {
     fontSize: 14,
-    color: "#8e8e93",
+    color: "#b0bec5",
   },
   loadingText: {
-    color: "#8e8e93",
+    color: "#b0bec5",
     padding: 12,
     fontSize: 14,
   },
   emptyText: {
-    color: "#636366",
+    color: "#b0bec5",
     padding: 12,
     fontSize: 13,
   },

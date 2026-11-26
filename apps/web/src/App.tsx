@@ -24,17 +24,18 @@ export function App() {
 
   // Se o usuário estiver deslogado e receber compartilhamento via Web Share Target
   // (seja na rota /inbox/share ou com parâmetros de compartilhamento), preserva o conteúdo
-  // no localStorage para não perder os dados durante o redirecionamento OAuth.
-  if (status === "unauthenticated") {
-    const search = location.search;
-    if (location.pathname === "/inbox/share" || hasShareParams(search)) {
-      const payload = extractSharePayload(search);
-      const normalized = normalizeSharePayload(payload);
-      if (normalized) {
-        savePendingShare(normalized);
-      }
+  // no localStorage dentro de um efeito para não disparar efeitos colaterais durante o render.
+  const incomingShare =
+    status === "unauthenticated" &&
+    (location.pathname === "/inbox/share" || hasShareParams(location.search))
+      ? normalizeSharePayload(extractSharePayload(location.search))
+      : null;
+
+  useEffect(() => {
+    if (incomingShare) {
+      savePendingShare(incomingShare);
     }
-  }
+  }, [incomingShare]);
 
   // Quando o usuário estiver autenticado (ex.: após voltar do Google OAuth em "/"),
   // se houver compartilhamento ou captura rápida desktop pendente no localStorage, redireciona para o Inbox.
@@ -54,7 +55,7 @@ export function App() {
   if (status === "unauthenticated" || !user) {
     return (
       <>
-        <LoginPage />
+        <LoginPage incomingShare={incomingShare} />
         <UpdatePrompt />
       </>
     );

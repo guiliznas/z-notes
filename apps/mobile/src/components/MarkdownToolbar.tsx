@@ -53,9 +53,9 @@ export default function MarkdownToolbar({ onInsert, onSave }: MarkdownToolbarPro
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#2c2c2e",
+    backgroundColor: "#28282a",
     borderTopWidth: 0.5,
-    borderTopColor: "#3a3a3c",
+    borderTopColor: "#414144",
     paddingVertical: 6,
     paddingHorizontal: 8,
   },
@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   btn: {
-    backgroundColor: "#3a3a3c",
+    backgroundColor: "#303032",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 6,
@@ -74,16 +74,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   btnText: {
-    color: "#fff",
+    color: "#eceff1",
     fontSize: 14,
     fontWeight: "600",
   },
   saveBtn: {
-    backgroundColor: "#007AFF",
+    backgroundColor: "#ffc107",
     marginLeft: 8,
   },
   saveBtnText: {
-    color: "#fff",
+    color: "#263238",
     fontWeight: "bold",
   },
 });

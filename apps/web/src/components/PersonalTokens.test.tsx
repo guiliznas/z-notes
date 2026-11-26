@@ -4,6 +4,16 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SettingsModal } from "./SettingsModal";
 import * as resources from "@/api/resources";
 
+vi.mock("@/auth/AuthContext", () => ({
+  useAuth: () => ({
+    status: "authenticated",
+    user: { id: 1, email: "test@example.com", name: "Test", avatarUrl: null, isAdmin: false },
+    refresh: vi.fn(),
+    logout: vi.fn(),
+    deleteAccount: vi.fn(),
+  }),
+}));
+
 vi.mock("@/api/resources", async () => {
   const actual = await vi.importActual<typeof resources>("@/api/resources");
   return {

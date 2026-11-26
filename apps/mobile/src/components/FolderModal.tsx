@@ -40,7 +40,7 @@ export default function FolderModal({
           <TextInput
             style={styles.input}
             placeholder="Nome da pasta"
-            placeholderTextColor="#888"
+            placeholderTextColor="#b0bec5"
             value={name}
             onChangeText={setName}
             autoFocus
@@ -69,19 +69,19 @@ const styles = StyleSheet.create({
   },
   dialog: {
     width: "100%",
-    backgroundColor: "#2c2c2e",
+    backgroundColor: "#28282a",
     borderRadius: 14,
     padding: 20,
   },
   title: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#fff",
+    color: "#eceff1",
     marginBottom: 16,
   },
   input: {
     backgroundColor: "#1c1c1e",
-    color: "#fff",
+    color: "#eceff1",
     padding: 12,
     borderRadius: 8,
     fontSize: 16,
@@ -98,17 +98,17 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   cancelBtn: {
-    backgroundColor: "#3a3a3c",
+    backgroundColor: "#303032",
   },
   cancelText: {
-    color: "#ebebf5",
+    color: "#eceff1",
     fontSize: 15,
   },
   saveBtn: {
-    backgroundColor: "#007AFF",
+    backgroundColor: "#ffc107",
   },
   saveText: {
-    color: "#fff",
+    color: "#263238",
     fontSize: 15,
     fontWeight: "600",
   },

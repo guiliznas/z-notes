@@ -104,6 +104,7 @@ export function searchNotes(q: string, folderId: number | null) {
 export const googleLoginUrl = "/api/auth/google";
 export const authMe = () => api<AuthMeResponse>("/auth/me");
 export const authLogout = () => api<{ ok: true }>("/auth/logout", { method: "POST" });
+export const authDeleteAccount = () => api<{ deleted: true }>("/auth/account", { method: "DELETE" });
 
 // Admin (backend exige papel admin em cada rota: 403 sem isAdmin)
 export const fetchAdminMetrics = () => api<MetricsResponse>("/admin/metrics");

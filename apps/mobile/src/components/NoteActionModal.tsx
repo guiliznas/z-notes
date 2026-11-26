@@ -2,14 +2,17 @@ import { useState } from "react";
 import { View, Text, TouchableOpacity, Modal, ScrollView, StyleSheet } from "react-native";
 import type { FolderTreeNode, FolderWithCount } from "@z-notes/shared";
 import { useFolders } from "../hooks/useFolders";
+import Icon from "./Icon";
 
 interface NoteActionModalProps {
   visible: boolean;
   isArchived: boolean;
+  isPinned?: boolean;
   isDeleted: boolean;
   currentFolderId: number | null;
   onClose: () => void;
   onToggleArchive: () => void;
+  onTogglePin?: () => void;
   onMoveToFolder: (folderId: number) => void;
   onTrash: () => void;
   onRestore?: () => void;
@@ -19,10 +22,12 @@ interface NoteActionModalProps {
 export default function NoteActionModal({
   visible,
   isArchived,
+  isPinned,
   isDeleted,
   currentFolderId,
   onClose,
   onToggleArchive,
+  onTogglePin,
   onMoveToFolder,
   onTrash,
   onRestore,
@@ -58,7 +63,7 @@ export default function NoteActionModal({
                       ]}
                       onPress={() => handleSelectFolder(root.id)}
                     >
-                      <Text style={styles.folderIcon}>📁</Text>
+                      <View style={styles.folderIconSlot}><Icon name="folder" size={16} color="#8e8e93" /></View>
                       <Text style={styles.folderName}>{root.name}</Text>
                       {currentFolderId === root.id && (
                         <Text style={styles.checkMark}>✓</Text>
@@ -74,7 +79,10 @@ export default function NoteActionModal({
                         ]}
                         onPress={() => handleSelectFolder(sub.id)}
                       >
-                        <Text style={styles.folderIcon}>↳ 📁</Text>
+                        <View style={styles.subFolderIconSlot}>
+                          <Text style={styles.subPrefix}>↳</Text>
+                          <Icon name="folder" size={14} color="#8e8e93" />
+                        </View>
                         <Text style={styles.folderName}>{sub.name}</Text>
                         {currentFolderId === sub.id && (
                           <Text style={styles.checkMark}>✓</Text>
@@ -100,8 +108,23 @@ export default function NoteActionModal({
                   style={styles.actionBtn}
                   onPress={() => setPickingFolder(true)}
                 >
-                  <Text style={styles.actionIcon}>📁</Text>
+                  <View style={styles.actionIconSlot}><Icon name="folder" size={16} color="#ebebf5" /></View>
                   <Text style={styles.actionText}>Mover para pasta...</Text>
+                </TouchableOpacity>
+              )}
+
+              {!isDeleted && onTogglePin && (
+                <TouchableOpacity
+                  style={styles.actionBtn}
+                  onPress={() => {
+                    onTogglePin();
+                    handleClose();
+                  }}
+                >
+                  <View style={styles.actionIconSlot}><Icon name="pin" size={16} color="#ebebf5" /></View>
+                  <Text style={styles.actionText}>
+                    {isPinned ? "Desafixar nota" : "Fixar nota"}
+                  </Text>
                 </TouchableOpacity>
               )}
 
@@ -113,7 +136,7 @@ export default function NoteActionModal({
                     handleClose();
                   }}
                 >
-                  <Text style={styles.actionIcon}>📦</Text>
+                  <View style={styles.actionIconSlot}><Icon name="archive" size={16} color="#ebebf5" /></View>
                   <Text style={styles.actionText}>
                     {isArchived ? "Desarquivar nota" : "Arquivar nota"}
                   </Text>
@@ -130,19 +153,19 @@ export default function NoteActionModal({
                         handleClose();
                       }}
                     >
-                      <Text style={styles.actionIcon}>♻️</Text>
+                      <View style={styles.actionIconSlot}><Icon name="restore" size={16} color="#ebebf5" /></View>
                       <Text style={styles.actionText}>Restaurar nota</Text>
                     </TouchableOpacity>
                   )}
                   {onHardDelete && (
                     <TouchableOpacity
-                      style={styles.actionBtn}
+                      style={[styles.actionBtn, styles.destructiveBtn]}
                       onPress={() => {
                         onHardDelete();
                         handleClose();
                       }}
                     >
-                      <Text style={styles.actionIcon}>⚠️</Text>
+                      <View style={styles.actionIconSlot}><Icon name="warning" size={16} color="#ff453a" /></View>
                       <Text style={[styles.actionText, styles.destructiveText]}>
                         Excluir definitivamente
                       </Text>
@@ -151,13 +174,13 @@ export default function NoteActionModal({
                 </>
               ) : (
                 <TouchableOpacity
-                  style={styles.actionBtn}
+                  style={[styles.actionBtn, styles.destructiveBtn]}
                   onPress={() => {
                     onTrash();
                     handleClose();
                   }}
                 >
-                  <Text style={styles.actionIcon}>🗑️</Text>
+                  <View style={styles.actionIconSlot}><Icon name="trash" size={16} color="#ff453a" /></View>
                   <Text style={[styles.actionText, styles.destructiveText]}>
                     Mover para lixeira
                   </Text>
@@ -185,7 +208,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   dialog: {
-    backgroundColor: "#2c2c2e",
+    backgroundColor: "#28282a",
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     padding: 20,
@@ -194,7 +217,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#fff",
+    color: "#eceff1",
     marginBottom: 16,
     textAlign: "center",
   },
@@ -204,16 +227,22 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 12,
     borderRadius: 10,
-    backgroundColor: "#3a3a3c",
+    backgroundColor: "#303032",
     marginBottom: 8,
   },
-  actionIcon: {
-    fontSize: 18,
+  destructiveBtn: {
+    backgroundColor: "#1c1c1e",
+    borderWidth: 1,
+    borderColor: "#ff453a",
+  },
+  actionIconSlot: {
     marginRight: 12,
+    width: 20,
+    alignItems: "center",
   },
   actionText: {
     fontSize: 16,
-    color: "#fff",
+    color: "#eceff1",
     fontWeight: "500",
   },
   destructiveText: {
@@ -226,7 +255,7 @@ const styles = StyleSheet.create({
   },
   cancelText: {
     fontSize: 16,
-    color: "#007AFF",
+    color: "#ffc107",
     fontWeight: "600",
     textAlign: "center",
     width: "100%",
@@ -247,19 +276,30 @@ const styles = StyleSheet.create({
     paddingLeft: 24,
   },
   folderItemActive: {
-    backgroundColor: "#3a3a3c",
+    backgroundColor: "#303032",
   },
-  folderIcon: {
-    fontSize: 16,
+  folderIconSlot: {
     marginRight: 10,
+    width: 18,
+    alignItems: "center",
+  },
+  subFolderIconSlot: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginRight: 10,
+  },
+  subPrefix: {
+    color: "#b0bec5",
+    fontSize: 14,
   },
   folderName: {
     fontSize: 15,
-    color: "#fff",
+    color: "#eceff1",
     flex: 1,
   },
   checkMark: {
-    color: "#007AFF",
+    color: "#ffc107",
     fontSize: 16,
     fontWeight: "bold",
   },

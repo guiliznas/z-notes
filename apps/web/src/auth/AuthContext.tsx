@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { PublicUser } from "@z-notes/shared";
-import { authLogout, authMe } from "@/api/resources";
+import { authMe, authLogout, authDeleteAccount } from "@/api/resources";
 import { clearToken, setUnauthorizedHandler } from "@/api/http";
 import { clearUserCache } from "@/offline/queryClient";
 import { DeepLinkRouter } from "@/lib/DeepLinkRouter";
@@ -12,6 +12,7 @@ export interface AuthValue {
   user: PublicUser | null;
   refresh: () => Promise<void>;
   logout: () => Promise<void>;
+  deleteAccount: (onBeforeSignOut?: () => Promise<void> | void) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthValue | null>(null);
@@ -58,8 +59,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const deleteAccount = async (onBeforeSignOut?: () => Promise<void> | void) => {
+    const id = user?.id;
+    await authDeleteAccount();
+    clearToken();
+    if (id !== undefined && id !== null) await clearUserCache(id).catch(() => {});
+    await onBeforeSignOut?.();
+    setUser(null);
+    setStatus("unauthenticated");
+  };
+
   return (
-    <AuthContext.Provider value={{ status, user, refresh, logout }}>
+    <AuthContext.Provider value={{ status, user, refresh, logout, deleteAccount }}>
       <DeepLinkRouter />
       {children}
     </AuthContext.Provider>

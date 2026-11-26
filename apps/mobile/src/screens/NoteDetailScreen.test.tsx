@@ -123,4 +123,16 @@ describe("NoteDetailScreen", () => {
     const input = container.querySelector("input") as HTMLInputElement;
     expect(input.value).toContain("# ");
   });
+
+  it("não exibe botão de editar para nota na lixeira", () => {
+    vi.mocked(useNote).mockReturnValue({
+      isPending: false,
+      data: { id: 1, contentMd: "Na lixeira", version: 1, deleted: true },
+    } as any);
+    vi.mocked(useUpdateNote).mockReturnValue({ mutate: vi.fn() } as any);
+    const { queryByLabelText } = renderWithProviders(
+      React.createElement(NoteDetailScreen, { noteId: 1, onBack: () => {} }),
+    );
+    expect(queryByLabelText("Editar nota")).toBeNull();
+  });
 });
