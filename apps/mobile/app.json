@@ -2,6 +2,7 @@
   "expo": {
     "name": "z-notes",
     "slug": "z-notes",
+    "owner": "guiliznass-team",
     "scheme": "znotes",
     "version": "0.1.0",
     "orientation": "portrait",
@@ -9,10 +10,10 @@
     "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.znotes.mobile"
+      "bundleIdentifier": "com.ziltro.znotes"
     },
     "android": {
-      "package": "com.znotes.mobile",
+      "package": "com.ziltro.znotes",
       "adaptiveIcon": {
         "backgroundColor": "#1c1c1e",
         "foregroundImage": "./assets/android-icon-foreground.png",
