@@ -50,6 +50,27 @@ Para garantir que dois usuários no mesmo dispositivo nunca tenham acesso às an
 
 ---
 
+### Usuário e senha (conta de teste, revisão da Play)
+
+Além do Google, a tela de login do app tem **usuário**, **senha** e o botão **Entrar**. Serve para uma única conta de teste (a que o revisor da loja usa). Não existe cadastro, e o web continua só com Google.
+
+- **Servidor:** `POST /api/auth/password` com `{ "username", "password" }` devolve `{ token, user }`; o app guarda o token como no fluxo Google. Mesmo limite das rotas de autenticação (10 tentativas por minuto).
+- **Configuração:** `Z_NOTES_TEST_USER` e `Z_NOTES_TEST_PASSWORD` (mínimo de 12 caracteres), definidas no ambiente do servidor (em produção, no Dokploy). A senha nunca vai para o Git.
+- **Desligado:** sem as duas variáveis (ou com senha curta, que gera aviso no boot) a rota responde 404 e as sessões da conta de teste deixam de valer.
+- **Exclusão:** a conta pode ser excluída como qualquer outra; o login seguinte cria uma nova, vazia.
+- A conta de teste nunca é administradora nem adota dados legados.
+
+### Build de produção para a Play (EAS)
+
+O perfil `production` de `apps/mobile/eas.json` gera o AAB (`com.ziltro.znotes`), com o número de versão controlado pelo EAS. O projeto EAS precisa estar ligado em `app.json` (`extra.eas.projectId`, criado uma vez com `eas init`).
+
+```bash
+cd apps/mobile
+eas build --platform android --profile production
+```
+
+---
+
 ## 3. CRUD de Notas, Busca e Suporte Offline
 
 ### Visualização e Organização
