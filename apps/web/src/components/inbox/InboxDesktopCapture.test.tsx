@@ -84,6 +84,7 @@ describe("Captura rápida no desktop via deep link (znotes://capture)", () => {
       user: AUTHENTICATED_USER,
       refresh: vi.fn(),
       logout: vi.fn(),
+      deleteAccount: vi.fn(),
     });
   });
 
@@ -161,6 +162,7 @@ describe("Captura rápida no desktop via deep link (znotes://capture)", () => {
       user: null,
       refresh: vi.fn(),
       logout: vi.fn(),
+      deleteAccount: vi.fn(),
     });
 
     savePendingCapture("Nota pendente de autenticação");
