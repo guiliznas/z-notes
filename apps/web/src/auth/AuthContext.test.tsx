@@ -12,6 +12,7 @@ vi.mock("@/offline/queryClient", async (importOriginal) => {
 
 const deepLink = vi.hoisted(() => ({ handler: null as null | ((urls: string[]) => void) }));
 vi.mock("@tauri-apps/plugin-deep-link", () => ({
+  getCurrent: vi.fn(async () => null),
   onOpenUrl: vi.fn(async (h: (urls: string[]) => void) => {
     deepLink.handler = h;
     return () => {

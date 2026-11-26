@@ -15,6 +15,7 @@ import {
   savePendingShare,
   getPendingShare,
 } from "@/lib/shareTarget";
+import { getPendingCapture } from "@/lib/deepLink";
 
 export function App() {
   const { status, user } = useAuth();
@@ -37,11 +38,12 @@ export function App() {
   }, [incomingShare]);
 
   // Quando o usuário estiver autenticado (ex.: após voltar do Google OAuth em "/"),
-  // se houver compartilhamento pendente no localStorage, redireciona para o Inbox.
+  // se houver compartilhamento ou captura rápida desktop pendente no localStorage, redireciona para o Inbox.
   useEffect(() => {
     if (status === "authenticated" && user) {
-      const pending = getPendingShare();
-      if (pending && location.pathname === "/") {
+      const pendingShare = getPendingShare();
+      const pendingCapture = getPendingCapture();
+      if ((pendingShare || pendingCapture) && location.pathname === "/") {
         navigate("/inbox", { replace: true });
       }
     }

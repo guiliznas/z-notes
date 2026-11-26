@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { googleLoginUrl } from "@/api/resources";
 import { appLoginUrl } from "@/api/appAuth";
 import { getBaseUrl, setBaseUrl, isTauriEnvironment } from "@/api/http";
 import { getPendingShare } from "@/lib/shareTarget";
+import { getPendingCapture, onCaptureEvent } from "@/lib/deepLink";
 import { Button } from "./ui/Button";
 import { NoteIcon, SettingsIcon } from "./icons";
 
@@ -20,6 +21,13 @@ export function LoginPage({ incomingShare }: { incomingShare?: string | null } =
   const [savedMessage, setSavedMessage] = useState(false);
   const [waitingBrowser, setWaitingBrowser] = useState(false);
   const pendingShareContent = incomingShare ?? getPendingShare()?.content ?? null;
+  const [pendingCapture, setPendingCapture] = useState(() => getPendingCapture());
+
+  useEffect(() => {
+    return onCaptureEvent(({ text }) => {
+      setPendingCapture(getPendingCapture() ?? (text ? { text, timestamp: Date.now() } : null));
+    });
+  }, []);
 
   const handleSaveServerUrl = () => {
     setBaseUrl(serverUrl.trim());
@@ -83,6 +91,17 @@ export function LoginPage({ incomingShare }: { incomingShare?: string | null } =
           >
             <p className="font-medium text-[var(--md-fg)]">Conteúdo compartilhado recebido</p>
             <p className="mt-1 line-clamp-2 text-[var(--text)]">“{pendingShareContent}”</p>
+            <p className="mt-1 text-[11px] text-[var(--md-fg)]">Entre na sua conta para enviar ao Inbox.</p>
+          </div>
+        )}
+
+        {pendingCapture?.text && !pendingShareContent && (
+          <div
+            data-testid="pending-capture-alert"
+            className="mb-4 rounded-xl border border-[var(--accent)]/40 bg-[var(--md-bg)] p-3 text-xs text-[var(--text)]"
+          >
+            <p className="font-medium text-[var(--md-fg)]">Captura rápida pendente</p>
+            <p className="mt-1 line-clamp-2 text-[var(--text)]">“{pendingCapture.text}”</p>
             <p className="mt-1 text-[11px] text-[var(--md-fg)]">Entre na sua conta para enviar ao Inbox.</p>
           </div>
         )}
