@@ -110,6 +110,49 @@ describe("LoginScreen", () => {
       expect(openAuth).not.toHaveBeenCalled();
     });
 
+    it("mostra o carregamento só no botão tocado, desativa os dois e ignora novo envio", async () => {
+      let finish!: () => void;
+      vi.mocked(authPassword).mockReturnValue(
+        new Promise((_resolve, reject) => {
+          finish = () => reject(new Error("falhou"));
+        }),
+      );
+      const utils = renderLogin();
+      fill(utils, "revisor", "errada");
+
+      const [google, secondary] = Array.from(utils.container.querySelectorAll("button"));
+      expect(secondary.textContent).toBe("Entrando...");
+      expect(google.textContent).toBe("Entrar com Google");
+      expect(google.disabled).toBe(true);
+      expect(secondary.disabled).toBe(true);
+      fireEvent.keyDown(utils.getByPlaceholderText("Senha"), { key: "Enter" });
+      expect(authPassword).toHaveBeenCalledTimes(1);
+
+      finish();
+      await waitFor(() => expect(secondary.textContent).toBe("Entrar"));
+      expect(google.disabled).toBe(false);
+    });
+
+    it("durante o login com Google o carregamento fica só no botão do Google", () => {
+      openAuth.mockReturnValue(new Promise(() => {}) as never);
+      const utils = renderLogin();
+      fireEvent.click(utils.button);
+
+      const [google, secondary] = Array.from(utils.container.querySelectorAll("button"));
+      expect(google.textContent).toBe("Entrando...");
+      expect(secondary.textContent).toBe("Entrar");
+      expect(secondary.disabled).toBe(true);
+    });
+
+    it("explica em português quando não alcança o servidor", async () => {
+      const alert = vi.spyOn(Alert, "alert");
+      vi.mocked(authPassword).mockRejectedValue(new TypeError("Network request failed"));
+      const utils = renderLogin();
+      fill(utils, "revisor", "errada");
+
+      await waitFor(() => expect(alert).toHaveBeenCalledWith("Erro", "Não foi possível conectar ao servidor"));
+    });
+
     it("não chama o servidor com campos vazios", () => {
       const alert = vi.spyOn(Alert, "alert");
       const utils = renderLogin();

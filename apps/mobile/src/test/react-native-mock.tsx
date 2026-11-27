@@ -9,7 +9,7 @@ function pass<T extends Record<string, unknown>>(props: T): Record<string, unkno
       out["aria-label"] = v;
       continue;
     }
-    if (k === "style" || k === "numberOfLines" || k === "autoCapitalize" || k === "autoCorrect" || k === "secureTextEntry" || k === "placeholderTextColor" || k === "textAlignVertical" || k === "autoFocus" || k === "multiline" || k === "elevation" || k === "transparent" || k === "animationType" || k === "horizontal" || k === "showsHorizontalScrollIndicator" || k === "contentContainerStyle" || k === "keyboardShouldPersistTaps") continue;
+    if (k === "style" || k === "numberOfLines" || k === "autoCapitalize" || k === "autoCorrect" || k === "secureTextEntry" || k === "placeholderTextColor" || k === "textAlignVertical" || k === "autoFocus" || k === "multiline" || k === "elevation" || k === "transparent" || k === "animationType" || k === "horizontal" || k === "showsHorizontalScrollIndicator" || k === "contentContainerStyle" || k === "keyboardShouldPersistTaps" || k === "returnKeyType" || k === "submitBehavior") continue;
     out[k] = v;
   }
   return out;
@@ -38,7 +38,11 @@ export const TextInput = React.forwardRef<HTMLInputElement, TextInputProps & Rec
       type: String(props.secureTextEntry) === "true" ? "password" : "text",
       value: props.value,
       onChange,
+      onKeyDown: (e: { key: string }) => {
+        if (e.key === "Enter") (props.onSubmitEditing as (() => void) | undefined)?.();
+      },
       placeholder: props.placeholder as string | undefined,
+      "aria-label": props.accessibilityLabel as string | undefined,
     });
   },
 );

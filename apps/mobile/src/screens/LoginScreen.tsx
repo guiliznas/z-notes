@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -19,27 +19,35 @@ interface Props {
   onAuthenticated: (user?: PublicUser) => void;
 }
 
+function errorMessage(e: unknown): string {
+  // O fetch rejeita com TypeError ("Network request failed") quando não alcança o servidor.
+  if (e instanceof TypeError) return "Não foi possível conectar ao servidor";
+  return e instanceof Error ? e.message : "Erro ao conectar";
+}
+
 function passwordErrorMessage(e: unknown): string {
   if (e instanceof ApiError) {
     if (e.status === 401) return "Usuário ou senha inválidos";
     if (e.status === 404) return "Este servidor não aceita login com usuário e senha";
     if (e.status === 429) return "Muitas tentativas. Aguarde um minuto e tente de novo";
   }
-  return e instanceof Error ? e.message : "Erro ao conectar";
+  return errorMessage(e);
 }
 
 export default function LoginScreen({ onAuthenticated }: Props) {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<"google" | "password" | null>(null);
   const [serverUrl, setServerUrl] = useState(getBaseUrl());
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const passwordRef = useRef<TextInput>(null);
 
   useEffect(() => {
     loadBaseUrl().then((u) => setServerUrl(u));
   }, []);
 
   const handleLogin = async () => {
-    setLoading(true);
+    if (loading) return;
+    setLoading("google");
     try {
       setBaseUrl(serverUrl.trim());
       const session = await WebBrowser.openAuthSessionAsync(googleLoginUrl(getBaseUrl()), AUTH_REDIRECT);
@@ -56,19 +64,19 @@ export default function LoginScreen({ onAuthenticated }: Props) {
         onAuthenticated(me.user);
       }
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Erro ao conectar";
-      Alert.alert("Erro", msg);
+      Alert.alert("Erro", errorMessage(e));
     } finally {
-      setLoading(false);
+      setLoading(null);
     }
   };
 
   const handlePasswordLogin = async () => {
+    if (loading) return;
     if (!username.trim() || !password) {
       Alert.alert("Erro", "Informe usuário e senha");
       return;
     }
-    setLoading(true);
+    setLoading("password");
     try {
       setBaseUrl(serverUrl.trim());
       const { token, user } = await authPassword(username.trim(), password);
@@ -78,7 +86,7 @@ export default function LoginScreen({ onAuthenticated }: Props) {
     } catch (e: unknown) {
       Alert.alert("Erro", passwordErrorMessage(e));
     } finally {
-      setLoading(false);
+      setLoading(null);
     }
   };
 
@@ -89,14 +97,19 @@ export default function LoginScreen({ onAuthenticated }: Props) {
         <TextInput
           style={styles.input}
           placeholder="URL do servidor"
+          accessibilityLabel="URL do servidor"
           placeholderTextColor="#b0bec5"
           value={serverUrl}
           onChangeText={setServerUrl}
           autoCapitalize="none"
           autoCorrect={false}
         />
-        <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
-          <Text style={styles.buttonText}>{loading ? "Entrando..." : "Entrar com Google"}</Text>
+        <TouchableOpacity
+          style={[styles.button, loading === "password" && styles.dimmed]}
+          onPress={handleLogin}
+          disabled={loading !== null}
+        >
+          <Text style={styles.buttonText}>{loading === "google" ? "Entrando..." : "Entrar com Google"}</Text>
         </TouchableOpacity>
 
         <View style={styles.divider}>
@@ -108,16 +121,22 @@ export default function LoginScreen({ onAuthenticated }: Props) {
         <TextInput
           style={styles.input}
           placeholder="Usuário"
+          accessibilityLabel="Usuário"
           placeholderTextColor="#b0bec5"
           value={username}
           onChangeText={setUsername}
           autoCapitalize="none"
           autoCorrect={false}
           autoComplete="username"
+          returnKeyType="next"
+          submitBehavior="submit"
+          onSubmitEditing={() => passwordRef.current?.focus()}
         />
         <TextInput
+          ref={passwordRef}
           style={styles.input}
           placeholder="Senha"
+          accessibilityLabel="Senha"
           placeholderTextColor="#b0bec5"
           value={password}
           onChangeText={setPassword}
@@ -125,10 +144,15 @@ export default function LoginScreen({ onAuthenticated }: Props) {
           autoCorrect={false}
           autoComplete="current-password"
           secureTextEntry
+          returnKeyType="go"
           onSubmitEditing={handlePasswordLogin}
         />
-        <TouchableOpacity style={styles.secondaryButton} onPress={handlePasswordLogin} disabled={loading}>
-          <Text style={styles.secondaryButtonText}>Entrar</Text>
+        <TouchableOpacity
+          style={[styles.secondaryButton, loading === "google" && styles.dimmed]}
+          onPress={handlePasswordLogin}
+          disabled={loading !== null}
+        >
+          <Text style={styles.secondaryButtonText}>{loading === "password" ? "Entrando..." : "Entrar"}</Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -149,7 +173,10 @@ const styles = StyleSheet.create({
   dividerLine: { flex: 1, height: 1, backgroundColor: "#414144" },
   dividerText: { color: "#b0bec5", fontSize: 14, marginHorizontal: 12 },
   secondaryButton: {
-    padding: 14, borderRadius: 10, alignItems: "center", borderWidth: 1, borderColor: "#ffc107", marginTop: 8,
+    // 13 + 1 de borda: mesma altura do botão do Google.
+    paddingVertical: 13, paddingHorizontal: 14, borderRadius: 10, alignItems: "center",
+    borderWidth: 1, borderColor: "#ffc107", marginTop: 8,
   },
   secondaryButtonText: { color: "#ffc107", fontSize: 16, fontWeight: "600" },
+  dimmed: { opacity: 0.6 },
 });
