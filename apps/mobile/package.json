@@ -7,6 +7,7 @@
     "start": "expo start",
     "android": "expo run:android",
     "build:apk": "eas build -p android --profile preview",
+    "eas-build-post-install": "pnpm --dir ../.. build:shared",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },

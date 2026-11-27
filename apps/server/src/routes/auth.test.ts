@@ -242,6 +242,19 @@ describe("auth", () => {
     expect(res.statusCode).toBe(401);
   });
 
+  it("DELETE /api/auth/account funciona com tarefas e itens no Inbox", async () => {
+    const post = (url: string, payload: object) =>
+      t.app.inject({ method: "POST", url, headers: { cookie: t.cookie }, payload });
+    const board = await post("/api/task-folders", { name: "Quadro" });
+    const list = await post("/api/task-lists", { folderId: board.json().id, name: "Lista" });
+    expect((await post("/api/tasks", { listId: list.json().id, title: "Tarefa" })).statusCode).toBe(201);
+    expect((await post("/api/inbox", { clientId: "c1", content: "ideia" })).statusCode).toBe(201);
+
+    const del = await t.app.inject({ method: "DELETE", url: "/api/auth/account", headers: { cookie: t.cookie } });
+    expect(del.statusCode).toBe(200);
+    expect(del.json()).toEqual({ deleted: true });
+  });
+
   it("DELETE /api/auth/account apaga usuário, notas, pastas e espelho sem afetar outra conta", async () => {
     // Usuário 1 cria pasta, subpasta e notas (gera espelho .md)
     const f1 = await t.app.inject({

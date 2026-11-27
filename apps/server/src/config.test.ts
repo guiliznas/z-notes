@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { configFromEnv, makeConfig } from "./config.js";
+import { configFromEnv, makeConfig, resolveTestUser } from "./config.js";
 
 describe("configFromEnv", () => {
   const OLD_ENV = process.env;
@@ -16,6 +16,8 @@ describe("configFromEnv", () => {
     delete process.env.Z_NOTES_BACKUP_DIR;
     delete process.env.Z_NOTES_BACKUP_CRON;
     delete process.env.Z_NOTES_BACKUP_WEBHOOK_URL;
+    delete process.env.Z_NOTES_TEST_USER;
+    delete process.env.Z_NOTES_TEST_PASSWORD;
   });
 
   it("usa defaults quando nenhuma env é definida", () => {
@@ -100,5 +102,19 @@ describe("makeConfig", () => {
     });
     expect(cfg.isProd).toBe(true);
     expect(cfg.backupCron).toBe("0 */2 * * *");
+  });
+});
+
+describe("conta de teste", () => {
+  it("fica desligada sem as variáveis, com só uma delas ou com senha curta", () => {
+    expect(resolveTestUser(undefined, undefined)).toBeNull();
+    expect(resolveTestUser("", "")).toBeNull();
+    expect(resolveTestUser("revisor", undefined)).toBeNull();
+    expect(resolveTestUser(undefined, "senha-ficticia-longa")).toBeNull();
+    expect(resolveTestUser("revisor", "curta")).toBeNull();
+  });
+
+  it("liga com usuário e senha de 12 caracteres ou mais", () => {
+    expect(resolveTestUser(" revisor ", "123456789012")).toEqual({ username: "revisor", password: "123456789012" });
   });
 });

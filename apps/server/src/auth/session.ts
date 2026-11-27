@@ -3,7 +3,7 @@ import type { FastifyRequest, FastifyReply } from "fastify";
 import jwt from "jsonwebtoken";
 import type { AppContext, RequestContext } from "../context.js";
 import { forbidden, unauthorized } from "../errors.js";
-import { getUserById, setAdmin } from "./users.js";
+import { getSessionUser, getUserById, setAdmin } from "./users.js";
 
 export const COOKIE_NAME = "z_session";
 const STATE_COOKIE_NAME = "z_oauth_state";
@@ -72,7 +72,7 @@ export function getSessionUserId(request: FastifyRequest, secret?: string): numb
 export function requireAuth(request: FastifyRequest, ctx: AppContext): number {
   const userId = getSessionUserId(request, ctx.cfg.sessionSecret);
   if (userId === null) throw unauthorized();
-  if (!getUserById(ctx, userId)) throw unauthorized("Sessão inválida");
+  if (!getSessionUser(ctx, userId)) throw unauthorized("Sessão inválida");
   return userId;
 }
 

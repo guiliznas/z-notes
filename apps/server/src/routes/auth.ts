@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import type { AppContext } from "../context.js";
-import { OAuthCallbackQuery } from "../validation.js";
-import { serviceUnavailable, unauthorized } from "../errors.js";
+import { OAuthCallbackQuery, PasswordLoginSchema } from "../validation.js";
+import { notFound, serviceUnavailable, unauthorized } from "../errors.js";
 import {
   APP_STATE_PREFIX,
   getSessionUserId,
@@ -19,11 +19,15 @@ import {
   fetchGoogleProfile,
   isGoogleConfigured,
 } from "../auth/google.js";
-import { adoptOrphanData, deleteUserAccount, getUserById, upsertUserByGoogle, type UserRow } from "../auth/users.js";
+import { adoptOrphanData, deleteUserAccount, getSessionUser, upsertUserByGoogle, type UserRow } from "../auth/users.js";
+import { matchesTestCredentials, upsertTestUser } from "../auth/test-user.js";
 import { rebuildMirror } from "../services/mirror-sync.js";
 
 /** Início e fim do OAuth: bem abaixo do teto global, para frear força bruta/abuso do fluxo de login. */
 const LOGIN_RATE_LIMIT = { max: 20, timeWindow: "1 minute" };
+
+/** Login por senha: mais apertado, é o único ponto em que dá para tentar adivinhar uma credencial. */
+const PASSWORD_RATE_LIMIT = { max: 10, timeWindow: "1 minute" };
 
 /** Deep link registrado pelos apps (mobile e desktop) para receber o JWT após o login Google. */
 const APP_DEEP_LINK = "znotes://auth";
@@ -73,6 +77,16 @@ export function registerAuthRoutes(app: FastifyInstance, ctx: AppContext): void 
     },
   );
 
+  // Só a conta de teste definida no ambiente (revisão da Play Store). Não há cadastro.
+  app.post("/api/auth/password", { config: { rateLimit: PASSWORD_RATE_LIMIT } }, async (req) => {
+    const testUser = ctx.cfg.testUser;
+    if (!testUser) throw notFound("Login com usuário e senha não está disponível neste servidor");
+    const { username, password } = PasswordLoginSchema.parse(req.body);
+    if (!matchesTestCredentials(testUser, username, password)) throw unauthorized("Usuário ou senha inválidos");
+    const user = upsertTestUser(ctx, testUser.username);
+    return { token: signToken(ctx, user.id), user: toPublicUser(user) };
+  });
+
   app.post("/api/auth/logout", async (_req, reply) => {
     clearSessionCookie(reply);
     return { ok: true };
@@ -81,7 +95,7 @@ export function registerAuthRoutes(app: FastifyInstance, ctx: AppContext): void 
   app.get("/api/auth/me", async (req) => {
     const userId = getSessionUserId(req, ctx.cfg.sessionSecret);
     if (userId === null) return { authenticated: false as const };
-    const user = getUserById(ctx, userId);
+    const user = getSessionUser(ctx, userId);
     if (!user) return { authenticated: false as const };
     return { authenticated: true as const, user: toPublicUser(user) };
   });

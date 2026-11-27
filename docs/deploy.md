@@ -27,6 +27,7 @@ Como rodar o projeto em uma máquina nova (do zero ou migrando os dados).
    | `Z_NOTES_SESSION_SECRET` | sim | Segredo aleatório longo (`openssl rand -hex 32`); o compose recusa subir sem ele |
    | `Z_NOTES_ADMIN_EMAILS` | não | CSV de e-mails com acesso a `/admin` |
    | `Z_NOTES_BACKUP_CRON` / `Z_NOTES_BACKUP_WEBHOOK_URL` | não | Defaults: diário 3h, sem webhook |
+   | `Z_NOTES_TEST_USER` / `Z_NOTES_TEST_PASSWORD` | não | Conta de teste do app (revisão da Play); sem as duas, o login por senha fica desligado. Senha com 12+ caracteres, nunca no Git |
 3. No Google Cloud Console, registre a **Authorized redirect URI** exatamente igual
    à `GOOGLE_CALLBACK_URL` (esquema, domínio, path e barra final contam;
    `redirect_uri_mismatch` = URI divergente).

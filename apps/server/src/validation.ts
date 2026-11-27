@@ -6,6 +6,11 @@ export const OAuthCallbackQuery = z.object({
   error: z.string().optional(),
 });
 
+export const PasswordLoginSchema = z.object({
+  username: z.string().min(1, "usuário é obrigatório").max(200),
+  password: z.string().min(1, "senha é obrigatória").max(200),
+});
+
 export const CreateFolderSchema = z.object({
   name: z.string().min(1),
   parentId: z.number().int().positive().nullable().optional(),

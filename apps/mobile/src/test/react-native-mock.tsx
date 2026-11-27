@@ -9,7 +9,7 @@ function pass<T extends Record<string, unknown>>(props: T): Record<string, unkno
       out["aria-label"] = v;
       continue;
     }
-    if (k === "style" || k === "numberOfLines" || k === "autoCapitalize" || k === "autoCorrect" || k === "secureTextEntry" || k === "placeholderTextColor" || k === "textAlignVertical" || k === "autoFocus" || k === "multiline" || k === "elevation" || k === "transparent" || k === "animationType" || k === "horizontal" || k === "showsHorizontalScrollIndicator" || k === "contentContainerStyle") continue;
+    if (k === "style" || k === "numberOfLines" || k === "autoCapitalize" || k === "autoCorrect" || k === "secureTextEntry" || k === "placeholderTextColor" || k === "textAlignVertical" || k === "autoFocus" || k === "multiline" || k === "elevation" || k === "transparent" || k === "animationType" || k === "horizontal" || k === "showsHorizontalScrollIndicator" || k === "contentContainerStyle" || k === "keyboardShouldPersistTaps" || k === "returnKeyType" || k === "submitBehavior") continue;
     out[k] = v;
   }
   return out;
@@ -38,7 +38,11 @@ export const TextInput = React.forwardRef<HTMLInputElement, TextInputProps & Rec
       type: String(props.secureTextEntry) === "true" ? "password" : "text",
       value: props.value,
       onChange,
+      onKeyDown: (e: { key: string }) => {
+        if (e.key === "Enter") (props.onSubmitEditing as (() => void) | undefined)?.();
+      },
       placeholder: props.placeholder as string | undefined,
+      "aria-label": props.accessibilityLabel as string | undefined,
     });
   },
 );
@@ -67,6 +71,9 @@ export const StyleSheet = {
 
 export const ScrollView = ({ children, ...rest }: { children?: ReactNode } & Record<string, unknown>) =>
   React.createElement("div", pass(rest), children);
+
+export const KeyboardAvoidingView = ({ children }: { children?: ReactNode }) =>
+  React.createElement("div", null, children);
 
 export const Modal = ({ children, visible = true, ...rest }: { children?: ReactNode; visible?: boolean } & Record<string, unknown>) =>
   visible ? React.createElement("div", { "data-testid": "modal", ...pass(rest) }, children) : null;

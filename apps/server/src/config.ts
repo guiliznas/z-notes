@@ -12,11 +12,19 @@ export interface GoogleOAuthConfig {
   callbackUrl: string;
 }
 
+/** Conta de teste com usuário e senha (revisão da Play Store). Não existe cadastro: só esta. */
+export interface TestUserConfig {
+  username: string;
+  password: string;
+}
+
 export interface AppConfig {
   dataDir: string;
   dbPath: string;
   mirrorDir: string;
   google: GoogleOAuthConfig;
+  /** Z_NOTES_TEST_USER + Z_NOTES_TEST_PASSWORD; `null` = login por senha desligado. */
+  testUser: TestUserConfig | null;
   /** e-mails com acesso admin (CSV em Z_NOTES_ADMIN_EMAILS, minúsculos). */
   adminEmails: string[];
   sessionSecret: string;
@@ -49,6 +57,28 @@ function resolveSessionSecret(isProd: boolean): string {
   return DEV_SECRET;
 }
 
+/** A rota de login é pública na internet: senha curta deixa o recurso desligado. */
+export const MIN_TEST_PASSWORD_LENGTH = 12;
+
+/** Lê a conta de teste do ambiente. Sem as duas variáveis (ou com senha curta) o recurso fica desligado. */
+export function resolveTestUser(username?: string, password?: string): TestUserConfig | null {
+  const name = username?.trim() ?? "";
+  if (!name && !password) return null;
+  if (!name || !password) {
+    console.warn(
+      "[z-notes] AVISO: defina Z_NOTES_TEST_USER e Z_NOTES_TEST_PASSWORD juntas — login por senha desligado.",
+    );
+    return null;
+  }
+  if (password.length < MIN_TEST_PASSWORD_LENGTH) {
+    console.warn(
+      `[z-notes] AVISO: Z_NOTES_TEST_PASSWORD precisa de ao menos ${MIN_TEST_PASSWORD_LENGTH} caracteres — login por senha desligado.`,
+    );
+    return null;
+  }
+  return { username: name, password };
+}
+
 /** Base do espelho .md de um usuário: isolamento em disco por dono. */
 export function userMirrorDir(cfg: AppConfig, userId: number): string {
   return path.join(cfg.mirrorDir, String(userId));
@@ -73,6 +103,7 @@ export function configFromEnv(): AppConfig {
     dbPath: path.join(dataDir, "z-notes.db"),
     mirrorDir: path.join(dataDir, "mirror"),
     google,
+    testUser: resolveTestUser(process.env.Z_NOTES_TEST_USER, process.env.Z_NOTES_TEST_PASSWORD),
     adminEmails: parseEmailList(process.env.Z_NOTES_ADMIN_EMAILS),
     sessionSecret: resolveSessionSecret(isProd),
     isProd,
@@ -98,6 +129,7 @@ export function makeConfig(overrides: Partial<AppConfig> & { dataDir: string }):
     dbPath: path.join(overrides.dataDir, "z-notes.db"),
     mirrorDir: path.join(overrides.dataDir, "mirror"),
     google: { clientId: "", clientSecret: "", callbackUrl: "" },
+    testUser: null,
     adminEmails: [],
     sessionSecret: DEV_SECRET,
     isProd: false,
