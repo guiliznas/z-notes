@@ -153,6 +153,18 @@ describe("LoginScreen", () => {
       await waitFor(() => expect(alert).toHaveBeenCalledWith("Erro", "Não foi possível conectar ao servidor"));
     });
 
+    // No Android o fetch do Expo não lança TypeError, e sim um Error "fetch failed: ...".
+    it("explica em português a falha de rede do fetch do Expo", async () => {
+      const alert = vi.spyOn(Alert, "alert");
+      vi.mocked(authPassword).mockRejectedValue(
+        new Error("fetch failed: java.net.ConnectException: Failed to connect to /127.0.0.1:1"),
+      );
+      const utils = renderLogin();
+      fill(utils, "revisor", "errada");
+
+      await waitFor(() => expect(alert).toHaveBeenCalledWith("Erro", "Não foi possível conectar ao servidor"));
+    });
+
     it("não chama o servidor com campos vazios", () => {
       const alert = vi.spyOn(Alert, "alert");
       const utils = renderLogin();

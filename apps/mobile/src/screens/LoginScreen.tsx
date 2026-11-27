@@ -20,8 +20,11 @@ interface Props {
 }
 
 function errorMessage(e: unknown): string {
-  // O fetch rejeita com TypeError ("Network request failed") quando não alcança o servidor.
-  if (e instanceof TypeError) return "Não foi possível conectar ao servidor";
+  // Sem alcançar o servidor, o fetch do React Native rejeita com TypeError ("Network request failed");
+  // o do Expo, usado no aparelho, com um Error cuja mensagem começa por "fetch failed:".
+  if (e instanceof TypeError || (e instanceof Error && e.message.startsWith("fetch failed:"))) {
+    return "Não foi possível conectar ao servidor";
+  }
   return e instanceof Error ? e.message : "Erro ao conectar";
 }
 
