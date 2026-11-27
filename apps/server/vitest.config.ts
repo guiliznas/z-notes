@@ -5,6 +5,10 @@ export default defineConfig({
     environment: "node",
     include: ["src/**/*.test.ts"],
     pool: "forks",
+    // O runner self-hosted divide a máquina com outros processos; sob carga, subir o app de teste
+    // já passou dos 10 s (hook) e dos 5 s (teste) padrão.
+    testTimeout: 60_000,
+    hookTimeout: 60_000,
     coverage: {
       provider: "v8",
       include: ["src/**/*.ts"],
