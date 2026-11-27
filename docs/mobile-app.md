@@ -54,7 +54,7 @@ Para garantir que dois usuários no mesmo dispositivo nunca tenham acesso às an
 
 Além do Google, a tela de login do app tem **usuário**, **senha** e o botão **Entrar**. Serve para uma única conta de teste (a que o revisor da loja usa). Não existe cadastro, e o web continua só com Google.
 
-- **Servidor:** `POST /api/auth/password` com `{ "username", "password" }` devolve `{ token, user }`; o app guarda o token como no fluxo Google. Mesmo limite das rotas de autenticação (10 tentativas por minuto).
+- **Servidor:** `POST /api/auth/password` com `{ "username", "password" }` devolve `{ token, user }`; o app guarda o token como no fluxo Google. Limite de 10 tentativas por minuto (mais restrito que os 20/min das demais rotas de autenticação).
 - **Configuração:** `Z_NOTES_TEST_USER` e `Z_NOTES_TEST_PASSWORD` (mínimo de 12 caracteres), definidas no ambiente do servidor (em produção, no Dokploy). A senha nunca vai para o Git.
 - **Desligado:** sem as duas variáveis (ou com senha curta, que gera aviso no boot) a rota responde 404 e as sessões da conta de teste deixam de valer.
 - **Exclusão:** a conta pode ser excluída como qualquer outra; o login seguinte cria uma nova, vazia.
