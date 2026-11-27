@@ -75,7 +75,7 @@ export function SettingsModal({ open, onClose, initialTab = "general" }: Props) 
 
   return (
     <>
-      <Modal title="Configurações" onClose={onClose} className="max-w-lg">
+      <Modal title="Configurações" onClose={onClose} size="lg">
         <div className="flex flex-col text-sm">
           {/* Abas */}
           <div className="-mt-1 -mx-5 mb-4 flex border-b border-[var(--border)] px-5 gap-4">

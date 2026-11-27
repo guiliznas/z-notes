@@ -8,10 +8,13 @@ interface Props {
   onClose: () => void;
   children: ReactNode;
   footer?: ReactNode;
-  className?: string;
+  /** Largura máxima do card. Variante própria: `cn` não resolve classes conflitantes. */
+  size?: keyof typeof SIZES;
 }
 
-export function Modal({ title, onClose, children, footer, className }: Props) {
+const SIZES = { md: "max-w-md", lg: "max-w-lg" };
+
+export function Modal({ title, onClose, children, footer, size = "md" }: Props) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     document.addEventListener("keydown", onKey);
@@ -20,24 +23,28 @@ export function Modal({ title, onClose, children, footer, className }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4"
       onMouseDown={onClose}
     >
       <div
         className={cn(
-          "w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-2xl",
-          className,
+          "flex max-h-[calc(100dvh-2rem)] w-full flex-col rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-2xl",
+          SIZES[size],
         )}
         onMouseDown={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-3.5">
+        <div className="flex shrink-0 items-center justify-between border-b border-[var(--border)] px-5 py-3.5">
           <h2 className="text-base font-semibold">{title}</h2>
           <IconButton label="Fechar" onClick={onClose}>
             <CloseIcon />
           </IconButton>
         </div>
-        <div className="px-5 py-4">{children}</div>
-        {footer && <div className="flex justify-end gap-2 border-t border-[var(--border)] px-5 py-3.5">{footer}</div>}
+        <div className="min-h-0 overflow-y-auto px-5 py-4">{children}</div>
+        {footer && (
+          <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-[var(--border)] px-5 py-3.5">
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   );
