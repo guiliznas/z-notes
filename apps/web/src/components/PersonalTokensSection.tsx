@@ -158,8 +158,8 @@ export function PersonalTokensSection() {
             {tokens.map((t) => (
               <div key={t.id} className="flex items-center justify-between gap-3 p-3">
                 <div className="flex min-w-0 flex-col gap-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-[var(--text)] truncate">{t.name}</span>
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <span className="max-w-full truncate font-medium text-[var(--text)]">{t.name}</span>
                     <span
                       className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
                         t.active
