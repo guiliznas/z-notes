@@ -6,9 +6,10 @@ interface Props {
   onSend: (content: string) => void;
   disabled?: boolean;
   initialText?: string;
+  focusTrigger?: number;
 }
 
-export function InboxComposer({ onSend, disabled, initialText }: Props) {
+export function InboxComposer({ onSend, disabled, initialText, focusTrigger }: Props) {
   const [text, setText] = useState(initialText ?? "");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const bp = useBreakpoint();
@@ -28,15 +29,30 @@ export function InboxComposer({ onSend, disabled, initialText }: Props) {
   useEffect(() => {
     if (initialText !== undefined && initialText !== "") {
       setText(initialText);
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         if (textareaRef.current) {
           textareaRef.current.focus();
           textareaRef.current.setSelectionRange(initialText.length, initialText.length);
           adjustHeight();
         }
       }, 50);
+      return () => clearTimeout(timer);
     }
   }, [initialText]);
+
+  useEffect(() => {
+    if (focusTrigger) {
+      const timer = setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+          const len = textareaRef.current.value.length;
+          textareaRef.current.setSelectionRange(len, len);
+          adjustHeight();
+        }
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [focusTrigger]);
 
   const handleSubmit = (e?: FormEvent) => {
     e?.preventDefault();

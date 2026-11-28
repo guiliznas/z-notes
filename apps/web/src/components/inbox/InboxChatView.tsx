@@ -9,6 +9,11 @@ import {
   clearPendingShare,
 } from "@/lib/shareTarget";
 import {
+  getPendingCapture,
+  clearPendingCapture,
+  onCaptureEvent,
+} from "@/lib/deepLink";
+import {
   useInbox,
   useCreateInboxItem,
   useArchiveInboxItem,
@@ -42,7 +47,8 @@ export function InboxChatView({ currentFilter, onSelectFilter, onOpenSidebar }: 
   const { notify } = useToast();
 
   const [prefilledText, setPrefilledText] = useState("");
-  const [prefilledSource, setPrefilledSource] = useState<"app" | "share">("app");
+  const [prefilledSource, setPrefilledSource] = useState<"app" | "share" | "desktop">("app");
+  const [composerFocusTrigger, setComposerFocusTrigger] = useState(0);
 
   const {
     items,
@@ -86,11 +92,36 @@ export function InboxChatView({ currentFilter, onSelectFilter, onOpenSidebar }: 
   // Agrupa mensagens cronologicamente com separadores de dia
   const timeline = buildInboxTimeline(items);
 
-  // Receptor do Web Share Target (Android):
-  // 1. Verifica rota /inbox/share ou parâmetros de busca (title, text, url)
-  // 2. Ou recupera do localStorage se veio do fluxo pós-login
+  // 1. Captura rápida desktop via deep link (znotes://capture ou query params ?capture=1)
+  // 2. Receptor do Web Share Target (Android): rota /inbox/share ou parâmetros de busca (title, text, url)
   // Em ambos os casos, pré-preenche o composer sem gravar sozinho e limpa a URL para /inbox
   useEffect(() => {
+    // 1. Captura rápida desktop via deep link (znotes://capture ou query params)
+    const hasCaptureParam = searchParams.get("capture") !== null;
+    const captureTextParam = searchParams.get("text") ?? searchParams.get("content");
+    if (hasCaptureParam) {
+      setPrefilledSource("desktop");
+      if (captureTextParam) {
+        setPrefilledText(captureTextParam);
+      }
+      setComposerFocusTrigger((n) => n + 1);
+      clearPendingCapture();
+      navigate("/inbox", { replace: true });
+      return;
+    }
+
+    const pendingCapture = getPendingCapture();
+    if (pendingCapture) {
+      setPrefilledSource("desktop");
+      if (pendingCapture.text) {
+        setPrefilledText(pendingCapture.text);
+      }
+      setComposerFocusTrigger((n) => n + 1);
+      clearPendingCapture();
+      return;
+    }
+
+    // 2. Web Share Target (Android)
     const isShareRoute = location.pathname === "/inbox/share";
     if (isShareRoute || hasShareParams(searchParams)) {
       const payload = extractSharePayload(searchParams);
@@ -114,6 +145,19 @@ export function InboxChatView({ currentFilter, onSelectFilter, onOpenSidebar }: 
       }
     }
   }, [location.pathname, searchParams, navigate]);
+
+  // Escuta evento de captura rápida disparado pelo deep link router com o app já aberto
+  useEffect(() => {
+    const unsubscribe = onCaptureEvent(({ text }) => {
+      clearPendingCapture();
+      setPrefilledSource("desktop");
+      if (text) {
+        setPrefilledText(text);
+      }
+      setComposerFocusTrigger((n) => n + 1);
+    });
+    return unsubscribe;
+  }, []);
 
   // Rola até o final ao abrir e ao receber/enviar nova mensagem
   useEffect(() => {
@@ -139,7 +183,7 @@ export function InboxChatView({ currentFilter, onSelectFilter, onOpenSidebar }: 
       capturedAt: Date.now(),
     });
 
-    if (prefilledSource === "share") {
+    if (prefilledSource === "share" || prefilledSource === "desktop") {
       setPrefilledSource("app");
     }
     setPrefilledText("");
@@ -562,6 +606,7 @@ export function InboxChatView({ currentFilter, onSelectFilter, onOpenSidebar }: 
           onSend={handleSend}
           initialText={prefilledText}
           disabled={createItem.isPending}
+          focusTrigger={composerFocusTrigger}
         />
       )}
 
