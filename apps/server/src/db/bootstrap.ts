@@ -101,12 +101,26 @@ CREATE TABLE IF NOT EXISTS inbox_items (
   UNIQUE(user_id, client_id)
 );
 
+CREATE TABLE IF NOT EXISTS api_tokens (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  token_hash TEXT NOT NULL UNIQUE,
+  token_prefix TEXT NOT NULL,
+  scope TEXT NOT NULL DEFAULT 'inbox:write',
+  created_at INTEGER NOT NULL,
+  last_used_at INTEGER,
+  revoked_at INTEGER
+);
+
 CREATE INDEX IF NOT EXISTS idx_task_folders_user ON task_folders(user_id);
 CREATE INDEX IF NOT EXISTS idx_task_lists_folder ON task_lists(folder_id);
 CREATE INDEX IF NOT EXISTS idx_tasks_list ON tasks(list_id);
 CREATE INDEX IF NOT EXISTS idx_tasks_user ON tasks(user_id);
 CREATE INDEX IF NOT EXISTS idx_inbox_items_user_captured ON inbox_items(user_id, captured_at DESC, id DESC);
 CREATE INDEX IF NOT EXISTS idx_inbox_items_user_archived ON inbox_items(user_id, archived_at);
+CREATE INDEX IF NOT EXISTS idx_api_tokens_user ON api_tokens(user_id);
+CREATE INDEX IF NOT EXISTS idx_api_tokens_hash ON api_tokens(token_hash);
 
 CREATE VIRTUAL TABLE IF NOT EXISTS notes_fts USING fts5(
   content_md,

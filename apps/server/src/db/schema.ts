@@ -102,6 +102,20 @@ export const inboxItems = sqliteTable("inbox_items", {
   updatedAt: integer("updated_at").notNull(),
 });
 
+export const apiTokens = sqliteTable("api_tokens", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  tokenHash: text("token_hash").notNull().unique(),
+  tokenPrefix: text("token_prefix").notNull(),
+  scope: text("scope").notNull().default("inbox:write"),
+  createdAt: integer("created_at").notNull(),
+  lastUsedAt: integer("last_used_at"),
+  revokedAt: integer("revoked_at"),
+});
+
 export type UserRow = typeof users.$inferSelect;
 export type FolderRow = typeof folders.$inferSelect;
 export type NoteRow = typeof notes.$inferSelect;
@@ -109,4 +123,5 @@ export type TaskFolderRow = typeof taskFolders.$inferSelect;
 export type TaskListRow = typeof taskLists.$inferSelect;
 export type TaskRow = typeof tasks.$inferSelect;
 export type InboxItemRow = typeof inboxItems.$inferSelect;
+export type ApiTokenRow = typeof apiTokens.$inferSelect;
 export type MetricSampleRow = typeof metricSamples.$inferSelect;

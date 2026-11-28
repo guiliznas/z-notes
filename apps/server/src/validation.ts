@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 
 export const OAuthCallbackQuery = z.object({
@@ -113,12 +114,30 @@ export const BatchArchiveTasksSchema = z.object({
 export const InboxSourceSchema = z.enum(["app", "share", "desktop", "api"]);
 export const InboxStatusSchema = z.enum(["pending", "archived", "resolved"]);
 
-export const CreateInboxItemSchema = z.object({
-  clientId: z.string().trim().min(1, "clientId é obrigatório").max(200, "clientId muito longo"),
-  content: z.string().trim().min(1, "conteúdo é obrigatório").max(20000, "conteúdo muito longo"),
-  source: InboxSourceSchema.optional().default("api"),
-  capturedAt: z.number().int().positive().optional(),
-});
+export const CreateInboxItemSchema = z
+  .object({
+    clientId: z.string().trim().min(1, "clientId é obrigatório").max(200, "clientId muito longo").optional(),
+    content: z.string().trim().max(20000, "conteúdo muito longo").optional(),
+    text: z.string().trim().max(20000, "conteúdo muito longo").optional(),
+    source: InboxSourceSchema.optional().default("api"),
+    capturedAt: z.number().int().positive().optional(),
+  })
+  .superRefine((data, ctx) => {
+    const rawContent = data.content ?? data.text;
+    if (!rawContent || rawContent.trim().length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["content"],
+        message: "conteúdo é obrigatório",
+      });
+    }
+  })
+  .transform((data) => ({
+    clientId: data.clientId && data.clientId.length > 0 ? data.clientId : randomUUID(),
+    content: (data.content ?? data.text)!.trim(),
+    source: data.source ?? "api",
+    capturedAt: data.capturedAt,
+  }));
 
 export const ListInboxQuery = z.object({
   status: InboxStatusSchema.optional().default("pending"),
@@ -138,3 +157,8 @@ export const ConvertInboxToNoteSchema = z.object({
   folderId: z.number().int().positive(),
 });
 
+/* ───────────── tokens ───────────── */
+
+export const CreateApiTokenSchema = z.object({
+  name: z.string().trim().min(1, "nome é obrigatório").max(100, "nome muito longo"),
+});

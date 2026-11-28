@@ -4,11 +4,12 @@ use tauri_plugin_deep_link::DeepLinkExt;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        // Deve ser o primeiro plugin: com a feature `deep-link`, o znotes://auth aberto pelo navegador
-        // chega na instância já rodando em vez de abrir uma segunda janela.
+        // Deve ser o primeiro plugin: com a feature `deep-link`, znotes://auth e znotes://capture
+        // chegam na instância já rodando em vez de abrir uma segunda janela.
         .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
             if let Some(window) = app.get_webview_window("main") {
                 let _ = window.unminimize();
+                let _ = window.show();
                 let _ = window.set_focus();
             }
         }))
