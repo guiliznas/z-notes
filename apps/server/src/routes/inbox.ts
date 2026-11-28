@@ -19,6 +19,8 @@ import {
   updateInboxItem,
 } from "../services/inbox.js";
 
+const INBOX_CAPTURE_RATE_LIMIT = { max: 60, timeWindow: "1 minute" };
+
 export function registerInboxRoutes(app: FastifyInstance, ctx: AppContext): void {
   app.get("/api/inbox/count", async (req) => {
     return { count: countPendingInbox(reqCtx(ctx, req)) };
@@ -29,7 +31,7 @@ export function registerInboxRoutes(app: FastifyInstance, ctx: AppContext): void
     return listInbox(reqCtx(ctx, req), query);
   });
 
-  app.post("/api/inbox", async (req, reply) => {
+  app.post("/api/inbox", { config: { rateLimit: INBOX_CAPTURE_RATE_LIMIT } }, async (req, reply) => {
     const body = CreateInboxItemSchema.parse(req.body);
     const result = createInboxItem(reqCtx(ctx, req), body);
     reply.code(result.created ? 201 : 200);
